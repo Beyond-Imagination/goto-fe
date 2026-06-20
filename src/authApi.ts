@@ -78,7 +78,12 @@ async function postJson<TResponse>(path: string, body: unknown): Promise<TRespon
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : {};
+  let payload: unknown;
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text || response.statusText };
+  }
 
   if (!response.ok) {
     throw new Error(JSON.stringify(payload, null, 2));
@@ -88,19 +93,32 @@ async function postJson<TResponse>(path: string, body: unknown): Promise<TRespon
 }
 
 function decodeTokens(response: LoginResponse | RefreshResponse): DecodedTokens {
-  const decoded: DecodedTokens = {
-    accessToken: decodeJwt(response.accessToken)
-  };
+  const decoded: DecodedTokens = {};
+
+  try {
+    decoded.accessToken = decodeJwt(response.accessToken);
+  } catch (error) {
+    console.warn("Failed to decode accessToken:", error);
+  }
 
   if ("refreshToken" in response) {
-    decoded.refreshToken = decodeJwt(response.refreshToken);
+    try {
+      decoded.refreshToken = decodeJwt(response.refreshToken);
+    } catch (error) {
+      console.warn("Failed to decode refreshToken:", error);
+    }
   }
 
   return decoded;
 }
 
 function decodeJwt(token: string): DecodedJwt {
-  const [encodedHeader, encodedPayload] = token.split(".");
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    throw new Error("Invalid JWT format.");
+  }
+
+  const [encodedHeader, encodedPayload] = parts;
 
   return {
     header: parseBase64UrlJson(encodedHeader),
