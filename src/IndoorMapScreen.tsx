@@ -28,20 +28,19 @@ type IndoorMapScreenProps = {
   placeId: number;
 };
 
-type MapState =
-  | { type: "loading" }
-  | { type: "error"; message: string }
-  | { type: "ready"; shapes: Shape[]; nodes: FacilityNode[] };
-
+type MapData = { shapes: Shape[]; nodes: FacilityNode[] };
 type Camera = Coord & { zoom: number };
 
 export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) {
   const [floors, setFloors] = useState<number[] | null>(null);
   const [floorsError, setFloorsError] = useState<string | null>(null);
   const [floor, setFloor] = useState<number | null>(null);
-  const [mapState, setMapState] = useState<MapState>({ type: "loading" });
-  // 층을 옮길 때마다 지도를 새로 마운트하면 폴리곤 레이어가 깨지는 문제가 있어서,
-  // camera는 별도 state로 두고 도면이 준비됐을 때만 갱신한다 (지도 자체는 계속 마운트 유지).
+  // mapData는 새 층 데이터가 성공적으로 도착했을 때만 교체한다 — 로딩 중에 null로
+  // 비워버리면 오버레이 전체가 unmount/remount 되면서 네이티브 쪽에서 폴리곤 레이어가
+  // 깨지는 문제가 있었음. 이전 층 도면을 유지한 채 로딩 스피너만 위에 띄운다.
+  const [mapData, setMapData] = useState<MapData | null>(null);
+  const [isLoadingMap, setIsLoadingMap] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [camera, setCamera] = useState<Camera>({ ...DEFAULT_CENTER, zoom: 19 });
 
   useEffect(() => {
@@ -76,7 +75,8 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
     let cancelled = false;
 
     async function load() {
-      setMapState({ type: "loading" });
+      setIsLoadingMap(true);
+      setMapError(null);
       try {
         const [geojson, nodes] = await Promise.all([
           fetchIndoorMap(accessToken, placeId, floor as number),
@@ -86,14 +86,15 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
           const shapes = extractShapes(geojson);
           const center = centroidOfRing(shapes[0]?.coords ?? []) ?? centerOfNodes(nodes) ?? DEFAULT_CENTER;
           setCamera({ ...center, zoom: 19 });
-          setMapState({ type: "ready", shapes, nodes });
+          setMapData({ shapes, nodes });
         }
       } catch (error) {
         if (!cancelled) {
-          setMapState({
-            type: "error",
-            message: error instanceof Error ? error.message : String(error)
-          });
+          setMapError(error instanceof Error ? error.message : String(error));
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingMap(false);
         }
       }
     }
@@ -134,19 +135,19 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
   return (
     <View style={styles.container}>
       <NaverMapView style={styles.map} camera={camera}>
-        {mapState.type === "ready" && <IndoorMapOverlays shapes={mapState.shapes} nodes={mapState.nodes} />}
+        {mapData && <IndoorMapOverlays shapes={mapData.shapes} nodes={mapData.nodes} />}
       </NaverMapView>
 
-      {mapState.type === "loading" && (
+      {isLoadingMap && (
         <View style={styles.overlayCenter}>
           <ActivityIndicator />
         </View>
       )}
 
-      {mapState.type === "error" && (
+      {mapError && !isLoadingMap && (
         <View style={styles.overlayCenter}>
           <Text selectable style={styles.errorText}>
-            {mapState.message}
+            {mapError}
           </Text>
         </View>
       )}
