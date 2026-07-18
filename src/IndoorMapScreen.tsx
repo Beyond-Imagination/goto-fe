@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { NaverMapCircleOverlay, NaverMapPolygonOverlay, NaverMapView, type Coord } from "@mj-studio/react-native-naver-map";
 
 import { FacilityNode, FloorGeoJson, GeoJsonFeature, fetchFacilityNodes, fetchIndoorMap } from "./indoorMapApi";
@@ -9,7 +9,8 @@ const DEFAULT_CENTER: Coord = { latitude: 37.5796, longitude: 126.977 };
 type IndoorMapScreenProps = {
   accessToken: string;
   placeId: number;
-  floor: number;
+  floors: number[];
+  initialFloor: number;
 };
 
 type LoadState =
@@ -17,7 +18,8 @@ type LoadState =
   | { type: "error"; message: string }
   | { type: "ready"; geojson: FloorGeoJson; nodes: FacilityNode[] };
 
-export function IndoorMapScreen({ accessToken, placeId, floor }: IndoorMapScreenProps) {
+export function IndoorMapScreen({ accessToken, placeId, floors, initialFloor }: IndoorMapScreenProps) {
+  const [floor, setFloor] = useState(initialFloor);
   const [state, setState] = useState<LoadState>({ type: "loading" });
 
   useEffect(() => {
@@ -50,29 +52,50 @@ export function IndoorMapScreen({ accessToken, placeId, floor }: IndoorMapScreen
     };
   }, [accessToken, placeId, floor]);
 
-  if (state.type === "loading") {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
+  return (
+    <View style={styles.container}>
+      {state.type === "loading" ? (
+        <View style={styles.center}>
+          <ActivityIndicator />
+        </View>
+      ) : state.type === "error" ? (
+        <View style={styles.center}>
+          <Text selectable style={styles.errorText}>
+            {state.message}
+          </Text>
+        </View>
+      ) : (
+        <IndoorMap geojson={state.geojson} nodes={state.nodes} />
+      )}
 
-  if (state.type === "error") {
-    return (
-      <View style={styles.center}>
-        <Text selectable style={styles.errorText}>
-          {state.message}
-        </Text>
+      <View style={styles.floorSelector}>
+        {floors.map((f) => (
+          <Pressable
+            key={f}
+            onPress={() => setFloor(f)}
+            style={[styles.floorButton, f === floor && styles.floorButtonActive]}
+          >
+            <Text style={[styles.floorButtonText, f === floor && styles.floorButtonTextActive]}>
+              {formatFloorLabel(f)}
+            </Text>
+          </Pressable>
+        ))}
       </View>
-    );
-  }
+    </View>
+  );
+}
 
-  const polygons = extractPolygons(state.geojson);
-  const center = centroidOfPolygons(polygons) ?? centerOfNodes(state.nodes) ?? DEFAULT_CENTER;
+type IndoorMapProps = {
+  geojson: FloorGeoJson;
+  nodes: FacilityNode[];
+};
+
+function IndoorMap({ geojson, nodes }: IndoorMapProps) {
+  const polygons = extractPolygons(geojson);
+  const center = centroidOfPolygons(polygons) ?? centerOfNodes(nodes) ?? DEFAULT_CENTER;
 
   return (
-    <NaverMapView style={styles.map} initialCamera={{ ...center, zoom: 18 }}>
+    <NaverMapView style={styles.map} camera={{ ...center, zoom: 18 }}>
       {polygons.map((coords, index) => (
         <NaverMapPolygonOverlay
           key={`floor-shape-${index}`}
@@ -83,7 +106,7 @@ export function IndoorMapScreen({ accessToken, placeId, floor }: IndoorMapScreen
         />
       ))}
 
-      {state.nodes.map((node) => (
+      {nodes.map((node) => (
         <NaverMapCircleOverlay
           key={`facility-node-${node.id}`}
           latitude={node.lat}
@@ -96,6 +119,10 @@ export function IndoorMapScreen({ accessToken, placeId, floor }: IndoorMapScreen
       ))}
     </NaverMapView>
   );
+}
+
+function formatFloorLabel(floor: number): string {
+  return floor > 0 ? `${floor}F` : `B${-floor}`;
 }
 
 // 백엔드 GeoJSON은 Polygon/MultiPolygon을 느슨한 타입(unknown)으로 내려주므로 좌표를 직접 파싱한다.
@@ -159,6 +186,9 @@ function centerOfNodes(nodes: FacilityNode[]): Coord | null {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
   map: {
     flex: 1
   },
@@ -173,5 +203,37 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
     fontSize: 12,
     textAlign: "center"
+  },
+  floorSelector: {
+    position: "absolute",
+    right: 16,
+    top: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4
+  },
+  floorButton: {
+    minWidth: 48,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb"
+  },
+  floorButtonActive: {
+    backgroundColor: "#2563eb"
+  },
+  floorButtonText: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "600"
+  },
+  floorButtonTextActive: {
+    color: "#ffffff"
   }
 });
