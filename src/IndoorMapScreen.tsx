@@ -13,25 +13,39 @@ import {
 
 const DEFAULT_CENTER: Coord = { latitude: 37.5796, longitude: 126.977 };
 
-const CORRIDOR_NODE_ID = "corridor";
+// 폴리곤 category별 스타일. 실제 역사 도면 관례(유료/무료 구역, 개찰구)를 참고함.
+const SHAPE_STYLES: Record<string, { fill: string; outline: string }> = {
+  room: { fill: "rgba(147, 197, 253, 0.45)", outline: "#3b82f6" },
+  corridor: { fill: "rgba(226, 232, 240, 0.6)", outline: "#94a3b8" },
+  unpaid_zone: { fill: "rgba(187, 247, 208, 0.55)", outline: "#16a34a" },
+  paid_zone: { fill: "rgba(191, 219, 254, 0.55)", outline: "#2563eb" },
+  gate: { fill: "rgba(253, 230, 138, 0.6)", outline: "#d97706" }
+};
+const DEFAULT_SHAPE_STYLE = SHAPE_STYLES.room;
 
 // 🛗, 🚻 이모지는 자체 불투명 배경이 있어 체크포인트 색상(주황/초록)을 가려버리므로 텍스트로 대체.
 const FACILITY_EMOJI: Record<string, string> = {
   ELEVATOR: "EL",
   STAIRS: "🪜",
   RESTROOM: "WC",
-  INFO_DESK: "📋"
+  INFO_DESK: "📋",
+  TICKET_MACHINE: "TM",
+  WIDE_GATE: "GT",
+  STAFF_ROOM: "SR",
+  PANTRY: "PT"
 };
 
 type IndoorMapScreenProps = {
   accessToken: string;
   placeId: number;
+  placeName?: string;
 };
 
 type MapData = { shapes: Shape[]; nodes: FacilityNode[] };
 type Camera = Coord & { zoom: number };
+type ScreenMode = "outdoor" | "indoor";
 
-export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) {
+export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapScreenProps) {
   const [floors, setFloors] = useState<number[] | null>(null);
   const [floorsError, setFloorsError] = useState<string | null>(null);
   const [floor, setFloor] = useState<number | null>(null);
@@ -41,7 +55,11 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [camera, setCamera] = useState<Camera>({ ...DEFAULT_CENTER, zoom: 19 });
+  const [indoorCamera, setIndoorCamera] = useState<Camera>({ ...DEFAULT_CENTER, zoom: 19 });
+  // 장소의 대표 위치. 최초 도면 로딩 성공 시 한 번만 설정하고 이후 층을 옮겨도 유지한다
+  // (야외 지도에서 보여줄 마커 위치가 현재 보고 있던 층에 따라 흔들리지 않도록).
+  const [placeCenter, setPlaceCenter] = useState<Coord | null>(null);
+  const [mode, setMode] = useState<ScreenMode>("outdoor");
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +103,8 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
         if (!cancelled) {
           const shapes = extractShapes(geojson);
           const center = centroidOfRing(shapes[0]?.coords ?? []) ?? centerOfNodes(nodes) ?? DEFAULT_CENTER;
-          setCamera({ ...center, zoom: 19 });
+          setIndoorCamera({ ...center, zoom: 19 });
+          setPlaceCenter((prev) => prev ?? center);
           setMapData({ shapes, nodes });
         }
       } catch (error) {
@@ -132,39 +151,77 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
     );
   }
 
+  const camera = mode === "indoor" ? indoorCamera : { ...(placeCenter ?? DEFAULT_CENTER), zoom: 16 };
+
   return (
     <View style={styles.container}>
       <NaverMapView style={styles.map} camera={camera}>
-        {mapData && <IndoorMapOverlays shapes={mapData.shapes} nodes={mapData.nodes} />}
+        {mode === "outdoor" && placeCenter && (
+          <NaverMapMarkerOverlay
+            latitude={placeCenter.latitude}
+            longitude={placeCenter.longitude}
+            width={40}
+            height={40}
+            anchor={{ x: 0.5, y: 0.5 }}
+            caption={{
+              text: `${placeName ?? "장소"} (실내지도 보기)`,
+              textSize: 13,
+              color: "#111827",
+              haloColor: "#ffffff",
+              offset: 4
+            }}
+            onTap={() => setMode("indoor")}
+          >
+            <View key="place-marker" collapsable={false} style={styles.placeMarker}>
+              <Text style={styles.placeMarkerEmoji}>🏢</Text>
+            </View>
+          </NaverMapMarkerOverlay>
+        )}
+
+        {mode === "indoor" && mapData && <IndoorMapOverlays shapes={mapData.shapes} nodes={mapData.nodes} />}
       </NaverMapView>
 
-      {isLoadingMap && (
+      {mode === "outdoor" && isLoadingMap && !placeCenter && (
         <View style={styles.overlayCenter}>
           <ActivityIndicator />
         </View>
       )}
 
-      {mapError && !isLoadingMap && (
-        <View style={styles.overlayCenter}>
-          <Text selectable style={styles.errorText}>
-            {mapError}
-          </Text>
-        </View>
-      )}
+      {mode === "indoor" && (
+        <>
+          {isLoadingMap && (
+            <View style={styles.overlayCenter}>
+              <ActivityIndicator />
+            </View>
+          )}
 
-      <View style={styles.floorSelector}>
-        {floors.map((f) => (
-          <Pressable
-            key={f}
-            onPress={() => setFloor(f)}
-            style={[styles.floorButton, f === floor && styles.floorButtonActive]}
-          >
-            <Text style={[styles.floorButtonText, f === floor && styles.floorButtonTextActive]}>
-              {formatFloorLabel(f)}
-            </Text>
+          {mapError && !isLoadingMap && (
+            <View style={styles.overlayCenter}>
+              <Text selectable style={styles.errorText}>
+                {mapError}
+              </Text>
+            </View>
+          )}
+
+          <Pressable style={styles.backButton} onPress={() => setMode("outdoor")}>
+            <Text style={styles.backButtonText}>← 전면 지도로 돌아가기</Text>
           </Pressable>
-        ))}
-      </View>
+
+          <View style={styles.floorSelector}>
+            {floors.map((f) => (
+              <Pressable
+                key={f}
+                onPress={() => setFloor(f)}
+                style={[styles.floorButton, f === floor && styles.floorButtonActive]}
+              >
+                <Text style={[styles.floorButtonText, f === floor && styles.floorButtonTextActive]}>
+                  {formatFloorLabel(f)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -178,14 +235,14 @@ function IndoorMapOverlays({ shapes, nodes }: IndoorMapOverlaysProps) {
   return (
     <>
       {shapes.map((shape) => {
-        const isCorridor = shape.id === CORRIDOR_NODE_ID;
+        const style = SHAPE_STYLES[shape.category ?? ""] ?? DEFAULT_SHAPE_STYLE;
         return (
           <NaverMapPolygonOverlay
             key={`floor-shape-${shape.id}`}
             coords={shape.coords}
-            color={isCorridor ? "rgba(226, 232, 240, 0.6)" : "rgba(147, 197, 253, 0.45)"}
+            color={style.fill}
             outlineWidth={1.5}
-            outlineColor={isCorridor ? "#94a3b8" : "#3b82f6"}
+            outlineColor={style.outline}
           />
         );
       })}
@@ -203,7 +260,7 @@ function IndoorMapOverlays({ shapes, nodes }: IndoorMapOverlaysProps) {
             key={`room-label-${shape.id}`}
             latitude={labelCenter.latitude}
             longitude={labelCenter.longitude}
-            width={80}
+            width={90}
             height={16}
             anchor={{ x: 0.5, y: 0.5 }}
           >
@@ -246,6 +303,7 @@ function formatFloorLabel(floor: number): string {
 type Shape = {
   id: string;
   label?: string;
+  category?: string;
   coords: Coord[];
 };
 
@@ -258,9 +316,16 @@ function extractShapes(geojson: FloorGeoJson): Shape[] {
     const properties = feature.properties ?? {};
     const id = typeof properties.node_id === "string" ? properties.node_id : `shape-${featureIndex}`;
     const label = typeof properties.label === "string" ? properties.label : undefined;
+    // category가 없는 기존 데이터와의 호환을 위해 id === "corridor"면 복도로 간주한다.
+    const category = typeof properties.category === "string" ? properties.category : id === "corridor" ? "corridor" : "room";
 
     extractRings(feature).forEach((coords, ringIndex) => {
-      shapes.push({ id: ringIndex === 0 ? id : `${id}-${ringIndex}`, label: ringIndex === 0 ? label : undefined, coords });
+      shapes.push({
+        id: ringIndex === 0 ? id : `${id}-${ringIndex}`,
+        label: ringIndex === 0 ? label : undefined,
+        category,
+        coords
+      });
     });
   });
 
@@ -398,5 +463,42 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#334155",
     textAlign: "center"
+  },
+  placeMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#2563eb",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#ffffff",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  placeMarkerEmoji: {
+    fontSize: 18
+  },
+  backButton: {
+    position: "absolute",
+    left: 16,
+    top: 16,
+    backgroundColor: "#111827",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    elevation: 4,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4
+  },
+  backButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "600"
   }
 });
