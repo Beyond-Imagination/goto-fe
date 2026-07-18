@@ -2,42 +2,77 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { NaverMapCircleOverlay, NaverMapPolygonOverlay, NaverMapView, type Coord } from "@mj-studio/react-native-naver-map";
 
-import { FacilityNode, FloorGeoJson, GeoJsonFeature, fetchFacilityNodes, fetchIndoorMap } from "./indoorMapApi";
+import {
+  FacilityNode,
+  FloorGeoJson,
+  GeoJsonFeature,
+  fetchFacilityNodes,
+  fetchFloors,
+  fetchIndoorMap
+} from "./indoorMapApi";
 
 const DEFAULT_CENTER: Coord = { latitude: 37.5796, longitude: 126.977 };
 
 type IndoorMapScreenProps = {
   accessToken: string;
   placeId: number;
-  floors: number[];
-  initialFloor: number;
 };
 
-type LoadState =
+type MapState =
   | { type: "loading" }
   | { type: "error"; message: string }
   | { type: "ready"; geojson: FloorGeoJson; nodes: FacilityNode[] };
 
-export function IndoorMapScreen({ accessToken, placeId, floors, initialFloor }: IndoorMapScreenProps) {
-  const [floor, setFloor] = useState(initialFloor);
-  const [state, setState] = useState<LoadState>({ type: "loading" });
+export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) {
+  const [floors, setFloors] = useState<number[] | null>(null);
+  const [floorsError, setFloorsError] = useState<string | null>(null);
+  const [floor, setFloor] = useState<number | null>(null);
+  const [mapState, setMapState] = useState<MapState>({ type: "loading" });
 
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
-      setState({ type: "loading" });
+    async function loadFloors() {
       try {
-        const [geojson, nodes] = await Promise.all([
-          fetchIndoorMap(accessToken, placeId, floor),
-          fetchFacilityNodes(accessToken, placeId, floor)
-        ]);
+        const result = await fetchFloors(accessToken, placeId);
         if (!cancelled) {
-          setState({ type: "ready", geojson, nodes });
+          setFloors(result);
+          setFloor(result[0] ?? null);
         }
       } catch (error) {
         if (!cancelled) {
-          setState({
+          setFloorsError(error instanceof Error ? error.message : String(error));
+        }
+      }
+    }
+
+    loadFloors();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, placeId]);
+
+  useEffect(() => {
+    if (floor === null) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function load() {
+      setMapState({ type: "loading" });
+      try {
+        const [geojson, nodes] = await Promise.all([
+          fetchIndoorMap(accessToken, placeId, floor as number),
+          fetchFacilityNodes(accessToken, placeId, floor as number)
+        ]);
+        if (!cancelled) {
+          setMapState({ type: "ready", geojson, nodes });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setMapState({
             type: "error",
             message: error instanceof Error ? error.message : String(error)
           });
@@ -52,20 +87,46 @@ export function IndoorMapScreen({ accessToken, placeId, floors, initialFloor }: 
     };
   }, [accessToken, placeId, floor]);
 
+  if (floorsError) {
+    return (
+      <View style={styles.center}>
+        <Text selectable style={styles.errorText}>
+          {floorsError}
+        </Text>
+      </View>
+    );
+  }
+
+  if (floors === null) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (floors.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>등록된 층이 없습니다.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {state.type === "loading" ? (
+      {mapState.type === "loading" ? (
         <View style={styles.center}>
           <ActivityIndicator />
         </View>
-      ) : state.type === "error" ? (
+      ) : mapState.type === "error" ? (
         <View style={styles.center}>
           <Text selectable style={styles.errorText}>
-            {state.message}
+            {mapState.message}
           </Text>
         </View>
       ) : (
-        <IndoorMap geojson={state.geojson} nodes={state.nodes} />
+        <IndoorMap geojson={mapState.geojson} nodes={mapState.nodes} />
       )}
 
       <View style={styles.floorSelector}>

@@ -28,6 +28,10 @@ export type FacilityNode = {
   snapRadius: number | null;
 };
 
+export async function fetchFloors(accessToken: string, placeId: number): Promise<number[]> {
+  return getJson<number[]>(`/api/v1/places/${placeId}/floors`, accessToken);
+}
+
 export async function fetchIndoorMap(accessToken: string, placeId: number, floor: number): Promise<FloorGeoJson> {
   return getJson<FloorGeoJson>(`/api/v1/places/${placeId}/floors/${floor}/indoor-map`, accessToken);
 }

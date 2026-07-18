@@ -13,9 +13,7 @@ import { AuthResult, login, refresh } from "./src/authApi";
 import { IndoorMapScreen } from "./src/IndoorMapScreen";
 
 // TODO: 장소 선택 화면이 생기기 전까지, 백엔드에 시드된 테스트 장소(경복궁)로 고정
-// TODO: 장소별 층 목록을 내려주는 백엔드 API가 아직 없어서 데모용으로 하드코딩
 const DEMO_PLACE_ID = 3;
-const DEMO_FLOORS = [1, 2, -1];
 
 type RequestState = "idle" | "loading";
 
@@ -69,12 +67,7 @@ export default function App() {
           <View style={styles.buttonRow}>
             <AuthButton disabled={false} label="뒤로" onPress={() => setShowMap(false)} />
           </View>
-          <IndoorMapScreen
-            accessToken={accessToken}
-            placeId={DEMO_PLACE_ID}
-            floors={DEMO_FLOORS}
-            initialFloor={DEMO_FLOORS[0]}
-          />
+          <IndoorMapScreen accessToken={accessToken} placeId={DEMO_PLACE_ID} />
         </SafeAreaView>
       </SafeAreaProvider>
     );
