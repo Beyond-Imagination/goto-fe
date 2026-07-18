@@ -34,7 +34,7 @@ export type DecodedTokens = {
 };
 
 const DEMO_CREDENTIALS = {
-  username: "demo",
+  nickname: "demo",
   password: "demo"
 };
 

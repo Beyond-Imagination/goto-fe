@@ -10,6 +10,11 @@ import {
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthResult, login, refresh } from "./src/authApi";
+import { IndoorMapScreen } from "./src/IndoorMapScreen";
+
+// TODO: 장소 선택 화면이 생기기 전까지, 백엔드에 시드된 테스트 장소(경복궁)로 고정
+const DEMO_PLACE_ID = 3;
+const DEMO_FLOOR = 1;
 
 type RequestState = "idle" | "loading";
 
@@ -18,8 +23,10 @@ export default function App() {
   const [result, setResult] = useState<AuthResult | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   const isLoading = requestState === "loading";
+  const accessToken = result?.response.accessToken ?? null;
 
   async function handleLogin() {
     await runAuthRequest(async () => {
@@ -54,6 +61,19 @@ export default function App() {
     }
   }
 
+  if (showMap && accessToken) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.buttonRow}>
+            <AuthButton disabled={false} label="뒤로" onPress={() => setShowMap(false)} />
+          </View>
+          <IndoorMapScreen accessToken={accessToken} placeId={DEMO_PLACE_ID} floor={DEMO_FLOOR} />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safeArea}>
@@ -62,6 +82,9 @@ export default function App() {
             <AuthButton disabled={isLoading} label="로그인" onPress={handleLogin} />
             {refreshToken ? (
               <AuthButton disabled={isLoading} label="리프레시" onPress={handleRefresh} />
+            ) : null}
+            {accessToken ? (
+              <AuthButton disabled={isLoading} label="지도 보기" onPress={() => setShowMap(true)} />
             ) : null}
           </View>
 
