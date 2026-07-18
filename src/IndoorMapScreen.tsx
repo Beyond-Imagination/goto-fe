@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { NaverMapCircleOverlay, NaverMapPolygonOverlay, NaverMapView, type Coord } from "@mj-studio/react-native-naver-map";
+import { NaverMapMarkerOverlay, NaverMapPolygonOverlay, NaverMapView, type Coord } from "@mj-studio/react-native-naver-map";
 
 import {
   FacilityNode,
@@ -13,6 +13,16 @@ import {
 
 const DEFAULT_CENTER: Coord = { latitude: 37.5796, longitude: 126.977 };
 
+const CORRIDOR_NODE_ID = "corridor";
+
+// 🛗, 🚻 이모지는 자체 불투명 배경이 있어 체크포인트 색상(주황/초록)을 가려버리므로 텍스트로 대체.
+const FACILITY_EMOJI: Record<string, string> = {
+  ELEVATOR: "EL",
+  STAIRS: "🪜",
+  RESTROOM: "WC",
+  INFO_DESK: "📋"
+};
+
 type IndoorMapScreenProps = {
   accessToken: string;
   placeId: number;
@@ -21,13 +31,18 @@ type IndoorMapScreenProps = {
 type MapState =
   | { type: "loading" }
   | { type: "error"; message: string }
-  | { type: "ready"; geojson: FloorGeoJson; nodes: FacilityNode[] };
+  | { type: "ready"; shapes: Shape[]; nodes: FacilityNode[] };
+
+type Camera = Coord & { zoom: number };
 
 export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) {
   const [floors, setFloors] = useState<number[] | null>(null);
   const [floorsError, setFloorsError] = useState<string | null>(null);
   const [floor, setFloor] = useState<number | null>(null);
   const [mapState, setMapState] = useState<MapState>({ type: "loading" });
+  // 층을 옮길 때마다 지도를 새로 마운트하면 폴리곤 레이어가 깨지는 문제가 있어서,
+  // camera는 별도 state로 두고 도면이 준비됐을 때만 갱신한다 (지도 자체는 계속 마운트 유지).
+  const [camera, setCamera] = useState<Camera>({ ...DEFAULT_CENTER, zoom: 19 });
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +83,10 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
           fetchFacilityNodes(accessToken, placeId, floor as number)
         ]);
         if (!cancelled) {
-          setMapState({ type: "ready", geojson, nodes });
+          const shapes = extractShapes(geojson);
+          const center = centroidOfRing(shapes[0]?.coords ?? []) ?? centerOfNodes(nodes) ?? DEFAULT_CENTER;
+          setCamera({ ...center, zoom: 19 });
+          setMapState({ type: "ready", shapes, nodes });
         }
       } catch (error) {
         if (!cancelled) {
@@ -115,18 +133,22 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
 
   return (
     <View style={styles.container}>
-      {mapState.type === "loading" ? (
-        <View style={styles.center}>
+      <NaverMapView style={styles.map} camera={camera}>
+        {mapState.type === "ready" && <IndoorMapOverlays shapes={mapState.shapes} nodes={mapState.nodes} />}
+      </NaverMapView>
+
+      {mapState.type === "loading" && (
+        <View style={styles.overlayCenter}>
           <ActivityIndicator />
         </View>
-      ) : mapState.type === "error" ? (
-        <View style={styles.center}>
+      )}
+
+      {mapState.type === "error" && (
+        <View style={styles.overlayCenter}>
           <Text selectable style={styles.errorText}>
             {mapState.message}
           </Text>
         </View>
-      ) : (
-        <IndoorMap geojson={mapState.geojson} nodes={mapState.nodes} />
       )}
 
       <View style={styles.floorSelector}>
@@ -146,39 +168,73 @@ export function IndoorMapScreen({ accessToken, placeId }: IndoorMapScreenProps) 
   );
 }
 
-type IndoorMapProps = {
-  geojson: FloorGeoJson;
+type IndoorMapOverlaysProps = {
+  shapes: Shape[];
   nodes: FacilityNode[];
 };
 
-function IndoorMap({ geojson, nodes }: IndoorMapProps) {
-  const polygons = extractPolygons(geojson);
-  const center = centroidOfPolygons(polygons) ?? centerOfNodes(nodes) ?? DEFAULT_CENTER;
-
+function IndoorMapOverlays({ shapes, nodes }: IndoorMapOverlaysProps) {
   return (
-    <NaverMapView style={styles.map} camera={{ ...center, zoom: 18 }}>
-      {polygons.map((coords, index) => (
-        <NaverMapPolygonOverlay
-          key={`floor-shape-${index}`}
-          coords={coords}
-          color="rgba(96, 165, 250, 0.35)"
-          outlineWidth={2}
-          outlineColor="#2563eb"
-        />
-      ))}
+    <>
+      {shapes.map((shape) => {
+        const isCorridor = shape.id === CORRIDOR_NODE_ID;
+        return (
+          <NaverMapPolygonOverlay
+            key={`floor-shape-${shape.id}`}
+            coords={shape.coords}
+            color={isCorridor ? "rgba(226, 232, 240, 0.6)" : "rgba(147, 197, 253, 0.45)"}
+            outlineWidth={1.5}
+            outlineColor={isCorridor ? "#94a3b8" : "#3b82f6"}
+          />
+        );
+      })}
+
+      {shapes.map((shape) => {
+        if (!shape.label) {
+          return null;
+        }
+        const labelCenter = centroidOfRing(shape.coords);
+        if (!labelCenter) {
+          return null;
+        }
+        return (
+          <NaverMapMarkerOverlay
+            key={`room-label-${shape.id}`}
+            latitude={labelCenter.latitude}
+            longitude={labelCenter.longitude}
+            width={80}
+            height={16}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View key={`label-view-${shape.id}`} collapsable={false}>
+              <Text style={styles.roomLabelText} numberOfLines={1}>
+                {shape.label}
+              </Text>
+            </View>
+          </NaverMapMarkerOverlay>
+        );
+      })}
 
       {nodes.map((node) => (
-        <NaverMapCircleOverlay
+        <NaverMapMarkerOverlay
           key={`facility-node-${node.id}`}
           latitude={node.lat}
           longitude={node.lng}
-          radius={4}
-          color={node.isCheckpoint ? "#f59e0b" : "#16a34a"}
-          outlineWidth={2}
-          outlineColor="#ffffff"
-        />
+          width={24}
+          height={24}
+          anchor={{ x: 0.5, y: 0.5 }}
+          caption={{ text: node.name ?? "", textSize: 11, color: "#111827", haloColor: "#ffffff", offset: 2 }}
+        >
+          <View
+            key={`facility-icon-${node.nodeType}-${node.isCheckpoint}`}
+            collapsable={false}
+            style={[styles.nodeMarker, { backgroundColor: node.isCheckpoint ? "#f59e0b" : "#16a34a" }]}
+          >
+            <Text style={styles.nodeMarkerEmoji}>{FACILITY_EMOJI[node.nodeType] ?? "📍"}</Text>
+          </View>
+        </NaverMapMarkerOverlay>
       ))}
-    </NaverMapView>
+    </>
   );
 }
 
@@ -186,18 +242,28 @@ function formatFloorLabel(floor: number): string {
   return floor > 0 ? `${floor}F` : `B${-floor}`;
 }
 
+type Shape = {
+  id: string;
+  label?: string;
+  coords: Coord[];
+};
+
 // 백엔드 GeoJSON은 Polygon/MultiPolygon을 느슨한 타입(unknown)으로 내려주므로 좌표를 직접 파싱한다.
 // TODO: 실제 도면 데이터로 렌더링 검증 시 exterior ring의 winding 방향(Naver는 시계 방향 요구)을 확인할 것.
-function extractPolygons(geojson: FloorGeoJson): Coord[][] {
-  const polygons: Coord[][] = [];
+function extractShapes(geojson: FloorGeoJson): Shape[] {
+  const shapes: Shape[] = [];
 
-  for (const feature of geojson.features) {
-    for (const ring of extractRings(feature)) {
-      polygons.push(ring);
-    }
-  }
+  geojson.features.forEach((feature, featureIndex) => {
+    const properties = feature.properties ?? {};
+    const id = typeof properties.node_id === "string" ? properties.node_id : `shape-${featureIndex}`;
+    const label = typeof properties.label === "string" ? properties.label : undefined;
 
-  return polygons;
+    extractRings(feature).forEach((coords, ringIndex) => {
+      shapes.push({ id: ringIndex === 0 ? id : `${id}-${ringIndex}`, label: ringIndex === 0 ? label : undefined, coords });
+    });
+  });
+
+  return shapes;
 }
 
 function extractRings(feature: GeoJsonFeature): Coord[][] {
@@ -222,9 +288,8 @@ function toRings(rings: number[][][]): Coord[][] {
   return [exteriorRing.map(([lng, lat]) => ({ latitude: lat, longitude: lng }))];
 }
 
-function centroidOfPolygons(polygons: Coord[][]): Coord | null {
-  const ring = polygons[0];
-  if (!ring || ring.length === 0) {
+function centroidOfRing(ring: Coord[]): Coord | null {
+  if (ring.length === 0) {
     return null;
   }
 
@@ -265,6 +330,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center"
   },
+  overlayCenter: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.7)"
+  },
   floorSelector: {
     position: "absolute",
     right: 16,
@@ -296,5 +372,30 @@ const styles = StyleSheet.create({
   },
   floorButtonTextActive: {
     color: "#ffffff"
+  },
+  nodeMarker: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#ffffff",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3
+  },
+  nodeMarkerEmoji: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#ffffff"
+  },
+  roomLabelText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#334155",
+    textAlign: "center"
   }
 });
