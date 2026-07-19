@@ -26,6 +26,7 @@ export type FacilityNode = {
   lng: number;
   isCheckpoint: boolean;
   snapRadius: number | null;
+  locationDescription: string | null;
 };
 
 export async function fetchFloors(accessToken: string, placeId: number): Promise<number[]> {

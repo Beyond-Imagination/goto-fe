@@ -64,10 +64,7 @@ export default function App() {
   if (showMap && accessToken) {
     return (
       <SafeAreaProvider>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.buttonRow}>
-            <AuthButton disabled={false} label="뒤로" onPress={() => setShowMap(false)} />
-          </View>
+        <SafeAreaView style={styles.mapSafeArea}>
           <IndoorMapScreen accessToken={accessToken} placeId={DEMO_PLACE_ID} placeName={DEMO_PLACE_NAME} />
         </SafeAreaView>
       </SafeAreaProvider>
@@ -141,6 +138,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#f6f7f9"
+  },
+  mapSafeArea: {
+    flex: 1,
+    backgroundColor: "#ffffff"
   },
   container: {
     flex: 1,

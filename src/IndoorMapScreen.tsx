@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { NaverMapMarkerOverlay, NaverMapPolygonOverlay, NaverMapView, type Coord } from "@mj-studio/react-native-naver-map";
+import {
+  NaverMapMarkerOverlay,
+  NaverMapPolygonOverlay,
+  NaverMapView,
+  type Coord,
+  type NaverMapViewRef
+} from "@mj-studio/react-native-naver-map";
 
 import {
   FacilityNode,
@@ -60,6 +66,7 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
   // (야외 지도에서 보여줄 마커 위치가 현재 보고 있던 층에 따라 흔들리지 않도록).
   const [placeCenter, setPlaceCenter] = useState<Coord | null>(null);
   const [mode, setMode] = useState<ScreenMode>("outdoor");
+  const mapRef = useRef<NaverMapViewRef>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,6 +132,13 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
     };
   }, [accessToken, placeId, floor]);
 
+  // 실내 도면에서 현재 위치 오버레이(파란 점)를 켠다. 카메라는 따라 움직이지 않고
+  // (NoFollow) 점만 사용자의 실제 GPS 위치를 따라간다 — 도면을 보다가 카메라가
+  // 임의로 이동하면 방향 감각을 잃기 쉽기 때문.
+  useEffect(() => {
+    mapRef.current?.setLocationTrackingMode(mode === "indoor" ? "NoFollow" : "None");
+  }, [mode]);
+
   if (floorsError) {
     return (
       <View style={styles.center}>
@@ -155,7 +169,7 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
 
   return (
     <View style={styles.container}>
-      <NaverMapView style={styles.map} camera={camera}>
+      <NaverMapView ref={mapRef} style={styles.map} camera={camera}>
         {mode === "outdoor" && placeCenter && (
           <NaverMapMarkerOverlay
             latitude={placeCenter.latitude}
