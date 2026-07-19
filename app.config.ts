@@ -40,7 +40,8 @@ const config: ExpoConfig = {
           extraMavenRepos: ["https://repository.map.naver.com/archive/maven"]
         }
       }
-    ]
+    ],
+    "./plugins/withNavigationBarNoScrim"
   ]
 };
 
