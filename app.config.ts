@@ -23,7 +23,14 @@ const config: ExpoConfig = {
     [
       "@mj-studio/react-native-naver-map",
       {
-        client_id: process.env.NAVER_MAP_CLIENT_ID
+        client_id: process.env.NAVER_MAP_CLIENT_ID,
+        ios: {
+          NSLocationWhenInUseUsageDescription: "실내 지도에서 현재 위치를 표시하기 위해 위치 정보가 필요해요."
+        },
+        android: {
+          ACCESS_FINE_LOCATION: true,
+          ACCESS_COARSE_LOCATION: true
+        }
       }
     ],
     [
