@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { ScrollView, View } from 'react-native';
@@ -80,6 +81,11 @@ export default function App() {
     try {
       setResult(await request());
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          operation: "auth-request"
+        }
+      });
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setRequestState('idle');

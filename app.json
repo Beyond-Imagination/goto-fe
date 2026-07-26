@@ -20,6 +20,9 @@
         "backgroundColor": "#2962FF"
       }
     },
+    "plugins": [
+      "@sentry/react-native/expo"
+    ],
     "web": {
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
