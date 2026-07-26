@@ -5,7 +5,8 @@
 
 ```bash
 pnpm install
-EXPO_PUBLIC_API_BASE_URL=http://localhost:8080 pnpm start
+cp .env.example .env
+pnpm start
 ```
 
 Android Emulator에서 로컬 BE를 호출할 때는 `http://10.0.2.2:8080`처럼 에뮬레이터 기준 호스트를 사용하세요.
@@ -13,3 +14,8 @@ Android Emulator에서 로컬 BE를 호출할 때는 `http://10.0.2.2:8080`처�
 ## 환경 변수
 
 - `EXPO_PUBLIC_API_BASE_URL`: `/api/v1/auth/login`, `/api/v1/auth/refresh`를 호출할 BE 서버 URL
+- `EXPO_PUBLIC_SENTRY_DSN`: Sentry 프로젝트 DSN
+- `EXPO_PUBLIC_APP_ENVIRONMENT`: Sentry 환경 구분값. `production` 빌드에서만 이벤트 전송
+
+Sentry 소스맵 업로드와 Discord 알림 중계기 계약은
+[`docs/monitoring.md`](docs/monitoring.md)를 참고하세요.
