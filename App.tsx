@@ -24,12 +24,14 @@ const ALL_ICONS: { name: IconName; label: string }[] = [
 void SplashScreen.preventAutoHideAsync();
 
 export default function App() {
+  /* eslint-disable @typescript-eslint/no-require-imports */
   const [fontsLoaded, fontError] = useFonts({
     'Pretendard-Regular': require('./src/assets/fonts/Pretendard-Regular.otf'),
     'Pretendard-Medium': require('./src/assets/fonts/Pretendard-Medium.otf'),
     'Pretendard-SemiBold': require('./src/assets/fonts/Pretendard-SemiBold.otf'),
     'Pretendard-Bold': require('./src/assets/fonts/Pretendard-Bold.otf'),
   });
+  /* eslint-enable @typescript-eslint/no-require-imports */
   const [requestState, setRequestState] = useState<RequestState>('idle');
   const [result, setResult] = useState<AuthResult | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
