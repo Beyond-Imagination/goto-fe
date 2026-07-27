@@ -1,9 +1,9 @@
 import React from 'react';
 import {
   TouchableOpacity,
-  TouchableOpacityProps,
   ActivityIndicator,
-  ViewStyle,
+  type TouchableOpacityProps,
+  type ViewStyle,
 } from 'react-native';
 import { Text } from '@/components/common/Text';
 import { colors } from '@/styles/tokens/colors';
@@ -93,7 +93,7 @@ export const Button: React.FC<ButtonProps> = ({
     <TouchableOpacity
       activeOpacity={0.8}
       disabled={disabled || loading}
-      style={[getContainerStyle(), style as ViewStyle]}
+      style={[getContainerStyle(), style]}
       {...props}
     >
       {loading ? (

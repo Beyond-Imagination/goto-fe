@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Rect, Path, SvgProps } from 'react-native-svg';
+import Svg, { Rect, Path, type SvgProps } from 'react-native-svg';
 import { colors } from '@/styles/tokens/colors';
 
 export interface IconProps extends SvgProps {
