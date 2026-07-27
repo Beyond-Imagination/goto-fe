@@ -13,6 +13,9 @@ Expo 앱
 앱은 Discord Webhook을 직접 호출하지 않는다. Discord Webhook URL과 Sentry
 Integration Client Secret은 백엔드 비밀값으로 관리한다.
 
+> **참고 (백엔드 Webhook 구성의 필요성)**:
+> Sentry Issue별로 Discord Forum 스레드를 자동 생성하고, 재발·회귀·해결 메시지를 동일한 스레드에 지속적으로 누적 관리(Sentry Issue ID ↔ Discord Thread ID 매핑)하기 위해서는 백엔드 Webhook 수신 엔드포인트 구성이 필수적이다. (Direct Webhook 연동 방식 사용 시에는 Sentry와 Discord 간의 이슈-스레드 매핑 상태 저장이 불가능함)
+
 ## 앱 환경 변수
 
 | 변수 | 용도 | 공개 여부 |
