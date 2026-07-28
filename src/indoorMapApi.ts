@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "./authApi";
+import { request } from "./apiClient";
 
 export type GeoJsonGeometry = {
   type: string;
@@ -30,11 +30,11 @@ export type FacilityNode = {
 };
 
 export async function fetchFloors(accessToken: string, placeId: number): Promise<number[]> {
-  return getJson<number[]>(`/api/v1/places/${placeId}/floors`, accessToken);
+  return request<number[]>(`/api/v1/places/${placeId}/floors`, { accessToken });
 }
 
 export async function fetchIndoorMap(accessToken: string, placeId: number, floor: number): Promise<FloorGeoJson> {
-  return getJson<FloorGeoJson>(`/api/v1/places/${placeId}/floors/${floor}/indoor-map`, accessToken);
+  return request<FloorGeoJson>(`/api/v1/places/${placeId}/floors/${floor}/indoor-map`, { accessToken });
 }
 
 export async function fetchFacilityNodes(
@@ -42,27 +42,5 @@ export async function fetchFacilityNodes(
   placeId: number,
   floor: number
 ): Promise<FacilityNode[]> {
-  return getJson<FacilityNode[]>(`/api/v1/places/${placeId}/floors/${floor}/nodes`, accessToken);
-}
-
-async function getJson<TResponse>(path: string, accessToken: string): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
-
-  const text = await response.text();
-  let payload: unknown;
-  try {
-    payload = text ? JSON.parse(text) : null;
-  } catch {
-    payload = { message: text || response.statusText };
-  }
-
-  if (!response.ok) {
-    throw new Error(JSON.stringify(payload, null, 2));
-  }
-
-  return payload as TResponse;
+  return request<FacilityNode[]>(`/api/v1/places/${placeId}/floors/${floor}/nodes`, { accessToken });
 }

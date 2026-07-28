@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "./authApi";
+import { request } from "./apiClient";
 
 export type CreateHelpRequestPayload = {
   placeId?: number | null;
@@ -20,26 +20,9 @@ export async function createHelpRequest(
   accessToken: string,
   payload: CreateHelpRequestPayload
 ): Promise<HelpRequestResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/help-requests`, {
+  return request<HelpRequestResponse>("/api/v1/help-requests", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`
-    },
-    body: JSON.stringify(payload)
+    accessToken,
+    body: payload
   });
-
-  const text = await response.text();
-  let body: unknown;
-  try {
-    body = text ? JSON.parse(text) : {};
-  } catch {
-    body = { message: text || response.statusText };
-  }
-
-  if (!response.ok) {
-    throw new Error(JSON.stringify(body, null, 2));
-  }
-
-  return body as HelpRequestResponse;
 }
