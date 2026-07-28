@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import {
   NaverMapMarkerOverlay,
   NaverMapPolygonOverlay,
@@ -9,58 +9,24 @@ import {
 } from "@mj-studio/react-native-naver-map";
 import Svg, { Path } from "react-native-svg";
 
+import { FacilityNode, fetchFacilityNodes, fetchFloors, fetchIndoorMap } from "../indoorMapApi";
+import { createHelpRequest } from "../helpRequestApi";
 import {
-  FacilityNode,
-  FloorGeoJson,
-  GeoJsonFeature,
-  fetchFacilityNodes,
-  fetchFloors,
-  fetchIndoorMap
-} from "./indoorMapApi";
-import { createHelpRequest } from "./helpRequestApi";
-
-const DEFAULT_CENTER: Coord = { latitude: 37.5796, longitude: 126.977 };
-// 네이버 지도 SDK의 사실상 최대 줌 레벨. 실내 도면 진입/노드 선택 시 이 값으로 통일해서
-// 노드를 선택했을 때 도면이 오히려 축소되어 보이는 일이 없도록 한다.
-const INDOOR_MAX_ZOOM = 21;
-
-// 폴리곤 category별 스타일. 실제 역사 도면 관례(유료/무료 구역, 개찰구)를 참고하되
-// 채도를 낮춰 그레이톤으로 통일함 (구역 구분은 색보다 옅은 명암 차이로만 표현).
-const SHAPE_STYLES: Record<string, { fill: string; outline: string }> = {
-  room: { fill: "#fafaf9", outline: "#d7dbd8" },
-  corridor: { fill: "#ffffff", outline: "#e2e5e3" },
-  unpaid_zone: { fill: "#eef1ee", outline: "#c3ccc5" },
-  paid_zone: { fill: "#eef0f3", outline: "#c1c9d1" },
-  gate: { fill: "#faf3e3", outline: "#e0a825" }
-};
-const DEFAULT_SHAPE_STYLE = SHAPE_STYLES.room;
-
-// 🛗, 🚻 이모지는 자체 불투명 배경이 있어 체크포인트 색상(주황/초록)을 가려버리므로 텍스트로 대체.
-const FACILITY_EMOJI: Record<string, string> = {
-  ELEVATOR: "EL",
-  STAIRS: "🪜",
-  RESTROOM: "WC",
-  INFO_DESK: "📋",
-  TICKET_MACHINE: "TM",
-  WIDE_GATE: "GT",
-  STAFF_ROOM: "SR",
-  PANTRY: "PT"
-};
-
-const FACILITY_LABEL: Record<string, string> = {
-  ELEVATOR: "엘리베이터",
-  STAIRS: "계단",
-  RESTROOM: "화장실",
-  INFO_DESK: "안내데스크",
-  TICKET_MACHINE: "발권기",
-  WIDE_GATE: "게이트",
-  STAFF_ROOM: "직원실",
-  PANTRY: "탕비실"
-};
-
-function facilityLabel(node: FacilityNode): string {
-  return node.name ?? FACILITY_LABEL[node.nodeType] ?? node.nodeType;
-}
+  DEFAULT_CENTER,
+  DEFAULT_SHAPE_STYLE,
+  FACILITY_EMOJI,
+  INDOOR_MAX_ZOOM,
+  SHAPE_STYLES,
+  centerOfNodes,
+  centroidOfRing,
+  extractShapes,
+  facilityLabel,
+  fitCameraToBounds,
+  formatFloorKorean,
+  formatFloorLabel
+} from "./geo";
+import { styles } from "./styles";
+import type { IndoorMapOverlaysProps, IndoorMapScreenProps, MapData, ScreenMode } from "./types";
 
 function BackIcon({ size = 20, color = "#111827" }: { size?: number; color?: string }) {
   return (
@@ -85,15 +51,6 @@ function PinIcon({ size = 15, color = "#111827" }: { size?: number; color?: stri
     </Svg>
   );
 }
-
-type IndoorMapScreenProps = {
-  accessToken: string;
-  placeId: number;
-  placeName?: string;
-};
-
-type MapData = { shapes: Shape[]; nodes: FacilityNode[] };
-type ScreenMode = "outdoor" | "indoor";
 
 export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapScreenProps) {
   const [floors, setFloors] = useState<number[] | null>(null);
@@ -189,7 +146,7 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [mode]);
+  }, [mode, mapData]);
 
   // 실내 도면에서 현재 위치 오버레이(파란 점)를 켠다. 카메라는 따라 움직이지 않고
   // (NoFollow) 점만 사용자의 실제 GPS 위치를 따라간다 — 도면을 보다가 카메라가
@@ -303,7 +260,11 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
             <Text style={styles.placeRowChevron}>⌄</Text>
           </Pressable>
 
-          <View style={styles.floorSelector}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.floorSelector}
+          >
             {floors.map((f) => (
               <Pressable
                 key={f}
@@ -315,7 +276,7 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
                 </Text>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
         </View>
       )}
 
@@ -462,12 +423,6 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
   );
 }
 
-type IndoorMapOverlaysProps = {
-  shapes: Shape[];
-  nodes: FacilityNode[];
-  onNodePress: (node: FacilityNode) => void;
-};
-
 function IndoorMapOverlays({ shapes, nodes, onNodePress }: IndoorMapOverlaysProps) {
   return (
     <>
@@ -529,479 +484,3 @@ function IndoorMapOverlays({ shapes, nodes, onNodePress }: IndoorMapOverlaysProp
     </>
   );
 }
-
-function formatFloorLabel(floor: number): string {
-  return floor > 0 ? `${floor}F` : `B${-floor}`;
-}
-
-function formatFloorKorean(floor: number): string {
-  return floor > 0 ? `${floor}층` : `지하${-floor}층`;
-}
-
-type Shape = {
-  id: string;
-  label?: string;
-  category?: string;
-  coords: Coord[];
-};
-
-// 백엔드 GeoJSON은 Polygon/MultiPolygon을 느슨한 타입(unknown)으로 내려주므로 좌표를 직접 파싱한다.
-// TODO: 실제 도면 데이터로 렌더링 검증 시 exterior ring의 winding 방향(Naver는 시계 방향 요구)을 확인할 것.
-function extractShapes(geojson: FloorGeoJson): Shape[] {
-  const shapes: Shape[] = [];
-
-  geojson.features.forEach((feature, featureIndex) => {
-    const properties = feature.properties ?? {};
-    const id = typeof properties.node_id === "string" ? properties.node_id : `shape-${featureIndex}`;
-    const label = typeof properties.label === "string" ? properties.label : undefined;
-    // category가 없는 기존 데이터와의 호환을 위해 id === "corridor"면 복도로 간주한다.
-    const category = typeof properties.category === "string" ? properties.category : id === "corridor" ? "corridor" : "room";
-
-    extractRings(feature).forEach((coords, ringIndex) => {
-      shapes.push({
-        id: ringIndex === 0 ? id : `${id}-${ringIndex}`,
-        label: ringIndex === 0 ? label : undefined,
-        category,
-        coords
-      });
-    });
-  });
-
-  return shapes;
-}
-
-function extractRings(feature: GeoJsonFeature): Coord[][] {
-  const { geometry } = feature;
-
-  if (geometry.type === "Polygon") {
-    return toRings(geometry.coordinates as number[][][]);
-  }
-
-  if (geometry.type === "MultiPolygon") {
-    return (geometry.coordinates as number[][][][]).flatMap(toRings);
-  }
-
-  return [];
-}
-
-function toRings(rings: number[][][]): Coord[][] {
-  const [exteriorRing] = rings;
-  if (!exteriorRing) {
-    return [];
-  }
-  return [exteriorRing.map(([lng, lat]) => ({ latitude: lat, longitude: lng }))];
-}
-
-function centroidOfRing(ring: Coord[]): Coord | null {
-  if (ring.length === 0) {
-    return null;
-  }
-
-  // GeoJSON 폴리곤 링은 첫 좌표와 끝 좌표가 같으므로 중복을 제외하고 평균을 낸다.
-  const points = ring.length > 1 ? ring.slice(0, -1) : ring;
-  const sum = points.reduce(
-    (acc, point) => ({
-      latitude: acc.latitude + point.latitude,
-      longitude: acc.longitude + point.longitude
-    }),
-    { latitude: 0, longitude: 0 }
-  );
-
-  return { latitude: sum.latitude / points.length, longitude: sum.longitude / points.length };
-}
-
-function centerOfNodes(nodes: FacilityNode[]): Coord | null {
-  const first = nodes[0];
-  return first ? { latitude: first.lat, longitude: first.lng } : null;
-}
-
-// 도면(방+시설 노드) 중심으로 최대 줌까지 당겨서 보여준다.
-// 도면의 실제 위경도 bbox 가로세로 비율이 폰 화면(세로로 긴) 비율과 다르면
-// 한쪽 방향은 꽉 차고 반대쪽엔 여백이 남을 수 있다 — 실제 도면 형태(예: 좌우로
-// 긴 승강장형 레이아웃)에 따른 자연스러운 한계이며 카메라 값으로 해소되지 않는다.
-function fitCameraToBounds(map: NaverMapViewRef | null, shapes: Shape[], nodes: FacilityNode[]) {
-  const coords: Coord[] = [
-    ...shapes.flatMap((shape) => shape.coords),
-    ...nodes.map((node) => ({ latitude: node.lat, longitude: node.lng }))
-  ];
-
-  if (!map || coords.length === 0) {
-    return;
-  }
-
-  const lats = coords.map((c) => c.latitude);
-  const lngs = coords.map((c) => c.longitude);
-  const center = {
-    latitude: (Math.min(...lats) + Math.max(...lats)) / 2,
-    longitude: (Math.min(...lngs) + Math.max(...lngs)) / 2
-  };
-
-  map.animateCameraTo({ ...center, zoom: INDOOR_MAX_ZOOM, duration: 300 });
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
-  map: {
-    flex: 1
-  },
-  mapIndoor: {
-    backgroundColor: "#fbfbfa"
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20
-  },
-  errorText: {
-    color: "#b91c1c",
-    fontFamily: "monospace",
-    fontSize: 12,
-    textAlign: "center"
-  },
-  overlayCenter: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.7)"
-  },
-  indoorHeader: {
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb"
-  },
-  navbar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 6
-  },
-  navIconButton: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  navTitle: {
-    fontSize: 16.5,
-    fontWeight: "700",
-    color: "#111827"
-  },
-  placeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingBottom: 12
-  },
-  placeRowText: {
-    fontSize: 13.5,
-    fontWeight: "600",
-    color: "#111827",
-    flexShrink: 1
-  },
-  placeRowChevron: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginLeft: 2
-  },
-  mapArea: {
-    flex: 1
-  },
-  floorSelector: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingBottom: 14
-  },
-  floorTab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: 10,
-    backgroundColor: "#ffffff",
-    elevation: 3,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3
-  },
-  floorTabActive: {
-    backgroundColor: "#166258"
-  },
-  floorTabText: {
-    color: "#111827",
-    fontSize: 13,
-    fontWeight: "600"
-  },
-  floorTabTextActive: {
-    color: "#ffffff"
-  },
-  nodeSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 24,
-    elevation: 8,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8
-  },
-  nodeSheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#d1d5db",
-    alignSelf: "center",
-    marginBottom: 10
-  },
-  nodeSheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10
-  },
-  nodeSheetTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#111827"
-  },
-  nodeSheetCloseText: {
-    fontSize: 16,
-    color: "#6b7280",
-    paddingHorizontal: 4
-  },
-  nodeStatusRow: {
-    marginBottom: 14
-  },
-  nodeStatusChip: {
-    alignSelf: "flex-start",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 100,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    marginBottom: 6
-  },
-  nodeStatusChipText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#6b7280"
-  },
-  nodeStatusMeta: {
-    fontSize: 12,
-    color: "#6b7280"
-  },
-  nodeActionRow: {
-    flexDirection: "row",
-    gap: 8
-  },
-  nodeActionButton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#f6f7f5",
-    minHeight: 44
-  },
-  nodeActionButtonText: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    color: "#111827"
-  },
-  nodeLocNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb"
-  },
-  nodeLocNoteTextGroup: {
-    flex: 1
-  },
-  nodeLocNoteTitle: {
-    fontSize: 12.5,
-    fontWeight: "700",
-    color: "#111827",
-    lineHeight: 18,
-    marginBottom: 2
-  },
-  nodeLocNoteFloor: {
-    fontSize: 11.5,
-    fontWeight: "500",
-    color: "#6b7280",
-    lineHeight: 16
-  },
-  facilityDrawer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    elevation: 8,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8
-  },
-  facilityDrawerTitle: {
-    fontSize: 13.5,
-    fontWeight: "700",
-    color: "#111827",
-    paddingHorizontal: 16,
-    marginBottom: 10
-  },
-  facilityList: {
-    paddingHorizontal: 16
-  },
-  facilityItem: {
-    alignItems: "center",
-    marginRight: 14,
-    width: 56
-  },
-  facilityItemIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#166258",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6
-  },
-  facilityItemEmoji: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#ffffff"
-  },
-  facilityItemLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#6b7280",
-    textAlign: "center"
-  },
-  emptyStateContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-    backgroundColor: "#ffffff"
-  },
-  emptyStateIllustration: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "#f3f4f6",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 22
-  },
-  emptyStateIllustrationEmoji: {
-    fontSize: 40
-  },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8
-  },
-  emptyStateDescription: {
-    fontSize: 13,
-    color: "#6b7280",
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 26
-  },
-  emptyPrimaryButton: {
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    marginBottom: 10
-  },
-  emptyPrimaryButtonText: {
-    color: "#ffffff",
-    fontSize: 14.5,
-    fontWeight: "700"
-  },
-  emptySecondaryButton: {
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#ffffff",
-    borderWidth: 1.5,
-    borderColor: "#111827",
-    alignItems: "center"
-  },
-  emptySecondaryButtonText: {
-    color: "#111827",
-    fontSize: 14.5,
-    fontWeight: "700"
-  },
-  nodeMarker: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    backgroundColor: "#166258",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#ffffff",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 3
-  },
-  nodeMarkerEmoji: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#ffffff"
-  },
-  roomLabelText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#334155",
-    textAlign: "center"
-  },
-  placeMarker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#2563eb",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#ffffff",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-    elevation: 5
-  },
-  placeMarkerEmoji: {
-    fontSize: 18
-  }
-});
