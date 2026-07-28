@@ -61,51 +61,47 @@ export default function App() {
     }
   }
 
-  if (showMap && accessToken) {
-    return (
-      <SafeAreaProvider>
-        <SafeAreaView style={styles.mapSafeArea}>
-          <IndoorMapScreen accessToken={accessToken} placeId={DEMO_PLACE_ID} placeName={DEMO_PLACE_NAME} />
-        </SafeAreaView>
-      </SafeAreaProvider>
-    );
-  }
+  const showingMap = showMap && accessToken;
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <View style={styles.buttonRow}>
-            <AuthButton disabled={isLoading} label="로그인" onPress={handleLogin} />
-            {refreshToken ? (
-              <AuthButton disabled={isLoading} label="리프레시" onPress={handleRefresh} />
-            ) : null}
-            {accessToken ? (
-              <AuthButton disabled={isLoading} label="지도 보기" onPress={() => setShowMap(true)} />
+      <SafeAreaView style={showingMap ? styles.mapSafeArea : styles.safeArea}>
+        {showingMap ? (
+          <IndoorMapScreen accessToken={accessToken} placeId={DEMO_PLACE_ID} placeName={DEMO_PLACE_NAME} />
+        ) : (
+          <View style={styles.container}>
+            <View style={styles.buttonRow}>
+              <AuthButton disabled={isLoading} label="로그인" onPress={handleLogin} />
+              {refreshToken ? (
+                <AuthButton disabled={isLoading} label="리프레시" onPress={handleRefresh} />
+              ) : null}
+              {accessToken ? (
+                <AuthButton disabled={isLoading} label="지도 보기" onPress={() => setShowMap(true)} />
+              ) : null}
+            </View>
+
+            {isLoading ? <ActivityIndicator style={styles.loading} /> : null}
+
+            {errorMessage || result ? (
+              <ScrollView
+                contentContainerStyle={styles.resultContent}
+                style={styles.resultPanel}
+              >
+                {errorMessage ? (
+                  <Text selectable style={styles.errorText}>
+                    {errorMessage}
+                  </Text>
+                ) : null}
+
+                {result ? (
+                  <Text selectable style={styles.tokenText}>
+                    {JSON.stringify(result, null, 2)}
+                  </Text>
+                ) : null}
+              </ScrollView>
             ) : null}
           </View>
-
-          {isLoading ? <ActivityIndicator style={styles.loading} /> : null}
-
-          {errorMessage || result ? (
-            <ScrollView
-              contentContainerStyle={styles.resultContent}
-              style={styles.resultPanel}
-            >
-              {errorMessage ? (
-                <Text selectable style={styles.errorText}>
-                  {errorMessage}
-                </Text>
-              ) : null}
-
-              {result ? (
-                <Text selectable style={styles.tokenText}>
-                  {JSON.stringify(result, null, 2)}
-                </Text>
-              ) : null}
-            </ScrollView>
-          ) : null}
-        </View>
+        )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
