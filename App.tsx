@@ -10,6 +10,11 @@ import {
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthResult, login, refresh } from "./src/authApi";
+import { IndoorMapScreen } from "./src/IndoorMapScreen";
+
+// TODO: 장소 선택 화면이 생기기 전까지, 백엔드에 시드된 테스트 장소(경복궁)로 고정
+const DEMO_PLACE_ID = 3;
+const DEMO_PLACE_NAME = "강남역 데모 장소";
 
 type RequestState = "idle" | "loading";
 
@@ -18,8 +23,10 @@ export default function App() {
   const [result, setResult] = useState<AuthResult | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   const isLoading = requestState === "loading";
+  const accessToken = result?.response.accessToken ?? null;
 
   async function handleLogin() {
     await runAuthRequest(async () => {
@@ -54,38 +61,47 @@ export default function App() {
     }
   }
 
+  const showingMap = showMap && accessToken;
+
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <View style={styles.buttonRow}>
-            <AuthButton disabled={isLoading} label="로그인" onPress={handleLogin} />
-            {refreshToken ? (
-              <AuthButton disabled={isLoading} label="리프레시" onPress={handleRefresh} />
+      <SafeAreaView style={showingMap ? styles.mapSafeArea : styles.safeArea}>
+        {showingMap ? (
+          <IndoorMapScreen accessToken={accessToken} placeId={DEMO_PLACE_ID} placeName={DEMO_PLACE_NAME} />
+        ) : (
+          <View style={styles.container}>
+            <View style={styles.buttonRow}>
+              <AuthButton disabled={isLoading} label="로그인" onPress={handleLogin} />
+              {refreshToken ? (
+                <AuthButton disabled={isLoading} label="리프레시" onPress={handleRefresh} />
+              ) : null}
+              {accessToken ? (
+                <AuthButton disabled={isLoading} label="지도 보기" onPress={() => setShowMap(true)} />
+              ) : null}
+            </View>
+
+            {isLoading ? <ActivityIndicator style={styles.loading} /> : null}
+
+            {errorMessage || result ? (
+              <ScrollView
+                contentContainerStyle={styles.resultContent}
+                style={styles.resultPanel}
+              >
+                {errorMessage ? (
+                  <Text selectable style={styles.errorText}>
+                    {errorMessage}
+                  </Text>
+                ) : null}
+
+                {result ? (
+                  <Text selectable style={styles.tokenText}>
+                    {JSON.stringify(result, null, 2)}
+                  </Text>
+                ) : null}
+              </ScrollView>
             ) : null}
           </View>
-
-          {isLoading ? <ActivityIndicator style={styles.loading} /> : null}
-
-          {errorMessage || result ? (
-            <ScrollView
-              contentContainerStyle={styles.resultContent}
-              style={styles.resultPanel}
-            >
-              {errorMessage ? (
-                <Text selectable style={styles.errorText}>
-                  {errorMessage}
-                </Text>
-              ) : null}
-
-              {result ? (
-                <Text selectable style={styles.tokenText}>
-                  {JSON.stringify(result, null, 2)}
-                </Text>
-              ) : null}
-            </ScrollView>
-          ) : null}
-        </View>
+        )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -118,6 +134,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#f6f7f9"
+  },
+  mapSafeArea: {
+    flex: 1,
+    backgroundColor: "#ffffff"
   },
   container: {
     flex: 1,

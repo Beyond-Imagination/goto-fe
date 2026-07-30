@@ -1,3 +1,5 @@
+import { request } from "./apiClient";
+
 export type LoginResponse = {
   accessToken: string;
   refreshToken: string;
@@ -34,22 +36,15 @@ export type DecodedTokens = {
 };
 
 const DEMO_CREDENTIALS = {
-  username: "demo",
+  nickname: "demo",
   password: "demo"
 };
 
-export function getApiBaseUrl(): string {
-  const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
-
-  if (!apiBaseUrl) {
-    throw new Error("EXPO_PUBLIC_API_BASE_URL is not configured.");
-  }
-
-  return apiBaseUrl.replace(/\/+$/, "");
-}
-
 export async function login(): Promise<AuthResult> {
-  const response = await postJson<LoginResponse>("/api/v1/auth/login", DEMO_CREDENTIALS);
+  const response = await request<LoginResponse>("/api/v1/auth/login", {
+    method: "POST",
+    body: DEMO_CREDENTIALS
+  });
 
   return {
     type: "login",
@@ -59,37 +54,16 @@ export async function login(): Promise<AuthResult> {
 }
 
 export async function refresh(refreshToken: string): Promise<AuthResult> {
-  const response = await postJson<RefreshResponse>("/api/v1/auth/refresh", { refreshToken });
+  const response = await request<RefreshResponse>("/api/v1/auth/refresh", {
+    method: "POST",
+    body: { refreshToken }
+  });
 
   return {
     type: "refresh",
     response,
     decoded: decodeTokens(response)
   };
-}
-
-async function postJson<TResponse>(path: string, body: unknown): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
-
-  const text = await response.text();
-  let payload: unknown;
-  try {
-    payload = text ? JSON.parse(text) : {};
-  } catch {
-    payload = { message: text || response.statusText };
-  }
-
-  if (!response.ok) {
-    throw new Error(JSON.stringify(payload, null, 2));
-  }
-
-  return payload as TResponse;
 }
 
 function decodeTokens(response: LoginResponse | RefreshResponse): DecodedTokens {
