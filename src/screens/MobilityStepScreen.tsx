@@ -1,17 +1,18 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View } from 'react-native';
 
-import { InfoNote } from "../components/InfoNote";
-import { MobilityCard } from "../components/Selectors";
-import { MOBILITY_OPTIONS, useProfile } from "../state/profile";
-import { ProfileStepLayout } from "./ProfileStepLayout";
+import { InfoNote } from '@/components/onboarding/InfoNote';
+import { MobilityCard } from '@/components/onboarding/Selectors';
+import { MOBILITY_OPTIONS, useProfile } from '@/state/profile';
+import { spacing } from '@/styles/tokens/spacing';
+import { ProfileStepLayout } from './ProfileStepLayout';
 
 const COLUMNS = 3;
 
-type MobilityStepScreenProps = {
+interface MobilityStepScreenProps {
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
-};
+}
 
 export function MobilityStepScreen({ onBack, onNext, onSkip }: MobilityStepScreenProps) {
   const { profile, toggleMobility } = useProfile();
@@ -61,12 +62,12 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 const styles = StyleSheet.create({
   grid: {
-    gap: 12,
-    marginBottom: 20,
-    marginTop: 28
+    gap: spacing[3],
+    marginBottom: spacing[5],
+    marginTop: spacing[7],
   },
   row: {
-    flexDirection: "row",
-    gap: 12
-  }
+    flexDirection: 'row',
+    gap: spacing[3],
+  },
 });

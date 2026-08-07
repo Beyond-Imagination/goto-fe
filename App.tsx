@@ -1,21 +1,34 @@
-import { useFonts } from "expo-font";
-import { StatusBar, View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useEffect } from 'react';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { RootNavigator } from "./src/navigation/RootNavigator";
-import { ProfileProvider } from "./src/state/profile";
-import { colors } from "./src/theme";
+import { RootNavigator } from '@/navigation/RootNavigator';
+import { ProfileProvider } from '@/state/profile';
+
+void SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-  // 시안이 지정한 Pretendard(SIL OFL)를 번들해 씁니다.
-  const [fontsLoaded] = useFonts({
-    "Pretendard-Regular": require("pretendard/dist/public/static/alternative/Pretendard-Regular.ttf"),
-    "Pretendard-Medium": require("pretendard/dist/public/static/alternative/Pretendard-Medium.ttf"),
-    "Pretendard-SemiBold": require("pretendard/dist/public/static/alternative/Pretendard-SemiBold.ttf")
+  const [fontsLoaded, fontError] = useFonts({
+    'Pretendard-Regular': require('./src/assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-Medium': require('./src/assets/fonts/Pretendard-Medium.otf'),
+    'Pretendard-SemiBold': require('./src/assets/fonts/Pretendard-SemiBold.otf'),
+    'Pretendard-Bold': require('./src/assets/fonts/Pretendard-Bold.otf'),
   });
 
-  if (!fontsLoaded) {
-    return <View style={{ backgroundColor: colors.primary, flex: 1 }} />;
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      void SplashScreen.hideAsync();
+    }
+  }, [fontError, fontsLoaded]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
+  if (fontError) {
+    throw fontError;
   }
 
   return (

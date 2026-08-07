@@ -1,21 +1,18 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from 'react-native';
 
-import { InfoNote } from "../components/InfoNote";
-import { Chip } from "../components/Selectors";
-import {
-  AVOID_CONDITIONS,
-  MAX_SELECTION,
-  PRIORITY_FACILITIES,
-  useProfile
-} from "../state/profile";
-import { colors, typography } from "../theme";
-import { ProfileStepLayout } from "./ProfileStepLayout";
+import { Text } from '@/components/common/Text';
+import { InfoNote } from '@/components/onboarding/InfoNote';
+import { Chip } from '@/components/onboarding/Selectors';
+import { AVOID_CONDITIONS, MAX_SELECTION, PRIORITY_FACILITIES, useProfile } from '@/state/profile';
+import { colors } from '@/styles/tokens/colors';
+import { spacing } from '@/styles/tokens/spacing';
+import { ProfileStepLayout } from './ProfileStepLayout';
 
-type PreferenceStepScreenProps = {
+interface PreferenceStepScreenProps {
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
-};
+}
 
 export function PreferenceStepScreen({ onBack, onNext, onSkip }: PreferenceStepScreenProps) {
   const { profile, toggleFacility, toggleAvoid } = useProfile();
@@ -64,32 +61,28 @@ export function PreferenceStepScreen({ onBack, onNext, onSkip }: PreferenceStepS
 function SectionTitle({ title }: { title: string }) {
   return (
     <View style={styles.sectionTitle}>
-      <Text style={styles.sectionLabel}>{title}</Text>
-      <Text style={styles.sectionHint}>{`(최대 ${MAX_SELECTION}개)`}</Text>
+      <Text variant="headline-2" weight="semibold">
+        {title}
+      </Text>
+      <Text color={colors.text.secondary} variant="body-3">
+        {`(최대 ${MAX_SELECTION}개)`}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    alignItems: "baseline",
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 32
-  },
-  sectionLabel: {
-    ...typography.sectionTitle,
-    color: colors.text
-  },
-  sectionHint: {
-    ...typography.caption,
-    color: colors.textSecondary
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    gap: spacing[2],
+    marginTop: spacing[8],
   },
   chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 12,
-    marginTop: 16
-  }
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginBottom: spacing[3],
+    marginTop: spacing[4],
+  },
 });

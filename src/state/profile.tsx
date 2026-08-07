@@ -1,14 +1,14 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
-import type { ImageSourcePropType } from "react-native";
+import type { ImageSourcePropType } from 'react-native';
 
 export type MobilityId =
-  | "wheelchair"
-  | "stroller"
-  | "cane"
-  | "walker"
-  | "slowWalk"
-  | "other";
+  | 'wheelchair'
+  | 'stroller'
+  | 'cane'
+  | 'walker'
+  | 'slowWalk'
+  | 'other';
 
 export type MobilityOption = {
   id: MobilityId;
@@ -17,32 +17,32 @@ export type MobilityOption = {
 };
 
 export const MOBILITY_OPTIONS: MobilityOption[] = [
-  { id: "wheelchair", label: "휠체어", icon: require("../assets/mobility-wheelchair.png") },
-  { id: "stroller", label: "유모차", icon: require("../assets/mobility-stroller.png") },
-  { id: "cane", label: "지팡이", icon: require("../assets/mobility-cane.png") },
-  { id: "walker", label: "보행 보조기구", icon: require("../assets/mobility-walker.png") },
-  { id: "slowWalk", label: "느린 보행", icon: require("../assets/mobility-slow-walk.png") },
-  { id: "other", label: "기타", icon: require("../assets/mobility-other.png") }
+  { id: 'wheelchair', label: '휠체어', icon: require('../assets/mobility-wheelchair.png') },
+  { id: 'stroller', label: '유모차', icon: require('../assets/mobility-stroller.png') },
+  { id: 'cane', label: '지팡이', icon: require('../assets/mobility-cane.png') },
+  { id: 'walker', label: '보행 보조기구', icon: require('../assets/mobility-walker.png') },
+  { id: 'slowWalk', label: '느린 보행', icon: require('../assets/mobility-slow-walk.png') },
+  { id: 'other', label: '기타', icon: require('../assets/mobility-other.png') }
 ];
 
 export const PRIORITY_FACILITIES = [
-  "엘리베이터",
-  "장애인 화장실",
-  "경사로",
-  "주차장",
-  "수유실",
-  "점자블록",
-  "음성안내"
+  '엘리베이터',
+  '장애인 화장실',
+  '경사로',
+  '주차장',
+  '수유실',
+  '점자블록',
+  '음성안내'
 ] as const;
 
 export const AVOID_CONDITIONS = [
-  "계단",
-  "높은 턱",
-  "급경사",
-  "좁은통로",
-  "공사 구간",
-  "보도 파손",
-  "긴 보행 거리"
+  '계단',
+  '높은 턱',
+  '급경사',
+  '좁은통로',
+  '공사 구간',
+  '보도 파손',
+  '긴 보행 거리'
 ] as const;
 
 /** 화면기획 7.2 — 우선 확인 시설 / 피하고 싶은 조건은 각각 최대 3개까지 선택합니다. */
@@ -64,7 +64,7 @@ type ProfileContextValue = {
   toggleFacility: (label: string) => void;
   toggleAvoid: (label: string) => void;
   setDisplayOption: (
-    key: "largeText" | "highContrast" | "vibration" | "statusAlerts",
+    key: 'largeText' | 'highContrast' | 'vibration' | 'statusAlerts',
     value: boolean
   ) => void;
 };
@@ -124,7 +124,7 @@ export function useProfile(): ProfileContextValue {
   const context = useContext(ProfileContext);
 
   if (!context) {
-    throw new Error("useProfile must be used inside a ProfileProvider.");
+    throw new Error('useProfile must be used inside a ProfileProvider.');
   }
 
   return context;

@@ -1,68 +1,70 @@
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type ImageSourcePropType
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Image, ScrollView, StyleSheet, View, type ImageSourcePropType } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BottomBar, PrimaryButton, SkipLink } from "../components/Buttons";
-import { InfoNote } from "../components/InfoNote";
-import { ScreenHeader } from "../components/ScreenHeader";
-import { colors, spacing, typography } from "../theme";
+import { Text } from '@/components/common/Text';
+import { BottomBar, PrimaryButton, SkipLink } from '@/components/onboarding/Buttons';
+import { InfoNote } from '@/components/onboarding/InfoNote';
+import { ScreenHeader } from '@/components/onboarding/ScreenHeader';
+import { SCREEN_X } from '@/components/onboarding/tokens';
+import { colors } from '@/styles/tokens/colors';
+import { spacing } from '@/styles/tokens/spacing';
 
-type Permission = {
+interface Permission {
   icon: ImageSourcePropType;
   title: string;
   description: string;
-};
+}
 
 const PERMISSIONS: Permission[] = [
   {
-    icon: require("../assets/perm-notification.png"),
-    title: "알림 (선택)",
-    description: "저장한 장소의 상태변화 알림"
+    icon: require('../assets/perm-notification.png'),
+    title: '알림 (선택)',
+    description: '저장한 장소의 상태변화 알림',
   },
   {
-    icon: require("../assets/perm-location.png"),
-    title: "위치 (선택)",
-    description: "내 주변 장소와 장애물 리포트 제공"
+    icon: require('../assets/perm-location.png'),
+    title: '위치 (선택)',
+    description: '내 주변 장소와 장애물 리포트 제공',
   },
   {
-    icon: require("../assets/perm-camera.png"),
-    title: "카메라 (선택)",
-    description: "장애물 리포트 제보시 사용"
+    icon: require('../assets/perm-camera.png'),
+    title: '카메라 (선택)',
+    description: '장애물 리포트 제보시 사용',
   },
   {
-    icon: require("../assets/perm-photo.png"),
-    title: "사진 (선택)",
-    description: "장애물 리포트 제보시 사용"
-  }
+    icon: require('../assets/perm-photo.png'),
+    title: '사진 (선택)',
+    description: '장애물 리포트 제보시 사용',
+  },
 ];
 
-type PermissionScreenProps = {
+interface PermissionScreenProps {
   onBack: () => void;
   onConfirm: () => void;
   onSkip: () => void;
-};
+}
 
 export function PermissionScreen({ onBack, onConfirm, onSkip }: PermissionScreenProps) {
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.screen}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.screen}>
       <ScreenHeader onBack={onBack} title="필수 권한 설정" />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{"앱 사용을 위해\n접근 권한을 허용해주세요"}</Text>
+        <Text variant="headline-1" weight="semibold">
+          {'앱 사용을 위해\n접근 권한을 허용해주세요'}
+        </Text>
 
         <View style={styles.list}>
           {PERMISSIONS.map((permission) => (
             <View key={permission.title} style={styles.row}>
               <Image resizeMode="contain" source={permission.icon} style={styles.icon} />
               <View style={styles.rowText}>
-                <Text style={styles.rowTitle}>{permission.title}</Text>
-                <Text style={styles.rowDescription}>{permission.description}</Text>
+                <Text variant="body-1" weight="semibold">
+                  {permission.title}
+                </Text>
+                <Text color={colors.text.secondary} variant="body-3">
+                  {permission.description}
+                </Text>
               </View>
             </View>
           ))}
@@ -83,47 +85,35 @@ export function PermissionScreen({ onBack, onConfirm, onSkip }: PermissionScreen
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: colors.white,
-    flex: 1
+    backgroundColor: colors.background.primary,
+    flex: 1,
   },
   content: {
-    paddingBottom: 32,
-    paddingHorizontal: spacing.screenX,
-    paddingTop: 8
-  },
-  title: {
-    ...typography.screenTitle,
-    color: colors.text
+    paddingBottom: spacing[8],
+    paddingHorizontal: SCREEN_X,
+    paddingTop: spacing[2],
   },
   list: {
-    gap: 28,
-    marginTop: 36
+    gap: spacing[7],
+    marginTop: spacing[9],
   },
   row: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 18
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing[5],
   },
   icon: {
     height: 28,
-    width: 28
+    width: 28,
   },
   rowText: {
     flex: 1,
-    gap: 4
-  },
-  rowTitle: {
-    ...typography.rowTitle,
-    color: colors.text
-  },
-  rowDescription: {
-    ...typography.caption,
-    color: colors.textSecondary
+    gap: spacing[1],
   },
   divider: {
-    backgroundColor: colors.lineRegular,
+    backgroundColor: colors.border.regular,
     height: 1,
-    marginBottom: 20,
-    marginTop: 36
-  }
+    marginBottom: spacing[5],
+    marginTop: spacing[9],
+  },
 });

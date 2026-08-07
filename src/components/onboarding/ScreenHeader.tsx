@@ -1,17 +1,20 @@
-import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, fonts, spacing, typography } from "../theme";
+import { Text } from '@/components/common/Text';
+import { SCREEN_X } from '@/components/onboarding/tokens';
+import { colors } from '@/styles/tokens/colors';
+import { fontFamily } from '@/styles/tokens/typography';
 
 const DOT_SIZE = 10;
 const DOT_PILL = 34;
 /** 스와이프 중간에 양쪽 점이 함께 늘어나 이어지는 것처럼 보이게 하는 중간값. */
 const DOT_STRETCH = 26;
 
-type ScreenHeaderProps = {
+interface ScreenHeaderProps {
   title: string;
   onBack?: () => void;
-};
+}
 
 export function ScreenHeader({ title, onBack }: ScreenHeaderProps) {
   return (
@@ -24,10 +27,15 @@ export function ScreenHeader({ title, onBack }: ScreenHeaderProps) {
           onPress={onBack}
           style={styles.back}
         >
-          <Text style={styles.backIcon}>←</Text>
+          {/* 시스템 폰트에 맡기면 안드로이드에서 글리프가 작게 나와서 번들 폰트로 고정합니다. */}
+          <Text color={colors.icon.primary} style={styles.backIcon} variant="headline-1">
+            ←
+          </Text>
         </Pressable>
       ) : null}
-      <Text style={styles.title}>{title}</Text>
+      <Text color={colors.text.primary} variant="title-2" weight="semibold">
+        {title}
+      </Text>
     </View>
   );
 }
@@ -47,19 +55,19 @@ export function StepProgress({ step, total }: { step: number; total: number }) {
   );
 }
 
-type PageDotsProps = {
+interface PageDotsProps {
   count: number;
   index: number;
   /** 현재 페이지 위치(0, 1, 2...). 스크롤에 물려 있어 스와이프 중에도 연속으로 움직입니다. */
   progress: Animated.AnimatedInterpolation<number>;
-};
+}
 
 /**
  * 온보딩 페이지 인디케이터.
  * 손가락을 따라 알약이 늘어났다 줄어들고, 페이지가 확정되면 살짝 튕기며 자리를 잡습니다.
  */
 export function PageDots({ count, index, progress }: PageDotsProps) {
-  const pop = useRef(new Animated.Value(1)).current;
+  const [pop] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     Animated.sequence([
@@ -68,8 +76,8 @@ export function PageDots({ count, index, progress }: PageDotsProps) {
         friction: 3.5,
         tension: 180,
         toValue: 1,
-        useNativeDriver: false
-      })
+        useNativeDriver: false,
+      }),
     ]).start();
   }, [index, pop]);
 
@@ -82,16 +90,16 @@ export function PageDots({ count, index, progress }: PageDotsProps) {
             styles.dot,
             {
               backgroundColor: progress.interpolate({
-                extrapolate: "clamp",
+                extrapolate: 'clamp',
                 inputRange: [i - 1, i, i + 1],
-                outputRange: [colors.dotInactive, colors.primary, colors.dotInactive]
+                outputRange: [colors.border.regular, colors.brand.mainAlt, colors.border.regular],
               }),
               width: progress.interpolate({
-                extrapolate: "clamp",
+                extrapolate: 'clamp',
                 inputRange: [i - 1, i - 0.5, i, i + 0.5, i + 1],
-                outputRange: [DOT_SIZE, DOT_STRETCH, DOT_PILL, DOT_STRETCH, DOT_SIZE]
-              })
-            }
+                outputRange: [DOT_SIZE, DOT_STRETCH, DOT_PILL, DOT_STRETCH, DOT_SIZE],
+              }),
+            },
           ]}
         />
       ))}
@@ -101,45 +109,38 @@ export function PageDots({ count, index, progress }: PageDotsProps) {
 
 const styles = StyleSheet.create({
   header: {
-    alignItems: "center",
+    alignItems: 'center',
     height: 50,
-    justifyContent: "center"
+    justifyContent: 'center',
   },
   back: {
-    left: spacing.screenX,
-    position: "absolute",
-    zIndex: 1
+    left: SCREEN_X,
+    position: 'absolute',
+    zIndex: 1,
   },
   backIcon: {
-    color: colors.iconMain,
-    // 시스템 폰트에 맡기면 안드로이드에서 글리프가 작게 나와서 번들 폰트로 고정합니다.
-    fontFamily: fonts.regular,
-    fontSize: 30,
-    lineHeight: 34
-  },
-  title: {
-    ...typography.headerTitle,
-    color: colors.text
+    fontFamily: fontFamily.regular,
+    lineHeight: 34,
   },
   track: {
-    backgroundColor: colors.lineLight,
+    backgroundColor: colors.border.light,
     borderRadius: 2,
     height: 3,
-    marginHorizontal: spacing.screenX,
-    overflow: "hidden"
+    marginHorizontal: SCREEN_X,
+    overflow: 'hidden',
   },
   fill: {
-    backgroundColor: colors.primary,
-    height: "100%"
+    backgroundColor: colors.brand.mainAlt,
+    height: '100%',
   },
   dots: {
-    alignItems: "center",
-    flexDirection: "row",
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: 8,
-    justifyContent: "center"
+    justifyContent: 'center',
   },
   dot: {
     borderRadius: DOT_SIZE / 2,
-    height: DOT_SIZE
-  }
+    height: DOT_SIZE,
+  },
 });

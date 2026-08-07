@@ -1,21 +1,23 @@
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import React from 'react';
+import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing, typography } from "../theme";
+import { Text } from '@/components/common/Text';
+import { BOTTOM_GAP, SCREEN_X } from '@/components/onboarding/tokens';
+import { colors } from '@/styles/tokens/colors';
+import { spacing } from '@/styles/tokens/spacing';
 
-/**
- * 마지막 요소 아래로 항상 확보할 여백(dp).
- * 홈 인디케이터 인셋이 iOS보다 얕은 안드로이드에서 버튼이 화면 밑에 붙어 보이는 걸 막습니다.
- */
-const BOTTOM_GAP = 42;
-
-type ActionButtonProps = {
+interface ActionButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   style?: ViewStyle;
-};
+}
 
+/**
+ * 온보딩 플로우의 하단 CTA.
+ * 공통 Button보다 높이(54)와 라운딩(14)이 크고 폭을 꽉 채우는 형태라 따로 둡니다.
+ */
 export function PrimaryButton({ label, onPress, disabled, style }: ActionButtonProps) {
   return (
     <Pressable
@@ -28,10 +30,12 @@ export function PrimaryButton({ label, onPress, disabled, style }: ActionButtonP
         styles.primary,
         pressed ? styles.primaryPressed : null,
         disabled ? styles.disabled : null,
-        style
+        style,
       ]}
     >
-      <Text style={[styles.label, styles.primaryLabel]}>{label}</Text>
+      <Text color={colors.text.inverse} variant="body-2" weight="semibold">
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -48,10 +52,12 @@ export function SecondaryButton({ label, onPress, disabled, style }: ActionButto
         styles.secondary,
         pressed ? styles.secondaryPressed : null,
         disabled ? styles.disabled : null,
-        style
+        style,
       ]}
     >
-      <Text style={[styles.label, styles.secondaryLabel]}>{label}</Text>
+      <Text color={colors.text.primary} variant="body-2" weight="semibold">
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -59,19 +65,22 @@ export function SecondaryButton({ label, onPress, disabled, style }: ActionButto
 export function SkipLink({ onPress }: { onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" hitSlop={12} onPress={onPress} style={styles.skip}>
-      <Text style={styles.skipLabel}>건너뛰기</Text>
+      <Text
+        color={colors.text.secondary}
+        style={styles.skipLabel}
+        variant="body-3"
+      >
+        건너뛰기
+      </Text>
     </Pressable>
   );
 }
 
-type BottomBarProps = {
+interface BottomBarProps {
   children: React.ReactNode;
-  /**
-   * 마지막 요소 아래 여백. 건너뛰기 링크가 없는 화면은 버튼이 바닥에 붙어 보여서
-   * 온보딩처럼 링크가 없는 경우 더 크게 잡습니다.
-   */
+  /** 마지막 요소 아래 여백. 건너뛰기 링크가 없는 화면은 더 크게 잡습니다. */
   bottomGap?: number;
-};
+}
 
 /** 화면 하단에 고정되는 액션 영역. 스크롤 콘텐츠 위에 얹힙니다. */
 export function BottomBar({ children, bottomGap = BOTTOM_GAP }: BottomBarProps) {
@@ -86,51 +95,40 @@ export function BottomBar({ children, bottomGap = BOTTOM_GAP }: BottomBarProps) 
 
 const styles = StyleSheet.create({
   button: {
-    alignItems: "center",
-    borderRadius: radius.button,
+    alignItems: 'center',
+    borderRadius: 14,
     height: 54,
-    justifyContent: "center",
-    paddingHorizontal: 20
+    justifyContent: 'center',
+    paddingHorizontal: spacing[5],
   },
   primary: {
-    backgroundColor: colors.primary
+    backgroundColor: colors.brand.mainAlt,
   },
   primaryPressed: {
-    backgroundColor: colors.primaryPressed
+    backgroundColor: '#2C2FD6',
   },
   secondary: {
-    backgroundColor: colors.surfaceLight
+    backgroundColor: colors.background.light,
   },
   secondaryPressed: {
-    backgroundColor: colors.surfacePressed
+    backgroundColor: colors.border.regular,
   },
   disabled: {
-    opacity: 0.45
-  },
-  label: {
-    ...typography.button
-  },
-  primaryLabel: {
-    color: colors.white
-  },
-  secondaryLabel: {
-    color: colors.text
+    opacity: 0.45,
   },
   skip: {
-    alignSelf: "center",
-    paddingVertical: 12
+    alignSelf: 'center',
+    paddingVertical: spacing[3],
   },
   skipLabel: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textDecorationLine: "underline"
+    textDecorationLine: 'underline',
   },
   bottomBar: {
-    backgroundColor: colors.white,
-    borderTopColor: colors.lineRegular,
+    backgroundColor: colors.background.primary,
+    borderTopColor: colors.border.regular,
     borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 4,
-    paddingHorizontal: spacing.screenX,
-    paddingTop: 14
-  }
+    gap: spacing[1],
+    paddingHorizontal: SCREEN_X,
+    paddingTop: spacing[3.5],
+  },
 });

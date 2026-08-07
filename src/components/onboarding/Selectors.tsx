@@ -1,26 +1,25 @@
+import { Image, Pressable, StyleSheet, View, type ImageSourcePropType } from 'react-native';
+
+import { Text } from '@/components/common/Text';
 import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type ImageSourcePropType
-} from "react-native";
+  MOBILITY_ICON_MUTED,
+  chipPalette,
+  togglePalette,
+} from '@/components/onboarding/tokens';
+import { colors } from '@/styles/tokens/colors';
+import { radius } from '@/styles/tokens/radius';
+import { spacing } from '@/styles/tokens/spacing';
 
-import { colors, radius, typography } from "../theme";
-
-type ChipTone = "blue" | "orange";
-
-type ChipProps = {
+interface ChipProps {
   label: string;
   selected: boolean;
-  tone: ChipTone;
+  tone: keyof typeof chipPalette;
   onPress: () => void;
-};
+}
 
 /** 접근성 프로필의 다중 선택 칩. tone에 따라 우선 확인 시설 / 피하고 싶은 조건을 구분합니다. */
 export function Chip({ label, selected, tone, onPress }: ChipProps) {
-  const palette = tone === "blue" ? BLUE : ORANGE;
+  const palette = chipPalette[tone];
 
   return (
     <Pressable
@@ -32,23 +31,23 @@ export function Chip({ label, selected, tone, onPress }: ChipProps) {
         // 선택 여부와 관계없이 테두리를 유지해야 폭이 안 바뀌고 옆 칩이 밀리지 않습니다.
         selected
           ? { backgroundColor: palette.solid, borderColor: palette.solid }
-          : { backgroundColor: colors.white, borderColor: palette.border },
-        pressed ? styles.pressed : null
+          : { backgroundColor: colors.background.primary, borderColor: palette.border },
+        pressed ? styles.pressed : null,
       ]}
     >
-      <Text style={[styles.chipLabel, { color: selected ? colors.white : palette.text }]}>
+      <Text color={selected ? colors.text.inverse : palette.text} variant="body-3" weight="medium">
         {label}
       </Text>
     </Pressable>
   );
 }
 
-type MobilityCardProps = {
+interface MobilityCardProps {
   label: string;
   icon: ImageSourcePropType;
   selected: boolean;
   onPress: () => void;
-};
+}
 
 /** 이동 방식 선택 카드. 아이콘은 단색 마스크라 tintColor로 상태 색을 입힙니다. */
 export function MobilityCard({ label, icon, selected, onPress }: MobilityCardProps) {
@@ -60,24 +59,29 @@ export function MobilityCard({ label, icon, selected, onPress }: MobilityCardPro
       style={({ pressed }) => [
         styles.card,
         selected ? styles.cardSelected : null,
-        pressed ? styles.pressed : null
+        pressed ? styles.pressed : null,
       ]}
     >
       <Image
         resizeMode="contain"
         source={icon}
-        style={[styles.cardIcon, { tintColor: selected ? colors.white : colors.iconMuted }]}
+        style={[
+          styles.cardIcon,
+          { tintColor: selected ? colors.icon.inverse : MOBILITY_ICON_MUTED },
+        ]}
       />
-      <Text style={[styles.cardLabel, selected ? styles.cardLabelSelected : null]}>{label}</Text>
+      <Text color={selected ? colors.text.inverse : colors.text.primary} variant="body-3">
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
-type ToggleProps = {
+interface ToggleProps {
   value: boolean;
   onValueChange: (next: boolean) => void;
   label: string;
-};
+}
 
 /** ON/OFF 텍스트를 함께 노출하는 스위치. 색상만으로 상태를 전달하지 않기 위한 디자인 원칙 5번. */
 export function Toggle({ value, onValueChange, label }: ToggleProps) {
@@ -87,132 +91,106 @@ export function Toggle({ value, onValueChange, label }: ToggleProps) {
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
       onPress={() => onValueChange(!value)}
-      style={[styles.toggle, value ? styles.toggleOn : styles.toggleOff]}
+      style={[styles.toggle, { backgroundColor: value ? togglePalette.on : togglePalette.off }]}
     >
-      {value ? <Text style={styles.toggleText}>ON</Text> : null}
+      {value ? (
+        <Text color={colors.text.inverse} style={styles.toggleText} variant="caption-3" weight="semibold">
+          ON
+        </Text>
+      ) : null}
       <View style={styles.knob} />
-      {value ? null : <Text style={styles.toggleText}>OFF</Text>}
+      {value ? null : (
+        <Text color={colors.text.inverse} style={styles.toggleText} variant="caption-3" weight="semibold">
+          OFF
+        </Text>
+      )}
     </Pressable>
   );
 }
 
-type SettingRowProps = {
+interface SettingRowProps {
   icon: ImageSourcePropType;
   title: string;
   description: string;
   value: boolean;
   onValueChange: (next: boolean) => void;
-};
+}
 
 export function SettingRow({ icon, title, description, value, onValueChange }: SettingRowProps) {
   return (
     <View style={styles.row}>
       <Image resizeMode="contain" source={icon} style={styles.rowIcon} />
       <View style={styles.rowText}>
-        <Text style={styles.rowTitle}>{title}</Text>
-        <Text style={styles.rowDescription}>{description}</Text>
+        <Text color={colors.text.primary} variant="body-1" weight="semibold">
+          {title}
+        </Text>
+        <Text color={colors.text.secondary} variant="body-3">
+          {description}
+        </Text>
       </View>
       <Toggle label={title} onValueChange={onValueChange} value={value} />
     </View>
   );
 }
 
-const BLUE = {
-  solid: colors.primary,
-  border: colors.chipBlueBorder,
-  text: colors.chipBlueText
-};
-
-const ORANGE = {
-  solid: colors.accent,
-  border: colors.chipOrangeBorder,
-  text: colors.chipOrangeText
-};
-
 const styles = StyleSheet.create({
   pressed: {
-    opacity: 0.75
+    opacity: 0.75,
   },
   chip: {
-    alignItems: "center",
-    borderRadius: radius.pill,
+    alignItems: 'center',
+    borderRadius: radius.full,
     borderWidth: 1,
     height: 44,
-    justifyContent: "center",
-    paddingHorizontal: 13
-  },
-  chipLabel: {
-    ...typography.chip
+    justifyContent: 'center',
+    paddingHorizontal: 13,
   },
   card: {
-    alignItems: "center",
+    alignItems: 'center',
     aspectRatio: 1,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: radius.card,
+    backgroundColor: colors.background.light,
+    borderRadius: radius.xl,
     flex: 1,
-    gap: 10,
-    justifyContent: "center"
+    gap: spacing[2.5],
+    justifyContent: 'center',
   },
   cardSelected: {
-    backgroundColor: colors.primary
+    backgroundColor: colors.brand.mainAlt,
   },
   cardIcon: {
     height: 44,
-    width: 44
-  },
-  cardLabel: {
-    ...typography.caption,
-    color: colors.text
-  },
-  cardLabelSelected: {
-    color: colors.white
+    width: 44,
   },
   toggle: {
-    alignItems: "center",
-    borderRadius: radius.pill,
-    flexDirection: "row",
+    alignItems: 'center',
+    borderRadius: radius.full,
+    flexDirection: 'row',
     height: 28,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     paddingHorizontal: 3,
-    width: 56
-  },
-  toggleOn: {
-    backgroundColor: colors.toggleOn
-  },
-  toggleOff: {
-    backgroundColor: colors.toggleOff
+    width: 56,
   },
   toggleText: {
-    ...typography.toggleLabel,
-    color: colors.white,
-    paddingHorizontal: 4
+    paddingHorizontal: spacing[1],
   },
   knob: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.neutral[0],
     borderRadius: 11,
     height: 22,
-    width: 22
+    width: 22,
   },
   row: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    paddingVertical: 12
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing[3],
+    paddingVertical: spacing[3],
   },
   rowIcon: {
     height: 40,
-    width: 40
+    width: 40,
   },
   rowText: {
     flex: 1,
-    gap: 2
+    gap: spacing[0.5],
   },
-  rowTitle: {
-    ...typography.rowTitle,
-    color: colors.text
-  },
-  rowDescription: {
-    ...typography.caption,
-    color: colors.textSecondary
-  }
 });
