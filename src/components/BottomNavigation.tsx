@@ -3,9 +3,18 @@ import { Image, Platform, Pressable, StyleSheet, Text, View, type StyleProp, typ
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgUri } from "react-native-svg";
 
-import { FIGMA_NAVIGATION_ASSETS } from "../design/figmaNavigationAssets";
-import { FIGMA_TOKENS } from "../design/tokens";
-import type { AppRoute, NavigationTabId } from "../navigation/routes";
+import { FIGMA_NAVIGATION_ASSETS } from '@/design/figmaNavigationAssets';
+import { APP_ROUTE, type AppRoute, type NavigationTabId } from '@/navigation/routes';
+import { colors } from '@/styles/tokens/colors';
+import { spacing } from '@/styles/tokens/spacing';
+import { fontFamily, fontSize } from '@/styles/tokens/typography';
+
+const NAVIGATION_LAYOUT = {
+  actionAssetSize: 94,
+  height: 90,
+  referenceWidth: 390,
+  tabRowReferenceWidth: 375,
+} as const;
 
 export const NAVIGATION_TABS = [
   { id: "home", label: "홈" },
@@ -40,19 +49,19 @@ export function BottomNavigation({
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const navigationHeight = Math.max(
-    FIGMA_TOKENS.navigationHeight,
-    FIGMA_TOKENS.tabRowHeight + insets.bottom
+    NAVIGATION_LAYOUT.height,
+    spacing[14] + insets.bottom
   );
-  const tabRowWidth = (width * FIGMA_TOKENS.tabRowWidth) / FIGMA_TOKENS.navigationReferenceWidth;
-  const actionLeft = (width - 94) / 2;
-  const locationLeft = (width - FIGMA_TOKENS.touchTargetSize) / 2;
+  const tabRowWidth = (width * NAVIGATION_LAYOUT.tabRowReferenceWidth) / NAVIGATION_LAYOUT.referenceWidth;
+  const actionLeft = (width - NAVIGATION_LAYOUT.actionAssetSize) / 2;
+  const locationLeft = (width - spacing[12]) / 2;
   const tabRowLeft = (width - tabRowWidth) / 2;
 
   return (
     <View role="navigation" style={[styles.navigation, { height: navigationHeight }]}>
       <View style={styles.background}>
         <FigmaSvg
-          height={FIGMA_TOKENS.navigationHeight}
+          height={NAVIGATION_LAYOUT.height}
           source={FIGMA_NAVIGATION_ASSETS.background}
           width={width}
         />
@@ -85,13 +94,18 @@ export function BottomNavigation({
       </View>
 
       <View style={[styles.locationAction, { left: actionLeft }]}>
-        <FigmaSvg height={94} source={FIGMA_NAVIGATION_ASSETS.locationAction} width={94} />
+        <FigmaSvg
+          height={NAVIGATION_LAYOUT.actionAssetSize}
+          source={FIGMA_NAVIGATION_ASSETS.locationAction}
+          width={NAVIGATION_LAYOUT.actionAssetSize}
+        />
       </View>
 
       <Pressable
         accessibilityLabel="위치 화면으로 이동"
         accessibilityRole="button"
-        onPress={() => onNavigate("location")}
+        accessibilityState={{ selected: activeScreen === APP_ROUTE.location }}
+        onPress={() => onNavigate(APP_ROUTE.location)}
         style={({ pressed }) => [styles.locationTab, { left: locationLeft }, pressed ? styles.pressed : null]}
       >
         <FigmaSvg height={30} source={FIGMA_NAVIGATION_ASSETS.location} width={30} />
@@ -193,7 +207,7 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   safeAreaFill: {
-    backgroundColor: FIGMA_TOKENS.canvas,
+    backgroundColor: colors.background.primary,
     bottom: 0,
     left: 0,
     pointerEvents: "none",
@@ -202,25 +216,25 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: "row",
-    height: FIGMA_TOKENS.tabRowHeight,
+    height: spacing[14],
     position: "absolute",
     top: 0
   },
   tab: {
     alignItems: "center",
     flex: 1,
-    gap: 4,
+    gap: spacing[1],
     justifyContent: "center",
-    paddingBottom: 4,
-    paddingTop: 8
+    paddingBottom: spacing[1],
+    paddingTop: spacing[2]
   },
   actionSlot: {
     flex: 1
   },
   iconBox: {
-    height: FIGMA_TOKENS.tabIconSize,
+    height: spacing[6],
     position: "relative",
-    width: FIGMA_TOKENS.tabIconSize
+    width: spacing[6]
   },
   iconLayer: {
     position: "absolute"
@@ -262,32 +276,31 @@ const styles = StyleSheet.create({
     top: 13.75
   },
   locationAction: {
-    height: 94,
+    height: NAVIGATION_LAYOUT.actionAssetSize,
     pointerEvents: "none",
     position: "absolute",
     top: -40,
-    width: 94
+    width: NAVIGATION_LAYOUT.actionAssetSize
   },
   locationTab: {
     alignItems: "center",
-    height: 48,
+    height: spacing[12],
     justifyContent: "center",
     position: "absolute",
     top: -27,
-    width: FIGMA_TOKENS.touchTargetSize
+    width: spacing[12]
   },
   tabLabel: {
-    color: FIGMA_TOKENS.labelSecondary,
-    fontFamily: "Pretendard",
-    fontSize: FIGMA_TOKENS.tabLabelSize,
-    fontWeight: "500",
+    color: colors.text.secondary,
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize['caption-3'].fontSize,
     letterSpacing: -0.275,
-    lineHeight: 15.95,
+    lineHeight: fontSize['caption-3'].lineHeight,
     textAlign: "center"
   },
   tabLabelSelected: {
-    color: FIGMA_TOKENS.labelPrimary,
-    fontWeight: "600"
+    color: colors.text.primary,
+    fontFamily: fontFamily.semibold
   },
   pressed: {
     opacity: 0.7

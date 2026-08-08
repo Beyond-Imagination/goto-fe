@@ -1,8 +1,10 @@
 import type { ComponentType } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import type { AppRoute } from "../navigation/routes";
-import { FIGMA_TOKENS } from "../design/tokens";
+import type { AppRoute } from '@/navigation/routes';
+import { colors } from '@/styles/tokens/colors';
+import { spacing } from '@/styles/tokens/spacing';
+import { fontFamily, fontSize } from '@/styles/tokens/typography';
 
 type AppRouteScreenProps = {
   readonly route: AppRoute;
@@ -63,19 +65,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 24
+    paddingHorizontal: spacing[6]
   },
   placeholderTitle: {
-    color: FIGMA_TOKENS.labelPrimary,
-    fontSize: 24,
-    fontWeight: "600",
-    lineHeight: 32
+    color: colors.text.primary,
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize['title-1'].fontSize,
+    letterSpacing: fontSize['title-1'].letterSpacing,
+    lineHeight: fontSize['title-1'].lineHeight
   },
   placeholderDescription: {
-    color: FIGMA_TOKENS.labelSecondary,
-    fontSize: 16,
-    lineHeight: 24,
-    marginTop: 8,
+    color: colors.text.secondary,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize['body-2'].fontSize,
+    letterSpacing: fontSize['body-2'].letterSpacing,
+    lineHeight: fontSize['body-2'].lineHeight,
+    marginTop: spacing[2],
     textAlign: "center"
   }
 });

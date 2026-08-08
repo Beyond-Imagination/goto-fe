@@ -4,19 +4,19 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { BottomNavigation } from './src/components/BottomNavigation';
-import { FIGMA_TOKENS } from './src/design/tokens';
-import { type AppRoute } from './src/navigation/routes';
-import { AppRouteScreen } from './src/screens/AppRouteScreen';
+import { BottomNavigation } from '@/components/BottomNavigation';
+import { type AppRoute } from '@/navigation/routes';
+import { AppRouteScreen } from '@/screens/AppRouteScreen';
+import { colors } from '@/styles/tokens/colors';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
-    'Pretendard-Regular': require('./src/assets/fonts/Pretendard-Regular.otf'),
-    'Pretendard-Medium': require('./src/assets/fonts/Pretendard-Medium.otf'),
-    'Pretendard-SemiBold': require('./src/assets/fonts/Pretendard-SemiBold.otf'),
-    'Pretendard-Bold': require('./src/assets/fonts/Pretendard-Bold.otf'),
+    'Pretendard-Regular': require('@/assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-Medium': require('@/assets/fonts/Pretendard-Medium.otf'),
+    'Pretendard-SemiBold': require('@/assets/fonts/Pretendard-SemiBold.otf'),
+    'Pretendard-Bold': require('@/assets/fonts/Pretendard-Bold.otf'),
   });
   const [activeRoute, setActiveRoute] = useState<AppRoute>('home');
 
@@ -49,11 +49,11 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: FIGMA_TOKENS.canvas,
+    backgroundColor: colors.background.primary,
     flex: 1,
   },
   screen: {
-    backgroundColor: FIGMA_TOKENS.canvas,
+    backgroundColor: colors.background.primary,
     flex: 1,
   },
 });
