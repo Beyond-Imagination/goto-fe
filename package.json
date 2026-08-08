@@ -9,21 +9,26 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@expo/metro-runtime": "56.0.15",
-    "expo": "56.0.12",
+    "@expo/metro-runtime": "~56.0.18",
+    "expo": "~56.0.17",
     "expo-asset": "~56.0.22",
+    "expo-font": "~56.0.7",
+    "expo-splash-screen": "~56.0.14",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-svg": "15.15.4",
-    "react-native-web": "~0.21.0"
+    "react-native-web": "0.21.2"
   },
   "devDependencies": {
     "@types/react": "19.2.17",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~56.0.4",
     "typescript": "6.0.3"
   }
 }

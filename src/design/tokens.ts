@@ -1,9 +1,11 @@
+import { colors } from "../styles/tokens/colors";
+
 export const FIGMA_TOKENS = {
-  canvas: "#FFFFFF",
-  iconInfo: "#81818D",
-  iconPrimary: "#2A2A37",
-  labelPrimary: "#111111",
-  labelSecondary: "#505050",
+  canvas: colors.background.primary,
+  iconInfo: colors.icon.tertiary,
+  iconPrimary: colors.icon.primary,
+  labelPrimary: colors.text.primary,
+  labelSecondary: colors.text.secondary,
   navigationHeight: 90,
   navigationReferenceWidth: 390,
   tabIconSize: 24,
