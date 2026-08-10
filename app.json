@@ -33,7 +33,11 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
         }
-      ]
-    ]
+      ],
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }
