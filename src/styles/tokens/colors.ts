@@ -7,6 +7,13 @@ export const colors = {
   // Brand Colors (Main 01, Sub 01, Sub 02)
   brand: {
     main: '#2962FF',   // Main 01 (메인 브랜드 블루)
+    /**
+     * 온보딩·권한·프로필 프레임의 버튼/칩/카드에 실제로 쓰인 블루.
+     * Styleguide "Main 01" 스와치 사각형의 실측 fill 값도 이 값인데,
+     * 같은 프레임의 라벨 텍스트와 Toggle 컴포넌트는 #2962FF를 씁니다.
+     * 어느 쪽이 정본인지 디자이너 확인이 필요합니다.
+     */
+    mainAlt: '#383CFF',
     sub1: '#6200EA',   // Sub 01 (서브 보라)
     sub2: '#FFD000',   // Sub 02 (서브 노랑 - Figma Variable #FFD000)
     DEFAULT: '#2962FF',

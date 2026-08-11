@@ -17,7 +17,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
         "backgroundImage": "./assets/images/adaptive-icon-background.png",
-        "backgroundColor": "#2962FF"
+        "backgroundColor": "#383CFF"
       }
     },
     "web": {
@@ -25,15 +25,19 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-asset",
+      "expo-font",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#2962FF",
+          "backgroundColor": "#383CFF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
         }
-      ]
-    ]
+      ],
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }
