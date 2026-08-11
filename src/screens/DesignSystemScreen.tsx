@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useFonts } from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthResult, login, refresh } from '@/authApi';
 import { Button, Card, Icon, IconName, Text } from '@/components';
@@ -21,37 +19,17 @@ const ALL_ICONS: { name: IconName; label: string }[] = [
   { name: '좁은통로', label: '좁은통로' },
 ];
 
-void SplashScreen.preventAutoHideAsync();
-
-export default function App() {
-  /* eslint-disable @typescript-eslint/no-require-imports */
-  const [fontsLoaded, fontError] = useFonts({
-    'Pretendard-Regular': require('./src/assets/fonts/Pretendard-Regular.otf'),
-    'Pretendard-Medium': require('./src/assets/fonts/Pretendard-Medium.otf'),
-    'Pretendard-SemiBold': require('./src/assets/fonts/Pretendard-SemiBold.otf'),
-    'Pretendard-Bold': require('./src/assets/fonts/Pretendard-Bold.otf'),
-  });
-  /* eslint-enable @typescript-eslint/no-require-imports */
+/**
+ * develop 브랜치에서 만든 디자인 시스템 쇼케이스입니다.
+ * 앱 진입점에서 분리해 goto://design-system 딥링크로만 열립니다.
+ */
+export function DesignSystemScreen() {
   const [requestState, setRequestState] = useState<RequestState>('idle');
   const [result, setResult] = useState<AuthResult | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isLoading = requestState === 'loading';
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      void SplashScreen.hideAsync();
-    }
-  }, [fontError, fontsLoaded]);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
-  if (fontError) {
-    throw fontError;
-  }
 
   async function handleLogin() {
     await runAuthRequest(async () => {
@@ -87,8 +65,7 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background.light }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background.light }}>
         <ScrollView contentContainerStyle={{ padding: spacing[5], gap: spacing[4] }}>
           <View style={{ gap: spacing[1] }}>
             <Text variant="headline-1" weight="bold" color={colors.brand.main}>
@@ -231,8 +208,7 @@ export default function App() {
             </View>
           </Card>
         </ScrollView>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
 

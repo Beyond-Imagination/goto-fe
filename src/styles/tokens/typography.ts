@@ -19,12 +19,13 @@ export const fontSize = {
   'headline-2': { fontSize: 28, lineHeight: 39.2, letterSpacing: -0.7 },
   'title-1': { fontSize: 24, lineHeight: 33.6, letterSpacing: -0.6 },
   'title-2': { fontSize: 20, lineHeight: 28.0, letterSpacing: -0.5 },
-  'body-1': { fontSize: 18, lineHeight: 26.1, letterSpacing: -0.2 },
-  'body-2': { fontSize: 16, lineHeight: 23.2, letterSpacing: 0 },
-  'body-3': { fontSize: 14, lineHeight: 20.3, letterSpacing: 0 },
-  'caption-1': { fontSize: 13, lineHeight: 18.85, letterSpacing: 0 },
-  'caption-2': { fontSize: 12, lineHeight: 17.4, letterSpacing: 0 },
-  'caption-3': { fontSize: 11, lineHeight: 15.95, letterSpacing: 0 },
+  // letterSpacing은 Typography Guide 전체가 fontSize의 -2.5%를 씁니다.
+  'body-1': { fontSize: 18, lineHeight: 26.1, letterSpacing: -0.45 },
+  'body-2': { fontSize: 16, lineHeight: 22.4, letterSpacing: -0.4 },
+  'body-3': { fontSize: 14, lineHeight: 20.3, letterSpacing: -0.35 },
+  'caption-1': { fontSize: 13, lineHeight: 18.85, letterSpacing: -0.325 },
+  'caption-2': { fontSize: 12, lineHeight: 17.4, letterSpacing: -0.3 },
+  'caption-3': { fontSize: 11, lineHeight: 16.0, letterSpacing: -0.275 },
 } as const;
 
 export const typography = {

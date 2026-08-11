@@ -4,13 +4,16 @@
     "strict": true,
     "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
-    "App.tsx",
-    "index.ts",
+    "app",
     "src",
-    "env.d.ts"
+    "env.d.ts",
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
   ]
 }
