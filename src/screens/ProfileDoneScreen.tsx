@@ -30,7 +30,7 @@ export function ProfileDoneScreen() {
       </View>
 
       <BottomBar>
-        <PrimaryButton href="/(apps)" label="홈으로 이동" />
+        <PrimaryButton href="/(tabs)" label="홈으로 이동" />
       </BottomBar>
     </SafeAreaView>
   );

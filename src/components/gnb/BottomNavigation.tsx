@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgUri } from "react-native-svg";
 
 import { FIGMA_NAVIGATION_ASSETS } from '@/design/figmaNavigationAssets';
-import { type AppRoute, type NavigationTabId } from '@/navigation/routes';
+import { type NavigationTabId } from '@/navigation/routes';
 import { colors } from '@/styles/tokens/colors';
 import { spacing } from '@/styles/tokens/spacing';
 import { fontFamily, fontSize } from '@/styles/tokens/typography';
@@ -19,24 +19,29 @@ const NAVIGATION_LAYOUT = {
 } as const;
 
 export const NAVIGATION_TABS = [
-  { href: "/(apps)", id: "home", label: "홈" },
+  { href: "/(tabs)", id: "home", label: "홈" },
   { href: "/report", id: "report", label: "제보" },
   { href: "/saved", id: "saved", label: "저장" },
   { href: "/profile", id: "profile", label: "내 정보" }
 ] as const satisfies readonly {
-  readonly href: "/(apps)" | "/profile" | "/report" | "/saved";
+  readonly href: "/(tabs)" | "/profile" | "/report" | "/saved";
   readonly id: NavigationTabId;
   readonly label: string;
 }[];
 
 type NavigationTab = (typeof NAVIGATION_TABS)[number];
 
+type BottomNavigationState = Readonly<{
+  index: number;
+  routes: readonly Readonly<{ name: string }>[];
+}>;
+
 type BottomNavigationProps = {
-  readonly activeScreen: AppRoute;
+  readonly state: BottomNavigationState;
 };
 
 type TabButtonProps = {
-  readonly activeScreen: AppRoute;
+  readonly selectedTab: NavigationTabId | undefined;
   readonly item: NavigationTab;
 };
 
@@ -47,7 +52,7 @@ type FigmaSvgProps = {
 };
 
 export function BottomNavigation({
-  activeScreen
+  state
 }: BottomNavigationProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -60,6 +65,7 @@ export function BottomNavigation({
   const actionLeft = (width - NAVIGATION_LAYOUT.actionAssetSize) / 2;
   const locationLeft = (width - spacing[12]) / 2;
   const tabRowLeft = (width - tabRowWidth) / 2;
+  const selectedTab = getSelectedTab(state);
 
   return (
     <View role="navigation" style={[styles.navigation, { height: navigationHeight }]}>
@@ -78,9 +84,9 @@ export function BottomNavigation({
       <View style={[styles.tabRow, { left: tabRowLeft, width: tabRowWidth }]}>
         {NAVIGATION_TABS.slice(0, 2).map((item) => (
           <TabButton
-            activeScreen={activeScreen}
             item={item}
             key={item.id}
+            selectedTab={selectedTab}
           />
         ))}
 
@@ -88,9 +94,9 @@ export function BottomNavigation({
 
         {NAVIGATION_TABS.slice(2).map((item) => (
           <TabButton
-            activeScreen={activeScreen}
             item={item}
             key={item.id}
+            selectedTab={selectedTab}
           />
         ))}
       </View>
@@ -109,11 +115,11 @@ export function BottomNavigation({
         onPressIn={() => setIsLocationPressed(true)}
         onPressOut={() => setIsLocationPressed(false)}
         replace
-        style={[
+        style={StyleSheet.flatten([
           styles.locationTab,
           { left: locationLeft },
           isLocationPressed ? styles.locationPressed : null
-        ]}
+        ])}
       >
         <Pressable
           accessibilityLabel="위치 화면으로 이동"
@@ -126,8 +132,8 @@ export function BottomNavigation({
   );
 }
 
-function TabButton({ activeScreen, item }: TabButtonProps) {
-  const isSelected = activeScreen === item.id;
+function TabButton({ item, selectedTab }: TabButtonProps) {
+  const isSelected = selectedTab === item.id;
   const [isPressed, setIsPressed] = useState(false);
 
   return (
@@ -137,7 +143,7 @@ function TabButton({ activeScreen, item }: TabButtonProps) {
       onPressIn={() => setIsPressed(true)}
       onPressOut={() => setIsPressed(false)}
       replace
-      style={[styles.tab, isPressed ? styles.pressed : null]}
+      style={StyleSheet.flatten([styles.tab, isPressed ? styles.pressed : null])}
     >
       <Pressable
         aria-current={isSelected ? "page" : undefined}
@@ -151,6 +157,22 @@ function TabButton({ activeScreen, item }: TabButtonProps) {
       </Pressable>
     </Link>
   );
+}
+
+function getSelectedTab(state: BottomNavigationState): NavigationTabId | undefined {
+  switch (state.routes[state.index]?.name) {
+    case "index":
+      return "home";
+    case "report":
+      return "report";
+    case "saved":
+      return "saved";
+    case "profile":
+      return "profile";
+    case "location":
+    default:
+      return undefined;
+  }
 }
 
 function TabIcon({ id, isSelected }: Pick<NavigationTab, "id"> & { readonly isSelected: boolean }) {
