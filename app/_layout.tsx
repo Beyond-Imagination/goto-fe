@@ -53,6 +53,7 @@ export default function RootLayout() {
           <Stack.Screen name="profile/preference" options={STEP_TRANSITION} />
           <Stack.Screen name="profile/display" options={STEP_TRANSITION} />
           <Stack.Screen name="profile/done" options={STEP_TRANSITION} />
+          <Stack.Screen name="(apps)" options={{ animation: 'none' }} />
           <Stack.Screen name="design-system" />
         </Stack>
       </ProfileProvider>

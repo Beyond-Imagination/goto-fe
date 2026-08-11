@@ -30,6 +30,7 @@ const ILLUSTRATION_NUDGE = 0.035;
 
 interface Page {
   illustration: ImageSourcePropType;
+  readonly illustrationAspectRatio: number;
   title: string;
   body: string;
   /**
@@ -48,6 +49,7 @@ interface Page {
 const PAGES: Page[] = [
   {
     illustration: require('../assets/onboarding-travel.png'),
+    illustrationAspectRatio: 1099 / 1161,
     title: '어디든 안심하고 떠나세요',
     body: '접근 가능한 관광지와 이동 정보를 한눈에\n확인하고, 나에게 맞는 여행을 계획해 보세요.',
     top: 0.2,
@@ -55,6 +57,7 @@ const PAGES: Page[] = [
   },
   {
     illustration: require('../assets/onboarding-trust.png'),
+    illustrationAspectRatio: 1203 / 1828,
     title: '믿을 수 있는 정보',
     body: '공식 정보와 사용자 제보를 함께 제공하여\n지금 방문 가능한지 정확히 판단할 수 있어요.',
     // 파란 궤적이 화면 위로 빠져나가는 시안의 연출.
@@ -65,19 +68,13 @@ const PAGES: Page[] = [
   },
   {
     illustration: require('../assets/onboarding-together.png'),
+    illustrationAspectRatio: 947 / 1425,
     title: '함께라서 더 안전하게',
     body: '당신의 제보가 다음 여행자의 길이 됩니다.',
     top: 0.11,
     height: 0.46,
   },
 ];
-
-/** 에셋의 원본 비율(가로/세로). */
-function aspectRatioOf(source: ImageSourcePropType): number {
-  const resolved = Image.resolveAssetSource(source);
-
-  return resolved?.width && resolved?.height ? resolved.width / resolved.height : 1;
-}
 
 interface OnboardingScreenProps {
   onStart: () => void;
@@ -132,9 +129,10 @@ export function OnboardingScreen({ onStart, initialPage = 0 }: OnboardingScreenP
         scrollEventThrottle={16}
         showsHorizontalScrollIndicator={false}
         style={styles.pager}
+        tabIndex={0}
       >
         {PAGES.map((page) => {
-          const ratio = aspectRatioOf(page.illustration);
+          const ratio = page.illustrationAspectRatio;
           const artWidth = Math.min(height * page.height * ratio, width - spacing[8]);
           const artHeight = artWidth / ratio;
 

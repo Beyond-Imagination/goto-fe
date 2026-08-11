@@ -23,6 +23,7 @@ const ROUTE_COMPONENTS = {
   saved: SavedScreen
 } as const satisfies Record<AppRoute, ComponentType>;
 
+// TODO: 각각에 해당하는 화면으로 직접 라우팅 될 수 있게끔 수정 후 제거 예정
 export function AppRouteScreen({ route }: AppRouteScreenProps) {
   const Screen = ROUTE_COMPONENTS[route];
 

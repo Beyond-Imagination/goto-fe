@@ -1,9 +1,15 @@
-import { useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
+import { useState } from 'react';
 
 import { SplashScreen } from '@/screens/SplashScreen';
 
 export default function SplashRoute() {
-  const router = useRouter();
+  // TODO: 추후 여기는 서버 응답을 받아서 온보딩으로 이동할지 여부를 결정합시다!
+  const [isComplete, setIsComplete] = useState(false);
 
-  return <SplashScreen onDone={() => router.replace('/onboarding')} />;
+  if (isComplete) {
+    return <Redirect href="/onboarding" />;
+  }
+
+  return <SplashScreen onDone={() => setIsComplete(true)} />;
 }

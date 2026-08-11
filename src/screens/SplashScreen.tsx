@@ -14,7 +14,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
   }, [onDone]);
 
   return (
-    <View accessibilityLabel="함께가길" style={styles.screen}>
+    <View accessibilityLabel="함께가길" accessibilityRole="image" style={styles.screen}>
       <StatusBar barStyle="light-content" />
       { }
       <Image resizeMode="contain" source={require('../assets/logo-mark.png')} style={styles.mark} />

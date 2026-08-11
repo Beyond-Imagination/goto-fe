@@ -9,7 +9,6 @@ export default function PermissionRoute() {
     <PermissionScreen
       onBack={() => router.back()}
       onConfirm={() => router.push('/profile/mobility')}
-      onSkip={() => router.push('/profile/mobility')}
     />
   );
 }

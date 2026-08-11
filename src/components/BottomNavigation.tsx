@@ -1,10 +1,12 @@
+import { Link } from "expo-router";
+import { useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { Image, Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgUri } from "react-native-svg";
 
 import { FIGMA_NAVIGATION_ASSETS } from '@/design/figmaNavigationAssets';
-import { APP_ROUTE, type AppRoute, type NavigationTabId } from '@/navigation/routes';
+import { type AppRoute, type NavigationTabId } from '@/navigation/routes';
 import { colors } from '@/styles/tokens/colors';
 import { spacing } from '@/styles/tokens/spacing';
 import { fontFamily, fontSize } from '@/styles/tokens/typography';
@@ -17,23 +19,25 @@ const NAVIGATION_LAYOUT = {
 } as const;
 
 export const NAVIGATION_TABS = [
-  { id: "home", label: "홈" },
-  { id: "report", label: "제보" },
-  { id: "saved", label: "저장" },
-  { id: "profile", label: "내 정보" }
-] as const satisfies readonly { readonly id: NavigationTabId; readonly label: string }[];
+  { href: "/(apps)", id: "home", label: "홈" },
+  { href: "/report", id: "report", label: "제보" },
+  { href: "/saved", id: "saved", label: "저장" },
+  { href: "/profile", id: "profile", label: "내 정보" }
+] as const satisfies readonly {
+  readonly href: "/(apps)" | "/profile" | "/report" | "/saved";
+  readonly id: NavigationTabId;
+  readonly label: string;
+}[];
 
 type NavigationTab = (typeof NAVIGATION_TABS)[number];
 
 type BottomNavigationProps = {
   readonly activeScreen: AppRoute;
-  readonly onNavigate: (route: AppRoute) => void;
 };
 
 type TabButtonProps = {
   readonly activeScreen: AppRoute;
   readonly item: NavigationTab;
-  readonly onNavigate: (route: AppRoute) => void;
 };
 
 type FigmaSvgProps = {
@@ -43,11 +47,11 @@ type FigmaSvgProps = {
 };
 
 export function BottomNavigation({
-  activeScreen,
-  onNavigate
+  activeScreen
 }: BottomNavigationProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const [isLocationPressed, setIsLocationPressed] = useState(false);
   const navigationHeight = Math.max(
     NAVIGATION_LAYOUT.height,
     spacing[14] + insets.bottom
@@ -71,13 +75,12 @@ export function BottomNavigation({
         <View style={[styles.safeAreaFill, { height: insets.bottom }]} />
       ) : null}
 
-      <View accessibilityRole="tablist" style={[styles.tabRow, { left: tabRowLeft, width: tabRowWidth }]}>
+      <View style={[styles.tabRow, { left: tabRowLeft, width: tabRowWidth }]}>
         {NAVIGATION_TABS.slice(0, 2).map((item) => (
           <TabButton
             activeScreen={activeScreen}
             item={item}
             key={item.id}
-            onNavigate={onNavigate}
           />
         ))}
 
@@ -88,7 +91,6 @@ export function BottomNavigation({
             activeScreen={activeScreen}
             item={item}
             key={item.id}
-            onNavigate={onNavigate}
           />
         ))}
       </View>
@@ -101,35 +103,53 @@ export function BottomNavigation({
         />
       </View>
 
-      <Pressable
-        accessibilityLabel="위치 화면으로 이동"
-        accessibilityRole="button"
-        accessibilityState={{ selected: activeScreen === APP_ROUTE.location }}
-        onPress={() => onNavigate(APP_ROUTE.location)}
-        style={({ pressed }) => [styles.locationTab, { left: locationLeft }, pressed ? styles.pressed : null]}
+      <Link
+        asChild
+        href="/location"
+        onPressIn={() => setIsLocationPressed(true)}
+        onPressOut={() => setIsLocationPressed(false)}
+        replace
+        style={[
+          styles.locationTab,
+          { left: locationLeft },
+          isLocationPressed ? styles.locationPressed : null
+        ]}
       >
-        <FigmaSvg height={30} source={FIGMA_NAVIGATION_ASSETS.location} width={30} />
-      </Pressable>
+        <Pressable
+          accessibilityLabel="위치 화면으로 이동"
+          accessibilityRole="button"
+        >
+          <FigmaSvg height={30} source={FIGMA_NAVIGATION_ASSETS.location} width={30} />
+        </Pressable>
+      </Link>
     </View>
   );
 }
 
-function TabButton({ activeScreen, item, onNavigate }: TabButtonProps) {
+function TabButton({ activeScreen, item }: TabButtonProps) {
   const isSelected = activeScreen === item.id;
+  const [isPressed, setIsPressed] = useState(false);
 
   return (
-    <Pressable
-      accessibilityLabel={`${item.label} 화면으로 이동`}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: isSelected }}
-      onPress={() => onNavigate(item.id)}
-      style={({ pressed }) => [styles.tab, pressed ? styles.pressed : null]}
+    <Link
+      asChild
+      href={item.href}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      replace
+      style={[styles.tab, isPressed ? styles.pressed : null]}
     >
-      <TabIcon id={item.id} isSelected={isSelected} />
-      <Text style={[styles.tabLabel, isSelected ? styles.tabLabelSelected : null]}>
-        {item.label}
-      </Text>
-    </Pressable>
+      <Pressable
+        aria-current={isSelected ? "page" : undefined}
+        accessibilityLabel={`${item.label} 화면으로 이동`}
+        accessibilityRole="link"
+      >
+        <TabIcon id={item.id} isSelected={isSelected} />
+        <Text style={[styles.tabLabel, isSelected ? styles.tabLabelSelected : null]}>
+          {item.label}
+        </Text>
+      </Pressable>
+    </Link>
   );
 }
 
@@ -198,6 +218,7 @@ function FigmaSvg({ height, source, width }: FigmaSvgProps) {
 
 const styles = StyleSheet.create({
   navigation: {
+    backgroundColor: colors.background.light,
     overflow: "visible",
     position: "relative",
   },
@@ -289,6 +310,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -27,
     width: spacing[12]
+  },
+  locationPressed: {
+    opacity: 0.82
   },
   tabLabel: {
     color: colors.text.secondary,
