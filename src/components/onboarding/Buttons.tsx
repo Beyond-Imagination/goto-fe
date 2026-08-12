@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { type Href, useRouter } from 'expo-router';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
@@ -8,23 +9,34 @@ import { colors } from '@/styles/tokens/colors';
 import { spacing } from '@/styles/tokens/spacing';
 
 interface ActionButtonProps {
+  href?: Href;
   label: string;
-  onPress: () => void;
+  onPress?: () => void;
   disabled?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
  * 온보딩 플로우의 하단 CTA.
  * 공통 Button보다 높이(54)와 라운딩(14)이 크고 폭을 꽉 채우는 형태라 따로 둡니다.
+ *
+ * href는 Link asChild 대신 router.replace로 처리합니다.
+ * Link asChild가 Pressable의 함수형 style을 깨뜨려 버튼이 안 보이는 문제가 있었습니다.
  */
-export function PrimaryButton({ label, onPress, disabled, style }: ActionButtonProps) {
+export function PrimaryButton({ href, label, onPress, disabled, style }: ActionButtonProps) {
+  const router = useRouter();
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: Boolean(disabled) }}
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        onPress?.();
+        if (href != null) {
+          router.replace(href);
+        }
+      }}
       style={({ pressed }) => [
         styles.button,
         styles.primary,
@@ -96,6 +108,7 @@ export function BottomBar({ children, bottomGap = BOTTOM_GAP }: BottomBarProps) 
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     borderRadius: 14,
     height: 54,
     justifyContent: 'center',

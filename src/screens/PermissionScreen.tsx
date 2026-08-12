@@ -41,10 +41,9 @@ const PERMISSIONS: Permission[] = [
 interface PermissionScreenProps {
   onBack: () => void;
   onConfirm: () => void;
-  onSkip: () => void;
 }
 
-export function PermissionScreen({ onBack, onConfirm, onSkip }: PermissionScreenProps) {
+export function PermissionScreen({ onBack, onConfirm }: PermissionScreenProps) {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.screen}>
       <ScreenHeader onBack={onBack} title="필수 권한 설정" />
@@ -77,7 +76,6 @@ export function PermissionScreen({ onBack, onConfirm, onSkip }: PermissionScreen
 
       <BottomBar>
         <PrimaryButton label="확인" onPress={onConfirm} />
-        <SkipLink onPress={onSkip} />
       </BottomBar>
     </SafeAreaView>
   );

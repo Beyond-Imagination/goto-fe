@@ -12,7 +12,7 @@ import { spacing } from '@/styles/tokens/spacing';
  * 온보딩 플로우의 임시 종착지입니다.
  * 화면기획 8. 홈 지도는 아직 이번 작업 범위가 아니라 자리표시자로 둡니다.
  */
-export function ProfileDoneScreen({ onRestart }: { onRestart: () => void }) {
+export function ProfileDoneScreen() {
   const { profile } = useProfile();
 
   return (
@@ -30,7 +30,7 @@ export function ProfileDoneScreen({ onRestart }: { onRestart: () => void }) {
       </View>
 
       <BottomBar>
-        <PrimaryButton label="처음부터 다시 보기" onPress={onRestart} />
+        <PrimaryButton href="/(tabs)" label="홈으로 이동" />
       </BottomBar>
     </SafeAreaView>
   );

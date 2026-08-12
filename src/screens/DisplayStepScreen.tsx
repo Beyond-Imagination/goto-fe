@@ -41,7 +41,7 @@ export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenP
           style={[styles.previewDisplay, { fontSize: 56 * scale, lineHeight: 56 * scale }]}
           variant="display-1"
         >
-          Tittle
+          Title
         </Text>
         <Text
           color={highContrast ? contrastPreview.title : colors.text.secondary}
@@ -49,7 +49,7 @@ export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenP
           variant="headline-1"
           weight="semibold"
         >
-          함께하길과 함께 가요
+          함께가길과 함께 가요
         </Text>
         <Text
           color={highContrast ? contrastPreview.body : colors.text.tertiary}
@@ -57,7 +57,7 @@ export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenP
           variant="title-2"
           weight="medium"
         >
-          {'함께 하길은 여러분이 가는\n길을 밝혀나갑니다'}
+          {'함께가길은 여러분이 가는\n길을 밝혀 나갑니다'}
         </Text>
       </View>
 
