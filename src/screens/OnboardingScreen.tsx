@@ -29,27 +29,27 @@ const ILLUSTRATION_BAND = 0.6;
 const ILLUSTRATION_NUDGE = 0.035;
 
 interface Page {
-  illustration: ImageSourcePropType;
-  readonly illustrationAspectRatio: number;
-  title: string;
-  body: string;
+  readonly illustration: ImageSourcePropType;
+  readonly aspectRatio: number;
+  readonly title: string;
+  readonly body: string;
   /**
    * 시안의 세로 배치를 화면 높이 비율로 옮긴 값입니다.
    * top이 음수면 일러스트가 화면 위로 빠져나가며 잘립니다.
    */
-  top: number;
-  height: number;
+  readonly top: number;
+  readonly height: number;
   /**
    * 좌우 오프셋(일러스트 폭 비율, 음수면 왼쪽).
    * 에셋 안에서 주체가 한쪽으로 몰려 있는 경우를 보정합니다.
    */
-  shiftX?: number;
+  readonly shiftX?: number;
 }
 
-const PAGES: Page[] = [
+const PAGES: readonly Page[] = [
   {
     illustration: require('../assets/onboarding-travel.png'),
-    illustrationAspectRatio: 1099 / 1161,
+    aspectRatio: 1099 / 1161,
     title: '어디든 안심하고 떠나세요',
     body: '접근 가능한 관광지와 이동 정보를 한눈에\n확인하고, 나에게 맞는 여행을 계획해 보세요.',
     top: 0.2,
@@ -57,7 +57,7 @@ const PAGES: Page[] = [
   },
   {
     illustration: require('../assets/onboarding-trust.png'),
-    illustrationAspectRatio: 1203 / 1828,
+    aspectRatio: 1203 / 1828,
     title: '믿을 수 있는 정보',
     body: '공식 정보와 사용자 제보를 함께 제공하여\n지금 방문 가능한지 정확히 판단할 수 있어요.',
     // 파란 궤적이 화면 위로 빠져나가는 시안의 연출.
@@ -68,7 +68,7 @@ const PAGES: Page[] = [
   },
   {
     illustration: require('../assets/onboarding-together.png'),
-    illustrationAspectRatio: 947 / 1425,
+    aspectRatio: 947 / 1425,
     title: '함께라서 더 안전하게',
     body: '당신의 제보가 다음 여행자의 길이 됩니다.',
     top: 0.11,
@@ -77,9 +77,9 @@ const PAGES: Page[] = [
 ];
 
 interface OnboardingScreenProps {
-  onStart: () => void;
+  readonly onStart: () => void;
   /** 딥링크로 특정 페이지부터 열 때 사용합니다. */
-  initialPage?: number;
+  readonly initialPage?: number;
 }
 
 export function OnboardingScreen({ onStart, initialPage = 0 }: OnboardingScreenProps) {
@@ -132,7 +132,7 @@ export function OnboardingScreen({ onStart, initialPage = 0 }: OnboardingScreenP
         tabIndex={0}
       >
         {PAGES.map((page) => {
-          const ratio = page.illustrationAspectRatio;
+          const ratio = page.aspectRatio;
           const artWidth = Math.min(height * page.height * ratio, width - spacing[8]);
           const artHeight = artWidth / ratio;
 
