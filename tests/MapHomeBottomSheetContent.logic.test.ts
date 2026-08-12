@@ -7,7 +7,7 @@ import {
   mapHomeBottomSheetItemKey,
   mapHomeBottomSheetSelection,
   mapHomeBottomSheetSelectionKind
-} from "../src/screens/home/mapHomeBottomSheetContent.ts";
+} from "@/screens/home/mapHomeBottomSheetContent";
 
 test("home map content supplies stable FlatList keys", () => {
   const data = getMapHomeBottomSheetSelectionData({

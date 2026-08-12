@@ -7,7 +7,7 @@ import {
   nativeVelocityForSnap,
   selectSnap,
   translateYFor
-} from "../src/components/common/bottomSheet/bottomSheet.logic.ts";
+} from "@/components/common/bottomSheet/bottomSheet.logic";
 
 test("unselected map sheet initially exposes 33 percent of its container", () => {
   assert.ok(Math.abs(translateYFor(bottomSheetSnap.peek, 1000) - 670) < 0.001);

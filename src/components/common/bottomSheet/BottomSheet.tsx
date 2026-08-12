@@ -239,7 +239,7 @@ export function BottomSheet<Item>({
           ]}
         >
           <View style={styles.handleArea}>
-            <View {...pointerHandlers} style={styles.handleGestureArea}>
+            <View {...(pointerHandlers ?? {})} style={styles.handleGestureArea}>
               {Platform.OS === "web" ? (
                 handleControl
               ) : (
