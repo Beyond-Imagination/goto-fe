@@ -117,6 +117,14 @@ export const colors = {
     900: '#111111',
     DEFAULT: '#111111',
   },
+
+  social: {
+    kakao: '#FFE812',
+    kakaoForeground: '#3E1918',
+    naver: '#01C73C',
+    google: '#FFFFFF',
+    pressedOpacity: 0.86,
+  },
 } as const;
 
 export type ColorTokens = typeof colors;
