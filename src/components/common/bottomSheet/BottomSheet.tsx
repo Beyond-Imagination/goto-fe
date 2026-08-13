@@ -12,7 +12,8 @@ import {
   Pressable,
   Text,
   useWindowDimensions,
-  View
+  View,
+  type ViewStyle
 } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -47,6 +48,15 @@ export type BottomSheetContent<Item> = {
   readonly summary: string;
   readonly title: string;
 };
+
+/** React Native Web supports these CSS properties, but React Native's ViewStyle omits them. */
+const webGestureStyle = Platform.select({
+  web: {
+    touchAction: "none",
+    userSelect: "none"
+  } as unknown as ViewStyle,
+  default: undefined
+});
 
 type BottomSheetProps<Item> = {
   readonly content: BottomSheetContent<Item>;
@@ -239,7 +249,7 @@ export function BottomSheet<Item>({
           ]}
         >
           <View style={styles.handleArea}>
-            <View {...(pointerHandlers ?? {})} style={styles.handleGestureArea}>
+            <View {...(pointerHandlers ?? {})} style={[styles.handleGestureArea, webGestureStyle]}>
               {Platform.OS === "web" ? (
                 handleControl
               ) : (
