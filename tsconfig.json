@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
+    "types": ["node"],
     "paths": {
       "@/*": [
         "./src/*"
@@ -12,6 +13,7 @@
   "include": [
     "app",
     "src",
+    "tests",
     "env.d.ts",
     "expo-env.d.ts",
     ".expo/types/**/*.ts"

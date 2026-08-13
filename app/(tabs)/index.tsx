@@ -1,5 +1,5 @@
-import { AppRouteScreen } from '@/screens/AppRouteScreen';
+import { MapHomeScreen } from '@/screens/home/MapHomeScreen';
 
 export default function HomeRoute() {
-  return <AppRouteScreen route="home" />;
+  return <MapHomeScreen />;
 }

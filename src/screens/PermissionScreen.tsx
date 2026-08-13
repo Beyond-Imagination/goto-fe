@@ -2,7 +2,7 @@ import { Image, ScrollView, StyleSheet, View, type ImageSourcePropType } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
-import { BottomBar, PrimaryButton, SkipLink } from '@/components/onboarding/Buttons';
+import { BottomBar, PrimaryButton } from '@/components/onboarding/Buttons';
 import { InfoNote } from '@/components/onboarding/InfoNote';
 import { ScreenHeader } from '@/components/onboarding/ScreenHeader';
 import { SCREEN_X } from '@/components/onboarding/tokens';
