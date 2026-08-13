@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ProfileProvider } from '@/state/profile';
+import { AuthProvider } from '@/auth';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -38,28 +39,31 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ProfileProvider>
-          {/* 스플래시만 밝은 아이콘을 쓰고, 나머지 흰 배경 화면은 어두운 아이콘으로 돌아옵니다. */}
-          <StatusBar barStyle="dark-content" translucent />
-          <Stack
-            screenOptions={{
-              // 성격이 다른 화면으로 넘어가는 전환의 기본값.
-              animation: 'slide_from_right',
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="index" options={{ animation: 'fade' }} />
-            <Stack.Screen name="login" options={{ animation: 'fade' }} />
-            <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="permission" options={STEP_TRANSITION} />
-            <Stack.Screen name="profile/mobility" options={STEP_TRANSITION} />
-            <Stack.Screen name="profile/preference" options={STEP_TRANSITION} />
-            <Stack.Screen name="profile/display" options={STEP_TRANSITION} />
-            <Stack.Screen name="profile/done" options={STEP_TRANSITION} />
-            <Stack.Screen name="design-system" />
-          </Stack>
-        </ProfileProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            {/* 스플래시만 밝은 아이콘을 쓰고, 나머지 흰 배경 화면은 어두운 아이콘으로 돌아옵니다. */}
+            <StatusBar barStyle="dark-content" translucent />
+            <Stack
+              screenOptions={{
+                // 성격이 다른 화면으로 넘어가는 전환의 기본값.
+                animation: 'slide_from_right',
+                headerShown: false,
+              }}
+            >
+              <Stack.Screen name="index" options={{ animation: 'fade' }} />
+              <Stack.Screen name="login" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+              <Stack.Screen name="signup" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="permission" options={STEP_TRANSITION} />
+              <Stack.Screen name="profile/mobility" options={STEP_TRANSITION} />
+              <Stack.Screen name="profile/preference" options={STEP_TRANSITION} />
+              <Stack.Screen name="profile/display" options={STEP_TRANSITION} />
+              <Stack.Screen name="profile/done" options={STEP_TRANSITION} />
+              <Stack.Screen name="design-system" />
+            </Stack>
+          </ProfileProvider>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

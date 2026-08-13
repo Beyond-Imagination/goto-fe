@@ -8,8 +8,8 @@ export default function DisplayRoute() {
   return (
     <DisplayStepScreen
       onBack={() => router.back()}
-      onDone={() => router.push('/profile/done')}
-      onSkip={() => router.push('/profile/done')}
+      onDone={() => router.push('/signup/complete')}
+      onSkip={() => router.push('/signup/complete')}
     />
   );
 }

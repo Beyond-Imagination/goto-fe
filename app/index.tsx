@@ -1,15 +1,20 @@
 import { Redirect } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
+import { useAuth } from '@/auth';
+import { getInitialRoute } from '@/navigation/initialRoute';
 import { SplashScreen } from '@/screens/SplashScreen';
 
 export default function SplashRoute() {
-  // TODO: 추후 여기는 서버 응답을 받아서 온보딩으로 이동할지 여부를 결정합시다!
-  const [isComplete, setIsComplete] = useState(false);
+  const { session, status } = useAuth();
+  const [splashComplete, setSplashComplete] = useState(false);
+  const onSplashDone = useCallback(() => setSplashComplete(true), []);
 
-  if (isComplete) {
-    return <Redirect href="/login" />;
+  const route = getInitialRoute(status, Boolean(session), splashComplete);
+
+  if (route === null) {
+    return <SplashScreen onDone={onSplashDone} />;
   }
 
-  return <SplashScreen onDone={() => setIsComplete(true)} />;
+  return <Redirect href={route} />;
 }
