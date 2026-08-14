@@ -11,7 +11,7 @@ import type {
 import { type SocialProvider } from '@/components/auth/socialProviders';
 
 import { createAuthSession, type AuthSnapshot } from './authSession';
-import { createMockKakaoAdapter, createMockNaverAdapter, createMockOAuthApi } from '@/mock';
+import { createMockGoogleAdapter, createMockKakaoAdapter, createMockNaverAdapter, createMockOAuthApi } from '@/mock';
 import { isNicknameAvailable, oauthLogin, oauthSignup, refreshPlatformSession } from '../social/oauthApi';
 import { type KeyValueStorage } from './refreshTokenStore';
 import { getSocialLoginAdapter } from '../social/socialLogin';
@@ -48,9 +48,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isMockMode) {
       const mockKakaoAdapter = createMockKakaoAdapter();
       const mockNaverAdapter = createMockNaverAdapter();
+      const mockGoogleAdapter = createMockGoogleAdapter();
       return createAuthSession({
         api: createMockOAuthApi(),
-        getSocialLoginAdapter: (provider) => (provider === 'naver' ? mockNaverAdapter : mockKakaoAdapter),
+        getSocialLoginAdapter: (provider) => {
+          if (provider === 'google') {
+            return mockGoogleAdapter;
+          }
+          if (provider === 'naver') {
+            return mockNaverAdapter;
+          }
+          return mockKakaoAdapter;
+        },
         storage: Platform.OS === 'web' ? webNoopStorage : nativeSecureStorage,
       });
     }
