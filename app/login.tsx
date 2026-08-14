@@ -3,9 +3,8 @@ import { useState } from 'react';
 
 import {
   AUTH_STATUS,
-  AuthApiError,
   OAuthLoginCancelledError,
-  OAuthProviderUnavailableError,
+  getLoginUserErrorMessage,
   useAuth,
 } from '@/auth';
 import { type SocialProvider } from '@/components/auth';
@@ -33,7 +32,8 @@ export default function LoginRoute() {
         return;
       }
 
-      setErrorMessage(getLoginErrorMessage(error, provider));
+      console.error(`[LoginRoute] ${provider} login error:`, error);
+      setErrorMessage(getLoginUserErrorMessage(error, provider));
     } finally {
       setLoadingProvider(null);
     }
@@ -48,15 +48,3 @@ export default function LoginRoute() {
   );
 }
 
-function getLoginErrorMessage(error: unknown, provider: SocialProvider): string {
-  if (error instanceof OAuthProviderUnavailableError) {
-    const label = provider === 'naver' ? '네이버' : provider === 'google' ? '구글' : '웹';
-    return `${label} 로그인은 준비 중입니다.`;
-  }
-
-  if (error instanceof AuthApiError) {
-    return error.message;
-  }
-
-  return '로그인을 완료하지 못했어요. 다시 시도해주세요.';
-}

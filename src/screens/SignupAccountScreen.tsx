@@ -179,13 +179,13 @@ function getStatusMessage(status: NicknameStatus): string | null {
     case 'available':
       return '사용할 수 있는 닉네임이에요';
     case 'unavailable':
-      return '이미 사용중인 닉네임 이에요';
+      return '이미 사용 중인 닉네임이에요';
     case 'invalid':
       return '닉네임은 한글, 영문, 숫자 2~12자로 입력해주세요.';
     case 'needsCheck':
       return '중복확인을 해주세요.';
     case 'requestFailed':
-      return '중복확인에 실패했어요. 다시 시도해주세요.';
+      return '중복확인 중 오류가 발생했어요. 다시 시도해주세요.';
     case 'idle':
     case 'checking':
       return null;
