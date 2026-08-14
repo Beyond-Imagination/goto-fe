@@ -34,9 +34,7 @@ export const bottomSheetStyles = StyleSheet.create({
     minHeight: 44
   },
   handleGestureArea: {
-    alignSelf: "stretch",
-    touchAction: "none",
-    userSelect: "none"
+    alignSelf: "stretch"
   },
   headerCopy: {
     gap: spacing[1]

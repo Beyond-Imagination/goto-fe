@@ -92,14 +92,27 @@ interface BottomBarProps {
   children: React.ReactNode;
   /** 마지막 요소 아래 여백. 건너뛰기 링크가 없는 화면은 더 크게 잡습니다. */
   bottomGap?: number;
+  horizontalPadding?: number;
+  showBorder?: boolean;
 }
 
 /** 화면 하단에 고정되는 액션 영역. 스크롤 콘텐츠 위에 얹힙니다. */
-export function BottomBar({ children, bottomGap = BOTTOM_GAP }: BottomBarProps) {
+export function BottomBar({
+  children,
+  bottomGap = BOTTOM_GAP,
+  horizontalPadding = SCREEN_X,
+  showBorder = true,
+}: BottomBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.bottomBar, { paddingBottom: Math.max(bottomGap - insets.bottom, 8) }]}>
+    <View
+      style={[
+        styles.bottomBar,
+        showBorder ? null : styles.bottomBarWithoutBorder,
+        { paddingBottom: Math.max(bottomGap - insets.bottom, 8), paddingHorizontal: horizontalPadding },
+      ]}
+    >
       {children}
     </View>
   );
@@ -141,7 +154,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border.regular,
     borderTopWidth: StyleSheet.hairlineWidth,
     gap: spacing[1],
-    paddingHorizontal: SCREEN_X,
     paddingTop: spacing[3.5],
+  },
+  bottomBarWithoutBorder: {
+    borderTopWidth: 0,
   },
 });

@@ -14,9 +14,11 @@ import { colors } from '@/styles/tokens/colors';
 
 interface LoginScreenProps {
   readonly onProviderPress?: (provider: SocialProvider) => void;
+  readonly loadingProvider?: SocialProvider | null;
+  readonly errorMessage?: string | null;
 }
 
-export function LoginScreen({ onProviderPress }: LoginScreenProps) {
+export function LoginScreen({ onProviderPress, loadingProvider = null, errorMessage = null }: LoginScreenProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalInset = width < loginLayout.compactBreakpoint
@@ -44,10 +46,20 @@ export function LoginScreen({ onProviderPress }: LoginScreenProps) {
           <View style={styles.providers}>
             {SOCIAL_PROVIDERS.map((provider, index) => (
               <View key={provider} style={index === 2 ? styles.lastProvider : null}>
-                <SocialLoginButton onProviderPress={onProviderPress} provider={provider} />
+                <SocialLoginButton
+                  disabled={loadingProvider !== null}
+                  onProviderPress={onProviderPress}
+                  provider={provider}
+                />
               </View>
             ))}
           </View>
+
+          {errorMessage ? (
+            <Text accessibilityLiveRegion="polite" color={colors.semantic.danger.DEFAULT} style={styles.error} variant="body-3">
+              {errorMessage}
+            </Text>
+          ) : null}
 
           <View style={styles.spacer} />
 
@@ -103,6 +115,10 @@ const styles = StyleSheet.create({
   },
   lastProvider: {
     marginTop: loginLayout.providersSecondGap - loginLayout.providersFirstGap,
+  },
+  error: {
+    marginTop: loginLayout.providersFirstGap,
+    textAlign: 'center',
   },
   spacer: {
     flex: 1,

@@ -94,8 +94,17 @@ function toggleWithLimit<T>(list: T[], value: T, limit?: number): T[] {
   return [...list, value];
 }
 
-export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<AccessibilityProfile>(INITIAL_PROFILE);
+export function ProfileProvider({
+  children,
+  initialProfile,
+}: {
+  children: ReactNode;
+  initialProfile?: Partial<AccessibilityProfile>;
+}) {
+  const [profile, setProfile] = useState<AccessibilityProfile>(() => ({
+    ...INITIAL_PROFILE,
+    ...initialProfile,
+  }));
 
   const value = useMemo<ProfileContextValue>(
     () => ({

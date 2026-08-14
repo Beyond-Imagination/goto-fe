@@ -9,7 +9,7 @@ export default function PreferenceRoute() {
     <PreferenceStepScreen
       onBack={() => router.back()}
       onNext={() => router.push('/profile/display')}
-      onSkip={() => router.push('/profile/done')}
+      onSkip={() => router.push('/signup/complete')}
     />
   );
 }

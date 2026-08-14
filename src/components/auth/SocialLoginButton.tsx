@@ -14,9 +14,10 @@ import { colors } from '@/styles/tokens/colors';
 interface SocialLoginButtonProps {
   readonly provider: SocialProvider;
   readonly onProviderPress?: (provider: SocialProvider) => void;
+  readonly disabled?: boolean;
 }
 
-export function SocialLoginButton({ provider, onProviderPress }: SocialLoginButtonProps) {
+export function SocialLoginButton({ provider, onProviderPress, disabled = false }: SocialLoginButtonProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isPointerPressed, setIsPointerPressed] = useState(false);
   const isPointerInteraction = useRef(false);
@@ -32,6 +33,8 @@ export function SocialLoginButton({ provider, onProviderPress }: SocialLoginButt
     <Pressable
       accessibilityLabel={SOCIAL_PROVIDER_ACCESSIBILITY_LABELS[provider]}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onBlur={() => {
         isPointerInteraction.current = false;
         setIsFocused(false);
@@ -53,6 +56,7 @@ export function SocialLoginButton({ provider, onProviderPress }: SocialLoginButt
         isNaver ? styles.naver : null,
         isFocused ? styles.focused : null,
         pressed || isPointerPressed ? styles.pressed : null,
+        disabled ? styles.disabled : null,
       ]}
     >
       <View style={styles.content}>
@@ -89,6 +93,9 @@ const styles = StyleSheet.create({
   focused: {
     borderColor: colors.border.focus,
     borderWidth: 2,
+  },
+  disabled: {
+    opacity: 0.45,
   },
   content: {
     alignItems: 'center',
