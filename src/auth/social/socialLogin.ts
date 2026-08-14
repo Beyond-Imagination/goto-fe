@@ -6,6 +6,7 @@ import { OAuthProviderUnavailableError } from '@/auth/common';
 import type { SocialProvider } from '@/components/auth/socialProviders';
 
 import { createKakaoLoginAdapter } from './kakaoLoginAdapter';
+import { supportsKakaoNativeLogin } from './kakaoLoginPlatform';
 import type { SocialLoginAdapter } from './socialLoginAdapter';
 
 const kakaoLoginAdapter = createKakaoLoginAdapter(
@@ -15,7 +16,7 @@ const kakaoLoginAdapter = createKakaoLoginAdapter(
 );
 
 export function getSocialLoginAdapter(provider: SocialProvider): SocialLoginAdapter {
-  if (Platform.OS !== 'android' || provider !== 'kakao') {
+  if (provider !== 'kakao' || !supportsKakaoNativeLogin(Platform.OS)) {
     throw new OAuthProviderUnavailableError();
   }
 

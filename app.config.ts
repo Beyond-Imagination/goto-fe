@@ -26,6 +26,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   ios: {
+    bundleIdentifier: 'net.beyondimagination.gotoapp',
     supportsTablet: true,
     icon: './assets/images/icon.png',
   },
@@ -66,6 +67,9 @@ const config: ExpoConfig = {
         nativeAppKey: kakaoNativeAppKey,
         android: {
           authCodeHandlerActivity: true,
+        },
+        ios: {
+          handleKakaoOpenUrl: true,
         },
       },
     ],
