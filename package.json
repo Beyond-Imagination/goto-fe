@@ -6,6 +6,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "prod": "expo start --no-dev --minify",
     "android": "expo run:android --device",
     "ios": "expo run:ios --device",
     "web": "expo start --web",
