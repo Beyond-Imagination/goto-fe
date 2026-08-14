@@ -23,6 +23,7 @@ type AuthContextValue = AuthSnapshot & {
   retryRestore: () => Promise<void>;
   cancelSignup: () => void;
   clearSession: () => Promise<void>;
+  isNicknameAvailable: (nickname: string) => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       retryRestore: authSession.restoreSession,
       cancelSignup: authSession.cancelSignup,
       clearSession: authSession.clearSession,
+      isNicknameAvailable: authSession.isNicknameAvailable,
     }),
     [authSession, snapshot],
   );
