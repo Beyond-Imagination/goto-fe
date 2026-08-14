@@ -71,6 +71,7 @@ function unusedApi(): OAuthApi {
   };
 
   return {
+    isNicknameAvailable: fail,
     oauthLogin: fail,
     oauthSignup: fail,
     refreshPlatformSession: fail,

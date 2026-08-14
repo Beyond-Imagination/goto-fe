@@ -5,6 +5,22 @@ import { AUTH_ERROR_CODE, OAUTH_LOGIN_STATUS } from '@/auth/common/constants';
 import { AuthApiError } from '@/auth/common/errors';
 import { createOAuthApi } from '@/auth/social/oauthApi';
 
+test('닉네임 사용 가능 여부는 URL 인코딩된 REST 조회로 확인한다', async () => {
+  let request: { method?: string; url: string } | null = null;
+  const api = createOAuthApi('https://api.example.test', async (input, init) => {
+    request = { method: init?.method, url: String(input) };
+    return Response.json({ available: true });
+  });
+
+  const available = await api.isNicknameAvailable('함께 가길');
+
+  assert.equal(available, true);
+  assert.deepEqual(request, {
+    method: undefined,
+    url: 'https://api.example.test/api/v1/nicknames/%ED%95%A8%EA%BB%98%20%EA%B0%80%EA%B8%B8/availability',
+  });
+});
+
 test('oauth/login은 백엔드 계약을 보내고 AUTHENTICATED 응답을 돌려준다', async () => {
   // Given: 백엔드가 AUTHENTICATED 토큰을 반환한다.
   let request: { url: string; body: unknown } | null = null;

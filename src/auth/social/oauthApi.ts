@@ -26,7 +26,12 @@ type RefreshResponse = {
   expiresIn: number;
 };
 
+type NicknameAvailabilityResponse = {
+  available: boolean;
+};
+
 export type OAuthApi = {
+  isNicknameAvailable(nickname: string): Promise<boolean>;
   oauthLogin(credential: ProviderCredential): Promise<OAuthLoginResponse>;
   oauthSignup(request: OAuthSignupRequest): Promise<{ session: PlatformSession; refreshToken: string }>;
   refreshPlatformSession(refreshToken: string): Promise<PlatformSession>;
@@ -56,7 +61,29 @@ export function createOAuthApi(apiBaseUrl: string, fetchImplementation: typeof f
     return payload as TResponse;
   }
 
+  async function getJson<TResponse>(path: string): Promise<TResponse> {
+    const response = await fetchImplementation(`${apiBaseUrl}${path}`);
+    const payload = await parseResponse(response);
+
+    if (!response.ok) {
+      const error = payload as ErrorResponse;
+      throw new AuthApiError(
+        response.status,
+        error.errorCode,
+        error.errorMessage ?? response.statusText ?? '인증 요청에 실패했습니다.',
+      );
+    }
+
+    return payload as TResponse;
+  }
+
   return {
+    async isNicknameAvailable(nickname) {
+      const response = await getJson<NicknameAvailabilityResponse>(
+        `/api/v1/nicknames/${encodeURIComponent(nickname)}/availability`,
+      );
+      return response.available;
+    },
     oauthLogin: (credential) => postJson<OAuthLoginResponse>('/api/v1/auth/oauth/login', credential),
     async oauthSignup(request) {
       const response = await postJson<OAuthLoginResponse>('/api/v1/auth/oauth/signup', request);
@@ -76,6 +103,10 @@ export function createOAuthApi(apiBaseUrl: string, fetchImplementation: typeof f
       return toPlatformSession(response);
     },
   };
+}
+
+export function isNicknameAvailable(nickname: string): Promise<boolean> {
+  return createOAuthApi(getApiBaseUrl()).isNicknameAvailable(nickname);
 }
 
 export function oauthLogin(credential: ProviderCredential): Promise<OAuthLoginResponse> {
