@@ -5,8 +5,9 @@ import { SvgUri } from 'react-native-svg';
 
 import type { TermDetail } from '@/auth/signup/termsContent';
 import { Text } from '@/components/common/Text';
-import { BottomBar, PrimaryButton } from '@/components/onboarding/Buttons';
+import { PrimaryButton } from '@/components/onboarding/Buttons';
 import { FIGMA_SIGNUP_ASSETS } from '@/design/figmaSignupAssets';
+
 import { colors } from '@/styles/tokens/colors';
 import { radius } from '@/styles/tokens/radius';
 import { spacing } from '@/styles/tokens/spacing';
@@ -169,14 +170,21 @@ function TermsDetailModalContent({
         </View>
       </ScrollView>
 
-      {/* 하단 고정 액션 바 */}
-      <BottomBar horizontalPadding={spacing[5]} showBorder>
+      {/* 하단 고정 액션 바: Safe Area 하단 인셋 + 넉넉한 여백 확보 */}
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            paddingBottom: Math.max(insets.bottom, spacing[4]) + spacing[2],
+          },
+        ]}
+      >
         <PrimaryButton
           label={isAgreed ? '확인' : '동의하고 닫기'}
           onPress={handleAgreeAndClose}
           style={styles.actionButton}
         />
-      </BottomBar>
+      </View>
     </View>
   );
 }
@@ -261,8 +269,16 @@ const styles = StyleSheet.create({
   subItemText: {
     lineHeight: 18,
   },
+  bottomBar: {
+    backgroundColor: colors.background.primary,
+    borderTopColor: colors.border.regular,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing[5],
+    paddingTop: spacing[3.5],
+  },
   actionButton: {
     borderRadius: radius.lg,
     height: 58,
   },
 });
+
