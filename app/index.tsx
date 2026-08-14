@@ -8,7 +8,7 @@ export default function SplashRoute() {
   const [isComplete, setIsComplete] = useState(false);
 
   if (isComplete) {
-    return <Redirect href="/onboarding" />;
+    return <Redirect href="/login" />;
   }
 
   return <SplashScreen onDone={() => setIsComplete(true)} />;
