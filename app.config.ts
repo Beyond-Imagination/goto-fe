@@ -2,6 +2,7 @@ import type { ExpoConfig } from 'expo/config';
 import { AndroidConfig, type ConfigPlugin, withAndroidManifest } from '@expo/config-plugins';
 
 const kakaoNativeAppKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY?.trim() ?? '';
+const naverUrlScheme = process.env.EXPO_PUBLIC_NAVER_SERVICE_URL_SCHEME?.trim() || 'goto-naver';
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ?? '';
 
 const withLocalApiCleartextTraffic: ConfigPlugin = (config) => {
@@ -29,6 +30,16 @@ const config: ExpoConfig = {
     bundleIdentifier: 'net.beyondimagination.gotoapp',
     supportsTablet: true,
     icon: './assets/images/icon.png',
+    infoPlist: {
+      LSApplicationQueriesSchemes: [
+        'naversearchapp',
+        'naversearchthirdlogin',
+        'nidlogin',
+        'kakaokompassauth',
+        'kakaolink',
+        'kakaoplus',
+      ],
+    },
   },
   android: {
     package: 'net.beyondimagination.gotoapp',
@@ -71,6 +82,12 @@ const config: ExpoConfig = {
         ios: {
           handleKakaoOpenUrl: true,
         },
+      },
+    ],
+    [
+      '@react-native-seoul/naver-login',
+      {
+        urlScheme: naverUrlScheme,
       },
     ],
     'expo-secure-store',
