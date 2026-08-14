@@ -1,3 +1,4 @@
+import { NICKNAME_FIXTURES } from '../fixtures';
 import type { PersonaDefinition } from './types';
 
 export const NICKNAME_CONFLICT_USER: PersonaDefinition = {
@@ -10,7 +11,7 @@ export const NICKNAME_CONFLICT_USER: PersonaDefinition = {
     pendingSignup: {
       provider: 'KAKAO',
       providerAccessToken: 'dev-mock-conflict-token',
-      suggestedNickname: '이미있는닉네임',
+      suggestedNickname: NICKNAME_FIXTURES.conflict,
     },
   },
   profile: {
