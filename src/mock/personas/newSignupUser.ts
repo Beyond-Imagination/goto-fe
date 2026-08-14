@@ -1,3 +1,4 @@
+import { NICKNAME_FIXTURES } from '../fixtures';
 import type { PersonaDefinition } from './types';
 
 export const NEW_SIGNUP_USER: PersonaDefinition = {
@@ -10,7 +11,7 @@ export const NEW_SIGNUP_USER: PersonaDefinition = {
     pendingSignup: {
       provider: 'KAKAO',
       providerAccessToken: 'dev-mock-provider-token',
-      suggestedNickname: '함께가길',
+      suggestedNickname: NICKNAME_FIXTURES.suggested,
     },
   },
   profile: {

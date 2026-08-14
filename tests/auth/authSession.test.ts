@@ -471,3 +471,25 @@ describe('회원가입', () => {
     });
   });
 });
+
+describe('닉네임 중복 확인', () => {
+  test('주입된 API의 isNicknameAvailable을 호출하여 결과를 반환한다', async () => {
+    const checkedNicknames: string[] = [];
+    const auth = createSession({
+      api: {
+        isNicknameAvailable: async (nickname) => {
+          checkedNicknames.push(nickname);
+          return nickname !== '중복닉네임';
+        },
+      },
+    });
+
+    const isAvailable1 = await auth.isNicknameAvailable('새닉네임');
+    assert.equal(isAvailable1, true);
+
+    const isAvailable2 = await auth.isNicknameAvailable('중복닉네임');
+    assert.equal(isAvailable2, false);
+
+    assert.deepEqual(checkedNicknames, ['새닉네임', '중복닉네임']);
+  });
+});

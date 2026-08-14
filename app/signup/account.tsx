@@ -1,12 +1,12 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
-import { isNicknameAvailable, useAuth } from '@/auth';
+import { useAuth } from '@/auth';
 import { SignupAccountScreen } from '@/screens/SignupAccountScreen';
 
 export default function SignupAccountRoute() {
   const router = useRouter();
   const { error } = useLocalSearchParams<{ error?: string }>();
-  const { pendingSignup, saveSignupDetails } = useAuth();
+  const { isNicknameAvailable, pendingSignup, saveSignupDetails } = useAuth();
 
   if (!pendingSignup) {
     return null;

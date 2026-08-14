@@ -7,26 +7,28 @@ import {
   type ProviderCredential,
 } from '@/auth/common';
 import type { OAuthApi } from '@/auth/social/oauthApi';
+import { NICKNAME_FIXTURES } from '../fixtures';
 import { resolveActivePersona, type PersonaDefinition } from '../personas';
 
 export interface MockOAuthApiOptions {
   readonly persona?: PersonaDefinition;
   readonly simulatedDelayMs?: number;
+  readonly unavailableNicknames?: readonly string[];
 }
 
 export function createMockOAuthApi(options: MockOAuthApiOptions = {}): OAuthApi {
   const getPersona = () => options.persona ?? resolveActivePersona();
   const delay = (ms = options.simulatedDelayMs ?? 50) =>
     new Promise((resolve) => setTimeout(resolve, ms));
+  const unavailableNicknames = new Set(
+    (options.unavailableNicknames ?? NICKNAME_FIXTURES.unavailable).map((n) => n.trim()),
+  );
 
   return {
     async isNicknameAvailable(nickname: string): Promise<boolean> {
       await delay();
       const normalized = nickname.trim();
-      if (normalized === '이미있는닉네임' || normalized === '중복닉네임') {
-        return false;
-      }
-      return true;
+      return !unavailableNicknames.has(normalized);
     },
 
     async oauthLogin(credential: ProviderCredential): Promise<OAuthLoginResponse> {
@@ -46,17 +48,18 @@ export function createMockOAuthApi(options: MockOAuthApiOptions = {}): OAuthApi 
       return {
         status: OAUTH_LOGIN_STATUS.signupRequired,
         provider: credential.provider,
-        suggestedNickname: persona.auth.pendingSignup?.suggestedNickname ?? '함께가길',
+        suggestedNickname: persona.auth.pendingSignup?.suggestedNickname ?? NICKNAME_FIXTURES.suggested,
       };
     },
 
     async oauthSignup(request): Promise<{ session: PlatformSession; refreshToken: string }> {
       await delay();
       const persona = getPersona();
+      const normalized = request.nickname.trim();
 
       if (
         persona.id === 'nickname_conflict_user' ||
-        request.nickname.trim() === '이미있는닉네임'
+        unavailableNicknames.has(normalized)
       ) {
         throw new AuthApiError(
           409,

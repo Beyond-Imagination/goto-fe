@@ -45,6 +45,7 @@ export type AuthSession = {
   completeOAuthSignup(preferences: OAuthSignupPreferences): Promise<PlatformSession>;
   cancelSignup(): void;
   clearSession(): Promise<void>;
+  isNicknameAvailable(nickname: string): Promise<boolean>;
 };
 
 function isUnauthorized(error: unknown): boolean {
@@ -208,5 +209,6 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
         status: AUTH_STATUS.unauthenticated,
       });
     },
+    isNicknameAvailable: (nickname: string) => deps.api.isNicknameAvailable(nickname),
   };
 }
