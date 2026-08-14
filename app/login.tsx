@@ -27,7 +27,7 @@ export default function LoginRoute() {
 
     try {
       const outcome = await beginSocialLogin(provider);
-      router.replace(outcome.type === AUTH_STATUS.authenticated ? '/(tabs)' : '/signup/account');
+      router.replace(outcome.type === AUTH_STATUS.authenticated ? '/(tabs)' : '/signup/terms');
     } catch (error) {
       if (error instanceof OAuthLoginCancelledError) {
         return;

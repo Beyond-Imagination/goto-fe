@@ -19,6 +19,11 @@ export default function SignupCompleteRoute() {
       await completeOAuthSignup(toOAuthSignupPreferences(profile));
       router.replace('/profile/done');
     } catch (nextError) {
+      if (nextError instanceof AuthApiError && nextError.errorCode === AUTH_ERROR_CODE.nicknameAlreadyInUse) {
+        router.replace('/signup/account?error=nickname');
+        return;
+      }
+
       setError(nextError instanceof Error ? nextError : new Error('회원가입을 완료하지 못했어요.'));
     }
   }, [completeOAuthSignup, profile, router]);

@@ -26,6 +26,7 @@ export type AuthSessionDeps = {
   api: OAuthApi;
   getSocialLoginAdapter: (provider: SocialProvider) => SocialLoginAdapter;
   storage: KeyValueStorage;
+  initialSnapshot?: Partial<AuthSnapshot>;
 };
 
 export type AuthSnapshot = {
@@ -62,6 +63,7 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
     session: null,
     pendingSignup: null,
     restoreError: null,
+    ...deps.initialSnapshot,
   };
 
   function emit(patch: Partial<AuthSnapshot>) {
@@ -85,7 +87,11 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
       const refreshToken = await refreshTokenStore.read();
 
       if (!refreshToken) {
-        emit({ session: null, status: AUTH_STATUS.unauthenticated });
+        emit({
+          session: deps.initialSnapshot?.session ?? null,
+          pendingSignup: deps.initialSnapshot?.pendingSignup ?? null,
+          status: deps.initialSnapshot?.status ?? AUTH_STATUS.unauthenticated,
+        });
         return;
       }
 
@@ -96,7 +102,11 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
       // 네트워크 오류는 토큰을 남겨 두고 restore_failed로 재시도한다.
       if (isUnauthorized(error)) {
         await refreshTokenStore.clear();
-        emit({ session: null, status: AUTH_STATUS.unauthenticated });
+        emit({
+          session: deps.initialSnapshot?.session ?? null,
+          pendingSignup: deps.initialSnapshot?.pendingSignup ?? null,
+          status: deps.initialSnapshot?.status ?? AUTH_STATUS.unauthenticated,
+        });
         return;
       }
 

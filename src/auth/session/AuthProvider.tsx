@@ -11,7 +11,8 @@ import type {
 import { type SocialProvider } from '@/components/auth/socialProviders';
 
 import { createAuthSession, type AuthSnapshot } from './authSession';
-import { oauthLogin, oauthSignup, refreshPlatformSession } from '../social/oauthApi';
+import { DEFAULT_DEV_PERSONA } from '@/mock/devUserPresets';
+import { isNicknameAvailable, oauthLogin, oauthSignup, refreshPlatformSession } from '../social/oauthApi';
 import { type KeyValueStorage } from './refreshTokenStore';
 import { getSocialLoginAdapter } from '../social/socialLogin';
 
@@ -39,16 +40,24 @@ const webNoopStorage: KeyValueStorage = {
   deleteItem: async () => undefined,
 };
 
+const DEV_MOCK_SNAPSHOT: Partial<AuthSnapshot> = {
+  session: DEFAULT_DEV_PERSONA.auth.session,
+  pendingSignup: DEFAULT_DEV_PERSONA.auth.pendingSignup,
+  status: DEFAULT_DEV_PERSONA.auth.status,
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const authSession = useMemo(
     () => createAuthSession({
       api: {
+        isNicknameAvailable,
         oauthLogin,
         oauthSignup,
         refreshPlatformSession,
       },
       getSocialLoginAdapter,
       storage: Platform.OS === 'web' ? webNoopStorage : nativeSecureStorage,
+      initialSnapshot: typeof __DEV__ !== 'undefined' && __DEV__ ? DEV_MOCK_SNAPSHOT : undefined,
     }),
     [],
   );

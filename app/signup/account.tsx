@@ -1,28 +1,33 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 
-import { useAuth } from '@/auth';
+import { isNicknameAvailable, useAuth } from '@/auth';
 import { SignupAccountScreen } from '@/screens/SignupAccountScreen';
 
 export default function SignupAccountRoute() {
   const router = useRouter();
   const { error } = useLocalSearchParams<{ error?: string }>();
-  const { cancelSignup, pendingSignup, saveSignupDetails } = useAuth();
+  const { pendingSignup, saveSignupDetails } = useAuth();
 
   if (!pendingSignup) {
     return null;
   }
 
+  const agreementMask = pendingSignup.details?.agreementMask;
+
+  if (agreementMask == null) {
+    return <Redirect href="/signup/terms" />;
+  }
+
   return (
     <SignupAccountScreen
-      errorMessage={error === 'nickname' ? '이미 사용 중인 닉네임입니다.' : null}
-      initialAgreementMask={pendingSignup.details?.agreementMask}
+      initialNicknameUnavailable={error === 'nickname'}
       initialNickname={pendingSignup.details?.nickname ?? pendingSignup.suggestedNickname ?? ''}
       onBack={() => {
-        cancelSignup();
-        router.replace('/login');
+        router.replace('/signup/terms');
       }}
-      onContinue={(details) => {
-        saveSignupDetails(details);
+      onCheckNickname={isNicknameAvailable}
+      onContinue={(nickname) => {
+        saveSignupDetails({ agreementMask, nickname });
         router.push('/permission');
       }}
     />
