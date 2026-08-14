@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { initializeKakaoSDK } from '@react-native-kakao/core';
 import { login as kakaoLogin } from '@react-native-kakao/user';
 import NaverLogin from '@react-native-seoul/naver-login';
@@ -6,6 +7,8 @@ import NaverLogin from '@react-native-seoul/naver-login';
 import { OAuthProviderUnavailableError } from '@/auth/common';
 import type { SocialProvider } from '@/components/auth/socialProviders';
 
+import { createGoogleLoginAdapter } from './googleLoginAdapter';
+import { supportsGoogleNativeLogin } from './googleLoginPlatform';
 import { createKakaoLoginAdapter } from './kakaoLoginAdapter';
 import { supportsKakaoNativeLogin } from './kakaoLoginPlatform';
 import { createNaverLoginAdapter } from './naverLoginAdapter';
@@ -27,6 +30,18 @@ const naverLoginAdapter = createNaverLoginAdapter(
   },
   (config) => NaverLogin.initialize(config),
   () => NaverLogin.login(),
+);
+
+const googleLoginAdapter = createGoogleLoginAdapter(
+  {
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim(),
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim(),
+    scopes: ['profile', 'email'],
+  },
+  (config) => GoogleSignin.configure(config),
+  (options) => GoogleSignin.hasPlayServices(options),
+  () => GoogleSignin.signIn(),
+  () => GoogleSignin.getTokens(),
 );
 
 export function initializeSocialSDKs(): void {
@@ -53,6 +68,20 @@ export function initializeSocialSDKs(): void {
   } catch (error) {
     console.warn('[Naver OAuth] Early initialization failed:', error);
   }
+
+  try {
+    const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+    const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
+    if ((googleWebClientId || googleIosClientId) && supportsGoogleNativeLogin(Platform.OS)) {
+      GoogleSignin.configure({
+        webClientId: googleWebClientId,
+        iosClientId: googleIosClientId,
+        scopes: ['profile', 'email'],
+      });
+    }
+  } catch (error) {
+    console.warn('[Google OAuth] Early initialization failed:', error);
+  }
 }
 
 export function getSocialLoginAdapter(provider: SocialProvider): SocialLoginAdapter {
@@ -68,6 +97,13 @@ export function getSocialLoginAdapter(provider: SocialProvider): SocialLoginAdap
       throw new OAuthProviderUnavailableError();
     }
     return naverLoginAdapter;
+  }
+
+  if (provider === 'google') {
+    if (!supportsGoogleNativeLogin(Platform.OS)) {
+      throw new OAuthProviderUnavailableError();
+    }
+    return googleLoginAdapter;
   }
 
   throw new OAuthProviderUnavailableError();

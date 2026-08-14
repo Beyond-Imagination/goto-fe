@@ -1,3 +1,5 @@
+export * from './googleLoginAdapter';
+export * from './googleLoginPlatform';
 export * from './kakaoLoginAdapter';
 export * from './kakaoLoginPlatform';
 export * from './naverLoginAdapter';

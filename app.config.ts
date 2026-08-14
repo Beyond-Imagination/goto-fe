@@ -3,6 +3,7 @@ import { AndroidConfig, type ConfigPlugin, withAndroidManifest } from '@expo/con
 
 const kakaoNativeAppKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY?.trim() ?? '';
 const naverUrlScheme = process.env.EXPO_PUBLIC_NAVER_SERVICE_URL_SCHEME?.trim() || 'goto-naver';
+const googleIosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME?.trim();
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ?? '';
 
 const withLocalApiCleartextTraffic: ConfigPlugin = (config) => {
@@ -88,6 +89,12 @@ const config: ExpoConfig = {
       '@react-native-seoul/naver-login',
       {
         urlScheme: naverUrlScheme,
+      },
+    ],
+    [
+      '@react-native-google-signin/google-signin',
+      {
+        iosUrlScheme: googleIosUrlScheme || undefined,
       },
     ],
     'expo-secure-store',
