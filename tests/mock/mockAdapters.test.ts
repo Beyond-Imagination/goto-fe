@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { OAUTH_LOGIN_STATUS, AuthApiError } from '@/auth/common';
-import { createMockKakaoAdapter, createMockOAuthApi } from '@/mock/adapters';
+import { createMockKakaoAdapter, createMockOAuthApi, createMockTermsApi } from '@/mock/adapters';
+import { MOCK_TERMS_LIST, MOCK_TERMS_MAP } from '@/mock/data/mockTerms';
 import { NEW_SIGNUP_USER, WHEELCHAIR_USER, NICKNAME_CONFLICT_USER } from '@/mock/personas';
 
 test('mockKakaoAdapter는 페르소나 기반 가상 토큰을 발급한다', async () => {
@@ -61,3 +62,30 @@ test('mockOAuthApi는 닉네임 충돌 유저의 가입 완료 시 409 에러를
     (error: unknown) => error instanceof AuthApiError && error.status === 409,
   );
 });
+
+test('mockTermsApi는 백엔드 DTO 규격에 일치하는 약관 목록을 반환한다', async () => {
+  const api = createMockTermsApi({ simulatedDelayMs: 0 });
+  const result = await api.getTerms();
+
+  assert.strictEqual(result.terms.length, MOCK_TERMS_LIST.length);
+  assert.strictEqual(result.terms[0]?.id, 'age');
+  assert.strictEqual(result.terms[1]?.id, 'terms');
+  assert.strictEqual(result.terms[1]?.title, '서비스 이용약관');
+  assert.ok(result.terms[1]?.sections.length > 0);
+});
+
+test('mockTermsApi는 특정 약관 단건 조회를 정상 반환하고 미등록 ID는 404 에러를 던진다', async () => {
+  const api = createMockTermsApi({ simulatedDelayMs: 0 });
+  const term = await api.getTerm('location');
+
+  assert.strictEqual(term.id, 'location');
+  assert.strictEqual(term.title, '위치기반서비스 이용약관');
+
+  await assert.rejects(
+    async () => {
+      await api.getTerm('unknown_id');
+    },
+    /404/,
+  );
+});
+
