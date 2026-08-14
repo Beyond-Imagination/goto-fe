@@ -11,7 +11,7 @@ import type {
 import { type SocialProvider } from '@/components/auth/socialProviders';
 
 import { createAuthSession, type AuthSnapshot } from './authSession';
-import { DEFAULT_DEV_PERSONA } from '@/mock/devUserPresets';
+import { createMockKakaoAdapter, createMockOAuthApi } from '@/mock';
 import { isNicknameAvailable, oauthLogin, oauthSignup, refreshPlatformSession } from '../social/oauthApi';
 import { type KeyValueStorage } from './refreshTokenStore';
 import { getSocialLoginAdapter } from '../social/socialLogin';
@@ -40,15 +40,20 @@ const webNoopStorage: KeyValueStorage = {
   deleteItem: async () => undefined,
 };
 
-const DEV_MOCK_SNAPSHOT: Partial<AuthSnapshot> = {
-  session: DEFAULT_DEV_PERSONA.auth.session,
-  pendingSignup: DEFAULT_DEV_PERSONA.auth.pendingSignup,
-  status: DEFAULT_DEV_PERSONA.auth.status,
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const authSession = useMemo(
-    () => createAuthSession({
+  const isMockMode = process.env.EXPO_PUBLIC_AUTH_MODE === 'mock';
+
+  const authSession = useMemo(() => {
+    if (isMockMode) {
+      const mockKakaoAdapter = createMockKakaoAdapter();
+      return createAuthSession({
+        api: createMockOAuthApi(),
+        getSocialLoginAdapter: () => mockKakaoAdapter,
+        storage: Platform.OS === 'web' ? webNoopStorage : nativeSecureStorage,
+      });
+    }
+
+    return createAuthSession({
       api: {
         isNicknameAvailable,
         oauthLogin,
@@ -57,10 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       getSocialLoginAdapter,
       storage: Platform.OS === 'web' ? webNoopStorage : nativeSecureStorage,
-      initialSnapshot: typeof __DEV__ !== 'undefined' && __DEV__ ? DEV_MOCK_SNAPSHOT : undefined,
-    }),
-    [],
-  );
+    });
+  }, [isMockMode]);
+
   const snapshot = useSyncExternalStore(authSession.subscribe, authSession.getSnapshot, authSession.getSnapshot);
 
   useEffect(() => {

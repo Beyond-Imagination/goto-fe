@@ -7,6 +7,8 @@ declare namespace NodeJS {
   interface ProcessEnv {
     EXPO_PUBLIC_API_BASE_URL?: string;
     EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY?: string;
+    EXPO_PUBLIC_AUTH_MODE?: 'live' | 'mock';
+    EXPO_PUBLIC_DEV_PERSONA?: string;
   }
 }
 
