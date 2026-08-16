@@ -11,6 +11,7 @@ import Svg, { Path } from "react-native-svg";
 
 import { FacilityNode, fetchFacilityNodes, fetchFloors, fetchIndoorMap } from "../indoorMapApi";
 import { createHelpRequest } from "../helpRequestApi";
+import { useLiveLocation } from "./useLiveLocation";
 import {
   DEFAULT_CENTER,
   DEFAULT_SHAPE_STYLE,
@@ -148,12 +149,12 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
     return () => clearTimeout(timer);
   }, [mode, mapData]);
 
-  // 실내 도면에서 현재 위치 오버레이(파란 점)를 켠다. 카메라는 따라 움직이지 않고
-  // (NoFollow) 점만 사용자의 실제 GPS 위치를 따라간다 — 도면을 보다가 카메라가
-  // 임의로 이동하면 방향 감각을 잃기 쉽기 때문.
-  useEffect(() => {
-    mapRef.current?.setLocationTrackingMode(mode === "indoor" ? "NoFollow" : "None");
-  }, [mode]);
+  // 실내 도면에서 현재 위치 오버레이(파란 점)를 켠다. 네이티브 트래킹 모드(NoFollow)에
+  // 맡기면 accuracy나 raw fix를 JS에서 전혀 볼 수 없어 GPS 튐을 걸러낼 방법이 없으므로,
+  // 직접 GPS를 구독해 필터링/스무딩한 뒤 locationOverlay를 controlled로 그린다.
+  // 카메라는 따라 움직이지 않는다 — 도면을 보다가 카메라가 임의로 이동하면 방향 감각을
+  // 잃기 쉽기 때문.
+  const liveLocation = useLiveLocation(mode === "indoor");
 
   useEffect(() => {
     if (floor === null) {
@@ -286,6 +287,12 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
           style={[styles.map, mode === "indoor" && styles.mapIndoor]}
           camera={camera}
           mapType={mode === "indoor" ? "None" : "Basic"}
+          // circleRadius는 픽셀 단위라 미터 단위 accuracy를 그대로 원 크기로 옮기려면
+          // 줌 레벨별 변환이 필요하다 — 대신 정확도는 아래 뱃지(±Nm 텍스트)로 보여준다.
+          locationOverlay={{
+            isVisible: mode === "indoor" && liveLocation !== null,
+            position: liveLocation?.position
+          }}
         >
           {mode === "outdoor" && placeCenter && (
             <NaverMapMarkerOverlay
@@ -333,6 +340,16 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
                 <Text selectable style={styles.errorText}>
                   {mapError}
                 </Text>
+              </View>
+            )}
+
+            {liveLocation && (
+              <View style={styles.locationAccuracyBadgeWrap} pointerEvents="none">
+                <View style={styles.locationAccuracyBadge}>
+                  <Text style={styles.locationAccuracyBadgeText}>
+                    현재 위치 정확도 ±{Math.round(liveLocation.accuracyMeters)}m
+                  </Text>
+                </View>
               </View>
             )}
 
