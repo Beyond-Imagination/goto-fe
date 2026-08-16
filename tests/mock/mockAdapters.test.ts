@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { OAUTH_LOGIN_STATUS, AuthApiError } from '@/auth/common';
-import { createMockKakaoAdapter, createMockOAuthApi, createMockTermsApi } from '@/mock/adapters';
+import { createMockGoogleAdapter, createMockKakaoAdapter, createMockNaverAdapter, createMockOAuthApi, createMockTermsApi } from '@/mock/adapters';
 import { MOCK_TERMS_LIST, MOCK_TERMS_MAP } from '@/mock/data/mockTerms';
 import { NICKNAME_FIXTURES } from '@/mock/fixtures';
 import { NEW_SIGNUP_USER, WHEELCHAIR_USER, NICKNAME_CONFLICT_USER } from '@/mock/personas';
@@ -12,6 +12,22 @@ test('mockKakaoAdapter는 페르소나 기반 가상 토큰을 발급한다', as
   const credential = await adapter.login();
 
   assert.equal(credential.provider, 'KAKAO');
+  assert.ok(credential.providerAccessToken.includes('new_signup_user'));
+});
+
+test('mockNaverAdapter는 페르소나 기반 가상 토큰을 발급한다', async () => {
+  const adapter = createMockNaverAdapter({ persona: NEW_SIGNUP_USER, simulatedDelayMs: 0 });
+  const credential = await adapter.login();
+
+  assert.equal(credential.provider, 'NAVER');
+  assert.ok(credential.providerAccessToken.includes('new_signup_user'));
+});
+
+test('mockGoogleAdapter는 페르소나 기반 가상 토큰을 발급한다', async () => {
+  const adapter = createMockGoogleAdapter({ persona: NEW_SIGNUP_USER, simulatedDelayMs: 0 });
+  const credential = await adapter.login();
+
+  assert.equal(credential.provider, 'GOOGLE');
   assert.ok(credential.providerAccessToken.includes('new_signup_user'));
 });
 
