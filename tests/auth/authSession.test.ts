@@ -24,6 +24,11 @@ const kakaoCredential: ProviderCredential = {
   providerAccessToken: 'kakao-access-token',
 };
 
+const naverCredential: ProviderCredential = {
+  provider: 'NAVER',
+  providerAccessToken: 'naver-access-token',
+};
+
 const signupDetails: OAuthSignupDetails = {
   nickname: '함께가길',
   agreementMask: 15,
@@ -85,16 +90,21 @@ function kakaoAdapter(login: SocialLoginAdapter['login'] = async () => kakaoCred
 function createSession(overrides: {
   api?: Partial<OAuthApi>;
   adapter?: SocialLoginAdapter;
+  naverAdapter?: SocialLoginAdapter;
   storage?: KeyValueStorage;
 } = {}) {
   return createAuthSession({
     api: { ...unusedApi(), ...overrides.api },
     getSocialLoginAdapter: (provider) => {
-      if (provider !== 'kakao') {
-        throw new OAuthProviderUnavailableError();
+      if (provider === 'kakao') {
+        return overrides.adapter ?? kakaoAdapter();
       }
 
-      return overrides.adapter ?? kakaoAdapter();
+      if (provider === 'naver') {
+        return overrides.naverAdapter ?? { login: async () => naverCredential };
+      }
+
+      throw new OAuthProviderUnavailableError();
     },
     storage: overrides.storage ?? createMemoryStorage(),
   });
@@ -250,6 +260,27 @@ describe('소셜 로그인', () => {
     assertSession(auth.getSnapshot().session);
   });
 
+  test('네이버 로그인으로 기존 회원이면 refresh token을 저장하고 로그인 상태가 된다', async () => {
+    const storage = createMemoryStorage();
+    const auth = await restoreUnauthenticated({
+      storage,
+      api: {
+        oauthLogin: async (credential) => {
+          assert.deepEqual(credential, naverCredential);
+          return { status: OAUTH_LOGIN_STATUS.authenticated, ...platformTokens };
+        },
+      },
+    });
+
+    const outcome = await auth.beginSocialLogin('naver');
+
+    assert.equal(outcome.type, AUTH_STATUS.authenticated);
+    assert.equal(auth.getSnapshot().status, AUTH_STATUS.authenticated);
+    assert.equal(storage.values.get(REFRESH_TOKEN_STORAGE_KEY), platformTokens.refreshToken);
+    assert.equal(auth.getSnapshot().pendingSignup, null);
+    assertSession(auth.getSnapshot().session);
+  });
+
   test('신규 회원이면 가입 대기 상태가 되고 추천 닉네임을 남긴다', async () => {
     const auth = await restoreUnauthenticated({
       api: {
@@ -269,6 +300,32 @@ describe('소셜 로그인', () => {
     assert.equal(auth.getSnapshot().session, null);
   });
 
+  test('네이버 로그인으로 신규 회원이면 가입 대기 상태가 되고 추천 닉네임을 남긴다', async () => {
+    const auth = await restoreUnauthenticated({
+      api: {
+        oauthLogin: async (credential) => {
+          assert.deepEqual(credential, naverCredential);
+          return {
+            status: OAUTH_LOGIN_STATUS.signupRequired,
+            provider: 'NAVER',
+            suggestedNickname: '네이버닉네임',
+          };
+        },
+      },
+    });
+
+    const outcome = await auth.beginSocialLogin('naver');
+
+    assert.equal(outcome.type, AUTH_STATUS.signup_required);
+    assert.equal(auth.getSnapshot().status, AUTH_STATUS.signup_required);
+    assert.deepEqual(auth.getSnapshot().pendingSignup, {
+      ...naverCredential,
+      provider: 'NAVER',
+      suggestedNickname: '네이버닉네임',
+    });
+    assert.equal(auth.getSnapshot().session, null);
+  });
+
   test('카카오 로그인을 취소하면 에러를 다시 던지고 비로그인 상태가 된다', async () => {
     const auth = await restoreUnauthenticated({
       adapter: kakaoAdapter(async () => {
@@ -277,6 +334,19 @@ describe('소셜 로그인', () => {
     });
 
     await assert.rejects(auth.beginSocialLogin('kakao'), OAuthLoginCancelledError);
+    assert.equal(auth.getSnapshot().status, AUTH_STATUS.unauthenticated);
+  });
+
+  test('네이버 로그인을 취소하면 에러를 다시 던지고 비로그인 상태가 된다', async () => {
+    const auth = await restoreUnauthenticated({
+      naverAdapter: {
+        login: async () => {
+          throw new OAuthLoginCancelledError();
+        },
+      },
+    });
+
+    await assert.rejects(auth.beginSocialLogin('naver'), OAuthLoginCancelledError);
     assert.equal(auth.getSnapshot().status, AUTH_STATUS.unauthenticated);
   });
 
@@ -294,7 +364,7 @@ describe('소셜 로그인', () => {
   test('아직 준비되지 않은 소셜 로그인은 비로그인 상태를 유지한다', async () => {
     const auth = await restoreUnauthenticated();
 
-    await assert.rejects(auth.beginSocialLogin('naver'), OAuthProviderUnavailableError);
+    await assert.rejects(auth.beginSocialLogin('google'), OAuthProviderUnavailableError);
     assert.equal(auth.getSnapshot().status, AUTH_STATUS.unauthenticated);
   });
 });

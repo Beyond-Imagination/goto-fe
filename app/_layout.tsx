@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ProfileProvider } from '@/state/profile';
-import { AuthProvider } from '@/auth';
+import { AuthProvider, initializeSocialSDKs } from '@/auth';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -21,6 +21,10 @@ export default function RootLayout() {
     'Pretendard-SemiBold': require('../src/assets/fonts/Pretendard-SemiBold.otf'),
     'Pretendard-Bold': require('../src/assets/fonts/Pretendard-Bold.otf'),
   });
+
+  useEffect(() => {
+    initializeSocialSDKs();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
