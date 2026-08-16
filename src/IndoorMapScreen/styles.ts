@@ -364,23 +364,5 @@ export const styles = StyleSheet.create({
   },
   placeMarkerEmoji: {
     fontSize: 18
-  },
-  locationAccuracyBadgeWrap: {
-    position: "absolute",
-    top: 12,
-    left: 0,
-    right: 0,
-    alignItems: "center"
-  },
-  locationAccuracyBadge: {
-    backgroundColor: "rgba(17, 24, 39, 0.75)",
-    borderRadius: 100,
-    paddingVertical: 6,
-    paddingHorizontal: 12
-  },
-  locationAccuracyBadgeText: {
-    color: "#ffffff",
-    fontSize: 11.5,
-    fontWeight: "600"
   }
 });

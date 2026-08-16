@@ -343,16 +343,6 @@ export function IndoorMapScreen({ accessToken, placeId, placeName }: IndoorMapSc
               </View>
             )}
 
-            {liveLocation && (
-              <View style={styles.locationAccuracyBadgeWrap} pointerEvents="none">
-                <View style={styles.locationAccuracyBadge}>
-                  <Text style={styles.locationAccuracyBadgeText}>
-                    현재 위치 정확도 ±{Math.round(liveLocation.accuracyMeters)}m
-                  </Text>
-                </View>
-              </View>
-            )}
-
             {selectedNode ? (
             <View style={styles.nodeSheet}>
               <View style={styles.nodeSheetHandle} />
