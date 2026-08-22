@@ -14,7 +14,6 @@ import { createAuthSession, type AuthSnapshot } from './authSession';
 import { createMockGoogleAdapter, createMockKakaoAdapter, createMockNaverAdapter, createMockOAuthApi } from '@/mock';
 import { isNicknameAvailable, oauthLogin, oauthSignup, refreshPlatformSession } from '../social/oauthApi';
 import { type KeyValueStorage } from './refreshTokenStore';
-import { getSocialLoginAdapter } from '../social/socialLogin';
 
 type AuthContextValue = AuthSnapshot & {
   beginSocialLogin: (provider: SocialProvider) => Promise<OAuthLoginOutcome>;
@@ -63,6 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         storage: Platform.OS === 'web' ? webNoopStorage : nativeSecureStorage,
       });
     }
+
+    // 소셜 SDK 네이티브 모듈은 Expo Go에 없어서, mock 모드에서도 최상단 import만으로
+    // TurboModule 오류가 납니다. 실제 로그인 모드에서만 lazy require로 불러옵니다.
+    const { getSocialLoginAdapter } =
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- 정적 import로 되돌리면 Expo Go(mock 모드)가 기동조차 못 합니다.
+      require('../social/socialLogin') as typeof import('../social/socialLogin');
 
     return createAuthSession({
       api: {

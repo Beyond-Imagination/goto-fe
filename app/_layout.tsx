@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ProfileProvider } from '@/state/profile';
-import { AuthProvider, initializeSocialSDKs } from '@/auth';
+import { AuthProvider } from '@/auth';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -23,6 +23,13 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // mock 모드(Expo Go)에는 네이티브 소셜 SDK가 없어서, 실제 로그인 모드에서만 lazy require로 초기화합니다.
+    if (process.env.EXPO_PUBLIC_AUTH_MODE === 'mock') {
+      return;
+    }
+    const { initializeSocialSDKs } =
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- 정적 import로 되돌리면 Expo Go(mock 모드)가 기동조차 못 합니다.
+      require('../src/auth/social/socialLogin') as typeof import('../src/auth/social/socialLogin');
     initializeSocialSDKs();
   }, []);
 

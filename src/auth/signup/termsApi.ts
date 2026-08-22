@@ -36,7 +36,8 @@ export function createTermsApi(
  * 백엔드 활성 약관 목록을 조회합니다. (Mock 모드 시 mockTermsApi 사용)
  */
 export async function fetchTermsList(
-  apiBaseUrl: string = getApiBaseUrl(),
+  // 기본 인자에서 getApiBaseUrl()을 부르면 mock 분기보다 먼저 평가돼 mock 모드에서도 URL 검증이 터집니다.
+  apiBaseUrl?: string,
   fetchImplementation: typeof fetch = fetch,
 ): Promise<readonly TermDetail[]> {
   if (process.env.EXPO_PUBLIC_AUTH_MODE === 'mock') {
@@ -45,7 +46,7 @@ export async function fetchTermsList(
     return response.terms;
   }
 
-  const api = createTermsApi(apiBaseUrl, fetchImplementation);
+  const api = createTermsApi(apiBaseUrl ?? getApiBaseUrl(), fetchImplementation);
   const response = await api.getTerms();
   return response.terms ?? [];
 }
@@ -55,7 +56,7 @@ export async function fetchTermsList(
  */
 export async function fetchTermDetail(
   termId: string,
-  apiBaseUrl: string = getApiBaseUrl(),
+  apiBaseUrl?: string,
   fetchImplementation: typeof fetch = fetch,
 ): Promise<TermDetail> {
   if (process.env.EXPO_PUBLIC_AUTH_MODE === 'mock') {
@@ -63,6 +64,6 @@ export async function fetchTermDetail(
     return mockApi.getTerm(termId);
   }
 
-  const api = createTermsApi(apiBaseUrl, fetchImplementation);
+  const api = createTermsApi(apiBaseUrl ?? getApiBaseUrl(), fetchImplementation);
   return api.getTerm(termId);
 }

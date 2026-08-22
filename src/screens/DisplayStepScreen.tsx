@@ -1,17 +1,12 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/common/Text';
+import { DisplayPreviewCard } from '@/components/onboarding/DisplayPreviewCard';
 import { SettingRow } from '@/components/onboarding/Selectors';
-import { contrastPreview } from '@/components/onboarding/tokens';
 import { useProfile } from '@/state/profile';
 import { colors } from '@/styles/tokens/colors';
-import { radius } from '@/styles/tokens/radius';
 import { spacing } from '@/styles/tokens/spacing';
-import { fontFamily } from '@/styles/tokens/typography';
 import { ProfileStepLayout } from './ProfileStepLayout';
-
-/** 큰 글씨를 켜면 미리보기 글자 크기가 이 배율만큼 커집니다. */
-const LARGE_TEXT_SCALE = 1.25;
 
 interface DisplayStepScreenProps {
   onBack: () => void;
@@ -21,9 +16,6 @@ interface DisplayStepScreenProps {
 
 export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenProps) {
   const { profile, setDisplayOption } = useProfile();
-
-  const scale = profile.largeText ? LARGE_TEXT_SCALE : 1;
-  const { highContrast } = profile;
 
   return (
     <ProfileStepLayout
@@ -35,30 +27,8 @@ export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenP
       subtitle="사용자 맞춤 화면설정과 필요한 알림을 받을 수 있어요"
       title="보기와 알림 설정"
     >
-      <View style={styles.preview}>
-        <Text
-          color={highContrast ? contrastPreview.title : colors.text.primary}
-          style={[styles.previewDisplay, { fontSize: 56 * scale, lineHeight: 56 * scale }]}
-          variant="display-1"
-        >
-          Title
-        </Text>
-        <Text
-          color={highContrast ? contrastPreview.title : colors.text.secondary}
-          style={[styles.previewTitle, { fontSize: 32 * scale, lineHeight: 41.6 * scale }]}
-          variant="headline-1"
-          weight="semibold"
-        >
-          함께가길과 함께 가요
-        </Text>
-        <Text
-          color={highContrast ? contrastPreview.body : colors.text.tertiary}
-          style={[styles.previewBody, { fontSize: 20 * scale, lineHeight: 28 * scale }]}
-          variant="title-2"
-          weight="medium"
-        >
-          {'함께가길은 여러분이 가는\n길을 밝혀 나갑니다'}
-        </Text>
+      <View style={styles.previewWrap}>
+        <DisplayPreviewCard highContrast={profile.highContrast} largeText={profile.largeText} />
       </View>
 
       <View style={styles.group}>
@@ -105,21 +75,8 @@ export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenP
 }
 
 const styles = StyleSheet.create({
-  preview: {
-    borderColor: colors.border.regular,
-    borderRadius: radius.xl,
-    borderWidth: 1,
+  previewWrap: {
     marginTop: spacing[6],
-    padding: spacing[5],
-  },
-  previewDisplay: {
-    fontFamily: fontFamily.semibold,
-  },
-  previewTitle: {
-    marginTop: spacing[1.5],
-  },
-  previewBody: {
-    marginTop: spacing[2.5],
   },
   group: {
     marginTop: spacing[2],
