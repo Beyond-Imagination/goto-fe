@@ -9,7 +9,7 @@ export default function MobilityRoute() {
     <MobilityStepScreen
       onBack={() => router.back()}
       onNext={() => router.push('/profile/preference')}
-      onSkip={() => router.push('/signup/complete')}
+      onSkip={() => router.replace('/signup/complete')}
     />
   );
 }
