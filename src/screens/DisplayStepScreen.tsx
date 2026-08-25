@@ -8,33 +8,17 @@ import { colors } from '@/styles/tokens/colors';
 import { radius } from '@/styles/tokens/radius';
 import { spacing } from '@/styles/tokens/spacing';
 import { fontFamily } from '@/styles/tokens/typography';
-import { ProfileStepLayout } from './ProfileStepLayout';
-
 /** 큰 글씨를 켜면 미리보기 글자 크기가 이 배율만큼 커집니다. */
 const LARGE_TEXT_SCALE = 1.25;
 
-interface DisplayStepScreenProps {
-  onBack: () => void;
-  onDone: () => void;
-  onSkip: () => void;
-}
-
-export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenProps) {
+export function DisplayStepScreen() {
   const { profile, setDisplayOption } = useProfile();
 
   const scale = profile.largeText ? LARGE_TEXT_SCALE : 1;
   const { highContrast } = profile;
 
   return (
-    <ProfileStepLayout
-      nextLabel="완료"
-      onBack={onBack}
-      onNext={onDone}
-      onSkip={onSkip}
-      step={3}
-      subtitle="사용자 맞춤 화면설정과 필요한 알림을 받을 수 있어요"
-      title="보기와 알림 설정"
-    >
+    <View style={styles.container}>
       <View style={styles.preview}>
         <Text
           color={highContrast ? contrastPreview.title : colors.text.primary}
@@ -100,11 +84,14 @@ export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenP
           value={profile.statusAlerts}
         />
       </View>
-    </ProfileStepLayout>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   preview: {
     borderColor: colors.border.regular,
     borderRadius: radius.xl,
