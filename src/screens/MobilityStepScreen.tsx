@@ -4,31 +4,15 @@ import { InfoNote } from '@/components/onboarding/InfoNote';
 import { MobilityCard } from '@/components/onboarding/Selectors';
 import { MOBILITY_OPTIONS, useProfile } from '@/state/profile';
 import { spacing } from '@/styles/tokens/spacing';
-import { ProfileStepLayout } from './ProfileStepLayout';
-
 const COLUMNS = 3;
 
-interface MobilityStepScreenProps {
-  onBack: () => void;
-  onNext: () => void;
-  onSkip: () => void;
-}
-
-export function MobilityStepScreen({ onBack, onNext, onSkip }: MobilityStepScreenProps) {
+export function MobilityStepScreen() {
   const { profile, toggleMobility } = useProfile();
 
   const rows = chunk(MOBILITY_OPTIONS, COLUMNS);
 
   return (
-    <ProfileStepLayout
-      nextLabel="다음"
-      onBack={onBack}
-      onNext={onNext}
-      onSkip={onSkip}
-      step={1}
-      subtitle="해당되는 이동 방식을 모두 선택할 수 있어요"
-      title="이동 방식 선택하기"
-    >
+    <View style={styles.container}>
       <View style={styles.grid}>
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
@@ -46,7 +30,7 @@ export function MobilityStepScreen({ onBack, onNext, onSkip }: MobilityStepScree
       </View>
 
       <InfoNote>선택한 정보는 경로추천과 위험안내, 시설확인에 활용되요</InfoNote>
-    </ProfileStepLayout>
+    </View>
   );
 }
 
@@ -61,6 +45,9 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   grid: {
     gap: spacing[3],
     marginBottom: spacing[5],

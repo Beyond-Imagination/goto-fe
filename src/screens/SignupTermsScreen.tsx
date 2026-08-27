@@ -62,8 +62,35 @@ export function SignupTermsScreen({
   }, []);
 
   useEffect(() => {
-    void loadTerms();
-  }, [loadTerms]);
+    let ignore = false;
+
+    async function init() {
+      try {
+        const serverTerms = await fetchTermsList();
+        if (!ignore) {
+          const mapped: Record<string, TermDetail> = {};
+          for (const term of serverTerms) {
+            mapped[term.id] = term;
+          }
+          setTermsMap(mapped);
+          setLoadState('success');
+        }
+      } catch (error) {
+        if (!ignore) {
+          setLoadState('error');
+          setErrorMessage(
+            error instanceof Error ? error.message : '약관 정보를 불러오지 못했습니다. 다시 시도해주세요.',
+          );
+        }
+      }
+    }
+
+    void init();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   function openTermModal(agreementId: string) {
     const detail = termsMap[agreementId];

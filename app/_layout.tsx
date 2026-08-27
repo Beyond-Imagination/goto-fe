@@ -60,10 +60,7 @@ export default function RootLayout() {
               <Stack.Screen name="signup" />
               <Stack.Screen name="onboarding" />
               <Stack.Screen name="permission" options={STEP_TRANSITION} />
-              <Stack.Screen name="profile/mobility" options={STEP_TRANSITION} />
-              <Stack.Screen name="profile/preference" options={STEP_TRANSITION} />
-              <Stack.Screen name="profile/display" options={STEP_TRANSITION} />
-              <Stack.Screen name="profile/done" options={STEP_TRANSITION} />
+              <Stack.Screen name="profile" options={STEP_TRANSITION} />
               <Stack.Screen name="design-system" />
             </Stack>
           </ProfileProvider>
