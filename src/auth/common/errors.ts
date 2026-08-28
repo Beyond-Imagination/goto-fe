@@ -1,10 +1,8 @@
-export class AuthApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly errorCode: string | undefined,
-    message: string,
-  ) {
-    super(message);
+import { ApiError } from '@/api/apiError';
+
+export class AuthApiError extends ApiError {
+  constructor(status: number, errorCode: string | undefined, message: string, data?: unknown) {
+    super(status, errorCode, message, data);
     this.name = 'AuthApiError';
   }
 }
