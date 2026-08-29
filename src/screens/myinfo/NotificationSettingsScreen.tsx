@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { NotificationToggleRow } from '@/components/myinfo/NotificationToggleRow';
 import { colors } from '@/styles/tokens/colors';
+
+/** 마지막 요소와 화면(홈 인디케이터) 사이 기본 여백. */
+const CONTENT_BOTTOM_GAP = 40;
 
 type NotificationKey =
   | 'savedStatusChange'
@@ -89,6 +93,7 @@ type NotificationSettingsScreenProps = {
 
 /** 내 정보 06 — 알림 설정. */
 export function NotificationSettingsScreen({ onBack }: NotificationSettingsScreenProps) {
+  const insets = useSafeAreaInsets();
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
 
   function setSetting(key: NotificationKey, value: boolean) {
@@ -101,9 +106,14 @@ export function NotificationSettingsScreen({ onBack }: NotificationSettingsScree
   }
 
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
-        <MyInfoHeader onBack={onBack} title="알림 설정" />
+    // 배경은 화면 끝까지 채우고, 하단 안전 영역은 스크롤 패딩으로만 확보합니다.
+    <SafeAreaView edges={['top']} style={styles.screen}>
+      {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
+      <MyInfoHeader onBack={onBack} title="알림 설정" />
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
+        style={styles.scroll}
+      >
         <View style={styles.sections}>
           {SECTIONS.map((section, sectionIndex) => (
             <View key={section.label}>
@@ -136,7 +146,7 @@ export function NotificationSettingsScreen({ onBack }: NotificationSettingsScree
           </Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -148,10 +158,7 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  content: {
-    // 탭바 위로 솟은 지도 FAB에 저장 버튼이 가리지 않도록 여유를 둡니다.
-    paddingBottom: 56,
-  },
+  content: {},
   sections: {
     marginTop: 50,
     paddingHorizontal: 32,

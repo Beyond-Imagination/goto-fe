@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
@@ -7,12 +8,16 @@ import { SettingRow } from '@/components/onboarding/Selectors';
 import { useProfile } from '@/state/profile';
 import { colors } from '@/styles/tokens/colors';
 
+/** 마지막 요소와 화면(홈 인디케이터) 사이 기본 여백. */
+const CONTENT_BOTTOM_GAP = 40;
+
 type ViewSettingsScreenProps = {
   readonly onBack: () => void;
 };
 
 /** 내 정보 07 — 접근성 보기 설정. 온보딩 「보기와 알림」과 같은 값을 다시 편집합니다. */
 export function ViewSettingsScreen({ onBack }: ViewSettingsScreenProps) {
+  const insets = useSafeAreaInsets();
   const { profile, setDisplayOption } = useProfile();
 
   function save() {
@@ -21,9 +26,14 @@ export function ViewSettingsScreen({ onBack }: ViewSettingsScreenProps) {
   }
 
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
-        <MyInfoHeader onBack={onBack} title="접근성 보기 설정" />
+    // 배경은 화면 끝까지 채우고, 하단 안전 영역은 스크롤 패딩으로만 확보합니다.
+    <SafeAreaView edges={['top']} style={styles.screen}>
+      {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
+      <MyInfoHeader onBack={onBack} title="접근성 보기 설정" />
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
+        style={styles.scroll}
+      >
 
         {/* 큰 글씨·고대비 토글이 바로 반영되는 샘플 카드 (온보딩 3단계와 동일). */}
         <View style={styles.previewWrap}>
@@ -75,7 +85,7 @@ export function ViewSettingsScreen({ onBack }: ViewSettingsScreenProps) {
           </Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -87,10 +97,7 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  content: {
-    // 탭바 위로 솟은 지도 FAB에 저장 버튼이 가리지 않도록 여유를 둡니다.
-    paddingBottom: 56,
-  },
+  content: {},
   previewWrap: {
     marginHorizontal: 32,
     marginTop: 38,

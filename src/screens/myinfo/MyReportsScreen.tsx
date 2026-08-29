@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
 import { FilterChips } from '@/components/myinfo/FilterChips';
@@ -22,6 +23,7 @@ type MyReportsScreenProps = {
 
 /** 내 정보 03·04 — 내 제보 기록. 기록이 하나도 없으면 빈 상태 화면을 보여줍니다. */
 export function MyReportsScreen({ onBack, onStartReport, forceEmpty = false }: MyReportsScreenProps) {
+  const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<Filter>('전체');
 
   // TODO(BE): 내 제보 목록 API 연동 시 교체합니다.
@@ -30,9 +32,9 @@ export function MyReportsScreen({ onBack, onStartReport, forceEmpty = false }: M
 
   if (reports.length === 0) {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView edges={['top']} style={styles.screen}>
         <MyInfoHeader onBack={onBack} title="내 제보 기록" />
-        <View style={styles.empty}>
+        <View style={[styles.empty, { paddingBottom: insets.bottom + 64 }]}>
           <Image source={require('../../assets/myinfo-report-empty.png')} style={styles.emptyIcon} />
           <Text
             color={colors.text.primary}
@@ -56,13 +58,16 @@ export function MyReportsScreen({ onBack, onStartReport, forceEmpty = false }: M
             </Text>
           </Pressable>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    // 배경은 화면 끝까지 채우고, 하단 안전 영역은 스크롤 패딩으로만 확보합니다.
+    <SafeAreaView edges={['top']} style={styles.screen}>
+      {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
       <MyInfoHeader onBack={onBack} title="내 제보 기록" />
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
       <View style={styles.filters}>
         <FilterChips onSelect={setFilter} options={FILTERS} selected={filter} />
       </View>
@@ -77,7 +82,8 @@ export function MyReportsScreen({ onBack, onStartReport, forceEmpty = false }: M
       <Text color={colors.text.disabled} style={styles.lastPage} variant="caption-1">
         {filtered.length > 0 ? '마지막 페이지입니다.' : '이 분류의 제보가 아직 없습니다.'}
       </Text>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -86,9 +92,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     flex: 1,
   },
-  content: {
-    paddingBottom: 24,
-  },
+  content: {},
   filters: {
     marginTop: 38,
     paddingHorizontal: MY_INFO_SCREEN_X,
@@ -110,8 +114,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    // 탭바를 뺀 영역 기준으로 살짝 위에 오도록 아래를 더 비웁니다.
-    paddingBottom: 120,
     paddingHorizontal: MY_INFO_SCREEN_X,
   },
   emptyIcon: {

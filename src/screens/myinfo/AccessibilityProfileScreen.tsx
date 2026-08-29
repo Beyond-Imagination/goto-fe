@@ -1,4 +1,5 @@
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
@@ -8,6 +9,9 @@ import { chipPalette } from '@/components/onboarding/tokens';
 import { MOCK_ACCESSIBILITY_PROFILE } from '@/screens/myinfo/mockData';
 import { MOBILITY_OPTIONS, useProfile } from '@/state/profile';
 import { colors } from '@/styles/tokens/colors';
+
+/** 마지막 요소와 화면(홈 인디케이터) 사이 기본 여백. */
+const CONTENT_BOTTOM_GAP = 24;
 
 type AccessibilityProfileScreenProps = {
   readonly onBack: () => void;
@@ -52,6 +56,7 @@ function Section({ title, hint, chips, tone }: SectionProps) {
 
 /** 내 정보 02 — 접근성 프로필. 온보딩에서 고른 값을 요약해 보여줍니다. */
 export function AccessibilityProfileScreen({ onBack }: AccessibilityProfileScreenProps) {
+  const insets = useSafeAreaInsets();
   const { profile } = useProfile();
 
   const mobilityLabels = profile.mobility.map(
@@ -65,8 +70,11 @@ export function AccessibilityProfileScreen({ onBack }: AccessibilityProfileScree
   const avoid = hasSelection ? profile.avoid : MOCK_ACCESSIBILITY_PROFILE.avoid;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    // 배경은 화면 끝까지 채우고, 하단 안전 영역은 스크롤 패딩으로만 확보합니다.
+    <SafeAreaView edges={['top']} style={styles.screen}>
+      {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
       <MyInfoHeader onBack={onBack} title="접근성 프로필" />
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}>
       <View style={styles.sections}>
         <Section chips={mobility} hint="온보딩 7.2 · 복수 선택" title="이동 방식" tone="blue" />
         <Section chips={facilities} hint="(최대 3개)" title="우선 확인 시설" tone="blue" />
@@ -78,7 +86,8 @@ export function AccessibilityProfileScreen({ onBack }: AccessibilityProfileScree
           title="이 설정이 지도와 검색 결과를 바꿉니다"
         />
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -87,9 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     flex: 1,
   },
-  content: {
-    paddingBottom: 24,
-  },
+  content: {},
   sections: {
     gap: 24,
     marginTop: 38,
