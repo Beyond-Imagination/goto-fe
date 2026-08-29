@@ -31,15 +31,18 @@ export default function ProfileLayout() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (pathname.includes('/done')) {
-    return <Slot />;
-  }
-
   const currentStepKey = pathname.includes('preference')
     ? 'preference'
-    : pathname.includes('display')
+    : pathname.includes('/display')
       ? 'display'
-      : 'mobility';
+      : pathname.includes('mobility')
+        ? 'mobility'
+        : null;
+
+  // 온보딩 3단계가 아닌 /profile/* 라우트(완료 화면, 내 정보 상세 화면들)는 스텝 크롬 없이 그대로 렌더링합니다.
+  if (!currentStepKey) {
+    return <Slot />;
+  }
 
   const config = STEP_CONFIG[currentStepKey];
 
