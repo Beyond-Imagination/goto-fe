@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { OAUTH_LOGIN_STATUS, AuthApiError } from '@/auth/common';
 import { createMockGoogleAdapter, createMockKakaoAdapter, createMockNaverAdapter, createMockOAuthApi, createMockTermsApi } from '@/mock/adapters';
-import { MOCK_TERMS_LIST, MOCK_TERMS_MAP } from '@/mock/data/mockTerms';
+import { MOCK_TERMS_LIST } from '@/mock/data/mockTerms';
 import { NICKNAME_FIXTURES } from '@/mock/fixtures';
 import { NEW_SIGNUP_USER, WHEELCHAIR_USER, NICKNAME_CONFLICT_USER } from '@/mock/personas';
 

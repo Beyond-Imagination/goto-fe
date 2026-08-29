@@ -6,27 +6,13 @@ import { SettingRow } from '@/components/onboarding/Selectors';
 import { useProfile } from '@/state/profile';
 import { colors } from '@/styles/tokens/colors';
 import { spacing } from '@/styles/tokens/spacing';
-import { ProfileStepLayout } from './ProfileStepLayout';
 
-interface DisplayStepScreenProps {
-  onBack: () => void;
-  onDone: () => void;
-  onSkip: () => void;
-}
-
-export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenProps) {
+export function DisplayStepScreen() {
   const { profile, setDisplayOption } = useProfile();
 
   return (
-    <ProfileStepLayout
-      nextLabel="완료"
-      onBack={onBack}
-      onNext={onDone}
-      onSkip={onSkip}
-      step={3}
-      subtitle="사용자 맞춤 화면설정과 필요한 알림을 받을 수 있어요"
-      title="보기와 알림 설정"
-    >
+    <View style={styles.container}>
+      {/* 큰 글씨·고대비 토글이 바로 반영되는 샘플 카드. 접근성 보기 설정 화면과 함께 씁니다. */}
       <View style={styles.previewWrap}>
         <DisplayPreviewCard highContrast={profile.highContrast} largeText={profile.largeText} />
       </View>
@@ -70,11 +56,14 @@ export function DisplayStepScreen({ onBack, onDone, onSkip }: DisplayStepScreenP
           value={profile.statusAlerts}
         />
       </View>
-    </ProfileStepLayout>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   previewWrap: {
     marginTop: spacing[6],
   },

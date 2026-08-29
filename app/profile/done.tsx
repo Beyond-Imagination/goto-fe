@@ -5,5 +5,10 @@ import { ProfileDoneScreen } from '@/screens/ProfileDoneScreen';
 export default function ProfileDoneRoute() {
   const router = useRouter();
 
-  return <ProfileDoneScreen onExplore={() => router.replace('/(tabs)')} />;
+  const handleExplore = () => {
+    router.dismissAll();
+    router.replace('/(tabs)');
+  };
+
+  return <ProfileDoneScreen onExplore={handleExplore} />;
 }

@@ -6,27 +6,11 @@ import { Chip } from '@/components/onboarding/Selectors';
 import { AVOID_CONDITIONS, MAX_SELECTION, PRIORITY_FACILITIES, useProfile } from '@/state/profile';
 import { colors } from '@/styles/tokens/colors';
 import { spacing } from '@/styles/tokens/spacing';
-import { ProfileStepLayout } from './ProfileStepLayout';
-
-interface PreferenceStepScreenProps {
-  onBack: () => void;
-  onNext: () => void;
-  onSkip: () => void;
-}
-
-export function PreferenceStepScreen({ onBack, onNext, onSkip }: PreferenceStepScreenProps) {
+export function PreferenceStepScreen() {
   const { profile, toggleFacility, toggleAvoid } = useProfile();
 
   return (
-    <ProfileStepLayout
-      nextLabel="다음"
-      onBack={onBack}
-      onNext={onNext}
-      onSkip={onSkip}
-      step={2}
-      subtitle="우선 확인할 시설과 피하고 싶은 구간을 선택하세요."
-      title="확인할 정보 고르기"
-    >
+    <View style={styles.container}>
       <SectionTitle title="우선 확인 시설" />
       <View style={styles.chips}>
         {PRIORITY_FACILITIES.map((label) => (
@@ -54,7 +38,7 @@ export function PreferenceStepScreen({ onBack, onNext, onSkip }: PreferenceStepS
       </View>
 
       <InfoNote>선택한 항목을 바탕으로 경로와 장소를 맞춤 제공해요</InfoNote>
-    </ProfileStepLayout>
+    </View>
   );
 }
 
@@ -72,6 +56,9 @@ function SectionTitle({ title }: { title: string }) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   sectionTitle: {
     alignItems: 'baseline',
     flexDirection: 'row',

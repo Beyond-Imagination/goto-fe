@@ -1,5 +1,5 @@
-import { AppRouteScreen } from '@/screens/AppRouteScreen';
+import { HelpRequestHomeScreen } from '@/screens/help/HelpRequestHomeScreen';
 
 export default function LocationRoute() {
-  return <AppRouteScreen route="location" />;
+  return <HelpRequestHomeScreen />;
 }

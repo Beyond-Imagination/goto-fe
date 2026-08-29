@@ -14,6 +14,8 @@ export const colors = {
      * 어느 쪽이 정본인지 디자이너 확인이 필요합니다.
      */
     mainAlt: '#383CFF',
+    // 도움 요청 홈의 "도움이 필요한 사람 찾기" 카드에 쓰이는 Figma Yellow.
+    help: '#F9A825',
     sub1: '#6200EA',   // Sub 01 (서브 보라)
     sub2: '#FFD000',   // Sub 02 (서브 노랑 - Figma Variable #FFD000)
     DEFAULT: '#2962FF',
