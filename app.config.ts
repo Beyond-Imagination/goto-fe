@@ -19,7 +19,8 @@ const withLocalApiCleartextTraffic: ConfigPlugin = (config) => {
 };
 
 const config: ExpoConfig = {
-  name: 'Goto',
+  name: '함께가길',
+  owner: 'beyondimagination',
   slug: 'goto-fe',
   version: '0.1.0',
   orientation: 'portrait',
@@ -29,9 +30,11 @@ const config: ExpoConfig = {
   newArchEnabled: true,
   ios: {
     bundleIdentifier: 'net.beyondimagination.gotoapp',
-    supportsTablet: true,
+    buildNumber: '1',
+    supportsTablet: false,
     icon: './assets/images/icon.png',
     infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
       LSApplicationQueriesSchemes: [
         'naversearchapp',
         'naversearchthirdlogin',
@@ -44,6 +47,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'net.beyondimagination.gotoapp',
+    versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon-foreground.png',
       backgroundImage: './assets/images/adaptive-icon-background.png',
@@ -73,35 +77,49 @@ const config: ExpoConfig = {
         },
       },
     ],
-    [
-      '@react-native-kakao/core',
-      {
-        nativeAppKey: kakaoNativeAppKey,
-        android: {
-          authCodeHandlerActivity: true,
-        },
-        ios: {
-          handleKakaoOpenUrl: true,
-        },
-      },
-    ],
+    // 환경변수가 없는 설정 확인 실행을 위해 조건부 적용
+    ...(kakaoNativeAppKey
+      ? [
+          [
+            '@react-native-kakao/core',
+            {
+              nativeAppKey: kakaoNativeAppKey,
+              android: {
+                authCodeHandlerActivity: true,
+              },
+              ios: {
+                handleKakaoOpenUrl: true,
+              },
+            },
+          ],
+        ]
+      : []),
     [
       '@react-native-seoul/naver-login',
       {
         urlScheme: naverUrlScheme,
       },
     ],
-    [
-      '@react-native-google-signin/google-signin',
-      {
-        iosUrlScheme: googleIosUrlScheme || undefined,
-      },
-    ],
+    ...(googleIosUrlScheme
+      ? [
+          [
+            '@react-native-google-signin/google-signin',
+            {
+              iosUrlScheme: googleIosUrlScheme,
+            },
+          ],
+        ]
+      : []),
     'expo-secure-store',
     'expo-router',
   ],
   experiments: {
     typedRoutes: true,
+  },
+  extra: {
+    eas: {
+      projectId: 'd8b9484a-b5c8-49e0-b12d-261a5cda885b',
+    },
   },
 };
 
