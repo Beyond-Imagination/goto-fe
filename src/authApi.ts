@@ -1,3 +1,7 @@
+import { createHttpClient, getApiBaseUrl } from '@/api';
+
+export { getApiBaseUrl };
+
 export type LoginResponse = {
   accessToken: string;
   refreshToken: string;
@@ -13,12 +17,12 @@ export type RefreshResponse = {
 
 export type AuthResult =
   | {
-      type: "login";
+      type: 'login';
       response: LoginResponse;
       decoded: DecodedTokens;
     }
   | {
-      type: "refresh";
+      type: 'refresh';
       response: RefreshResponse;
       decoded: DecodedTokens;
     };
@@ -34,62 +38,36 @@ export type DecodedTokens = {
 };
 
 const DEMO_CREDENTIALS = {
-  username: "demo",
-  password: "demo"
+  username: 'demo',
+  password: 'demo',
 };
 
-export function getApiBaseUrl(): string {
-  const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
-
-  if (!apiBaseUrl) {
-    throw new Error("EXPO_PUBLIC_API_BASE_URL is not configured.");
-  }
-
-  return apiBaseUrl.replace(/\/+$/, "");
-}
+const defaultHttpClient = createHttpClient();
 
 export async function login(): Promise<AuthResult> {
-  const response = await postJson<LoginResponse>("/api/v1/auth/login", DEMO_CREDENTIALS);
+  const response = await defaultHttpClient.post<LoginResponse, typeof DEMO_CREDENTIALS>(
+    '/api/v1/auth/login',
+    DEMO_CREDENTIALS,
+  );
 
   return {
-    type: "login",
+    type: 'login',
     response,
-    decoded: decodeTokens(response)
+    decoded: decodeTokens(response),
   };
 }
 
 export async function refresh(refreshToken: string): Promise<AuthResult> {
-  const response = await postJson<RefreshResponse>("/api/v1/auth/refresh", { refreshToken });
+  const response = await defaultHttpClient.post<RefreshResponse, { refreshToken: string }>(
+    '/api/v1/auth/refresh',
+    { refreshToken },
+  );
 
   return {
-    type: "refresh",
+    type: 'refresh',
     response,
-    decoded: decodeTokens(response)
+    decoded: decodeTokens(response),
   };
-}
-
-async function postJson<TResponse>(path: string, body: unknown): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
-
-  const text = await response.text();
-  let payload: unknown;
-  try {
-    payload = text ? JSON.parse(text) : {};
-  } catch {
-    payload = { message: text || response.statusText };
-  }
-
-  if (!response.ok) {
-    throw new Error(JSON.stringify(payload, null, 2));
-  }
-
-  return payload as TResponse;
 }
 
 function decodeTokens(response: LoginResponse | RefreshResponse): DecodedTokens {
@@ -98,14 +76,14 @@ function decodeTokens(response: LoginResponse | RefreshResponse): DecodedTokens 
   try {
     decoded.accessToken = decodeJwt(response.accessToken);
   } catch (error) {
-    console.warn("Failed to decode accessToken:", error);
+    console.warn('Failed to decode accessToken:', error);
   }
 
-  if ("refreshToken" in response) {
+  if ('refreshToken' in response) {
     try {
       decoded.refreshToken = decodeJwt(response.refreshToken);
     } catch (error) {
-      console.warn("Failed to decode refreshToken:", error);
+      console.warn('Failed to decode refreshToken:', error);
     }
   }
 
@@ -113,25 +91,25 @@ function decodeTokens(response: LoginResponse | RefreshResponse): DecodedTokens 
 }
 
 function decodeJwt(token: string): DecodedJwt {
-  const parts = token.split(".");
+  const parts = token.split('.');
   if (parts.length < 2) {
-    throw new Error("Invalid JWT format.");
+    throw new Error('Invalid JWT format.');
   }
 
   const [encodedHeader, encodedPayload] = parts;
 
   return {
     header: parseBase64UrlJson(encodedHeader),
-    payload: parseBase64UrlJson(encodedPayload)
+    payload: parseBase64UrlJson(encodedPayload),
   };
 }
 
 function parseBase64UrlJson(value: string): unknown {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
 
-  if (typeof atob !== "function") {
-    throw new Error("JWT decoding requires atob support.");
+  if (typeof atob !== 'function') {
+    throw new Error('JWT decoding requires atob support.');
   }
 
   return JSON.parse(atob(padded));

@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from '@/authApi';
+import { createHttpClient, getApiBaseUrl } from '@/api';
 import { createMockTermsApi } from '@/mock/adapters/mockTermsApi';
 import type { TermDetail, TermsListResponse } from './termsContent';
 
@@ -8,27 +8,33 @@ export type TermsApi = {
 };
 
 export function createTermsApi(
-  apiBaseUrl: string,
-  fetchImplementation: typeof fetch = fetch,
+  apiBaseUrl: string = getApiBaseUrl(),
+  fetchImplementation?: typeof fetch,
 ): TermsApi {
-  async function getJson<TResponse>(path: string): Promise<TResponse> {
-    const response = await fetchImplementation(`${apiBaseUrl}${path}`, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data as TResponse;
-  }
+  const client = createHttpClient({
+    baseUrl: apiBaseUrl,
+    fetch: fetchImplementation,
+  });
 
   return {
-    getTerms: () => getJson<TermsListResponse>('/api/v1/terms'),
-    getTerm: (termId: string) => getJson<TermDetail>(`/api/v1/terms/${encodeURIComponent(termId)}`),
+    async getTerms() {
+      try {
+        return await client.get<TermsListResponse>('/api/v1/terms');
+      } catch (error: any) {
+        throw new Error(
+          `API request failed with status ${error.status || 500}: ${error.message || 'Error'}`,
+        );
+      }
+    },
+    async getTerm(termId: string) {
+      try {
+        return await client.get<TermDetail>(`/api/v1/terms/${encodeURIComponent(termId)}`);
+      } catch (error: any) {
+        throw new Error(
+          `API request failed with status ${error.status || 500}: ${error.message || 'Error'}`,
+        );
+      }
+    },
   };
 }
 
@@ -38,7 +44,7 @@ export function createTermsApi(
 export async function fetchTermsList(
   // 기본 인자에서 getApiBaseUrl()을 부르면 mock 분기보다 먼저 평가돼 mock 모드에서도 URL 검증이 터집니다.
   apiBaseUrl?: string,
-  fetchImplementation: typeof fetch = fetch,
+  fetchImplementation?: typeof fetch,
 ): Promise<readonly TermDetail[]> {
   if (process.env.EXPO_PUBLIC_AUTH_MODE === 'mock') {
     const mockApi = createMockTermsApi();
@@ -57,7 +63,7 @@ export async function fetchTermsList(
 export async function fetchTermDetail(
   termId: string,
   apiBaseUrl?: string,
-  fetchImplementation: typeof fetch = fetch,
+  fetchImplementation?: typeof fetch,
 ): Promise<TermDetail> {
   if (process.env.EXPO_PUBLIC_AUTH_MODE === 'mock') {
     const mockApi = createMockTermsApi();
