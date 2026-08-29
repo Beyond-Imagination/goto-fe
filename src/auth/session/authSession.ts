@@ -40,6 +40,7 @@ export type AuthSession = {
   getSnapshot(): AuthSnapshot;
   subscribe(listener: () => void): () => void;
   restoreSession(): Promise<void>;
+  refreshSession(): Promise<string | null>;
   beginSocialLogin(provider: SocialProvider): Promise<OAuthLoginOutcome>;
   saveSignupDetails(details: OAuthSignupDetails): void;
   completeOAuthSignup(preferences: OAuthSignupPreferences): Promise<PlatformSession>;
@@ -81,6 +82,16 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
     });
   }
 
+  async function clearSession() {
+    await refreshTokenStore.clear();
+    emit({
+      session: null,
+      pendingSignup: null,
+      restoreError: null,
+      status: AUTH_STATUS.unauthenticated,
+    });
+  }
+
   async function restoreSession() {
     emit({ status: AUTH_STATUS.restoring, restoreError: null });
 
@@ -115,6 +126,24 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
     }
   }
 
+  async function refreshSession(): Promise<string | null> {
+    try {
+      const refreshToken = await refreshTokenStore.read();
+
+      if (!refreshToken) {
+        await clearSession();
+        return null;
+      }
+
+      const nextSession = await deps.api.refreshPlatformSession(refreshToken);
+      emit({ session: nextSession, status: AUTH_STATUS.authenticated });
+      return nextSession.accessToken;
+    } catch (error) {
+      await clearSession();
+      throw error;
+    }
+  }
+
   return {
     getSnapshot: () => snapshot,
     subscribe(listener) {
@@ -124,6 +153,7 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
       };
     },
     restoreSession,
+    refreshSession,
     async beginSocialLogin(provider) {
       emit({ status: AUTH_STATUS.signing_in });
 
@@ -200,15 +230,7 @@ export function createAuthSession(deps: AuthSessionDeps): AuthSession {
     cancelSignup() {
       emit({ pendingSignup: null, status: AUTH_STATUS.unauthenticated });
     },
-    async clearSession() {
-      await refreshTokenStore.clear();
-      emit({
-        session: null,
-        pendingSignup: null,
-        restoreError: null,
-        status: AUTH_STATUS.unauthenticated,
-      });
-    },
+    clearSession,
     isNicknameAvailable: (nickname: string) => deps.api.isNicknameAvailable(nickname),
   };
 }

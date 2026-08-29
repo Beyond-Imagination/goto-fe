@@ -20,6 +20,7 @@ type AuthContextValue = AuthSnapshot & {
   saveSignupDetails: (details: OAuthSignupDetails) => void;
   completeOAuthSignup: (preferences: OAuthSignupPreferences) => Promise<PlatformSession>;
   retryRestore: () => Promise<void>;
+  refreshSession: () => Promise<string | null>;
   cancelSignup: () => void;
   clearSession: () => Promise<void>;
   isNicknameAvailable: (nickname: string) => Promise<boolean>;
@@ -98,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveSignupDetails: authSession.saveSignupDetails,
       completeOAuthSignup: authSession.completeOAuthSignup,
       retryRestore: authSession.restoreSession,
+      refreshSession: authSession.refreshSession,
       cancelSignup: authSession.cancelSignup,
       clearSession: authSession.clearSession,
       isNicknameAvailable: authSession.isNicknameAvailable,

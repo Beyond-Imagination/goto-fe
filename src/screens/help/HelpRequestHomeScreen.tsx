@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { useAuth } from '@/auth/session/AuthProvider';
 import { Text } from '@/components/common/Text';
 import { FigmaSvg } from '@/components/help/FigmaSvg';
 import { HelpHeader } from '@/components/help/HelpHeader';
@@ -8,8 +10,6 @@ import { FIGMA_HELP_ASSETS } from '@/design/figmaHelpAssets';
 import { getPendingHelpRequestApi, HELP_ROUTE, usePendingHelpRequestCount } from '@/help';
 import { colors } from '@/styles/tokens/colors';
 import { spacing } from '@/styles/tokens/spacing';
-
-const pendingHelpRequestApi = getPendingHelpRequestApi();
 
 type HelpCardKind = 'nearby' | 'facility' | 'helpers';
 
@@ -47,6 +47,14 @@ const HELP_CARDS = [
 
 export function HelpRequestHomeScreen() {
   const router = useRouter();
+  const { session } = useAuth();
+  const pendingHelpRequestApi = useMemo(
+    () =>
+      getPendingHelpRequestApi(process.env.EXPO_PUBLIC_AUTH_MODE, {
+        getAccessToken: () => session?.accessToken,
+      }),
+    [session?.accessToken],
+  );
   const pendingCount = usePendingHelpRequestCount(pendingHelpRequestApi);
 
   function handleBack() {

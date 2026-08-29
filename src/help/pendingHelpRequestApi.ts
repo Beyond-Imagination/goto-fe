@@ -1,12 +1,15 @@
+  import { createHelpRequestApi, type HelpRequestApiOptions } from './helpRequestApi';
+
 export type PendingHelpRequestApi = Readonly<{
   getPendingCount(): Promise<number>;
 }>;
 
+export type PendingHelpRequestApiOptions = HelpRequestApiOptions;
+
 const MOCK_PENDING_HELP_REQUEST_COUNT = 2;
 
 /**
- * 백엔드 계약 전 mock 모드에서만 사용하는 비동기 어댑터입니다.
- * 실제 endpoint가 정해지면 이 인터페이스를 구현하는 live 어댑터만 추가합니다.
+ * 백엔드 Mock 모드에서 사용하는 비동기 어댑터입니다.
  */
 export function createMockPendingHelpRequestApi(
   count: number = MOCK_PENDING_HELP_REQUEST_COUNT,
@@ -16,10 +19,28 @@ export function createMockPendingHelpRequestApi(
   };
 }
 
+/**
+ * GET /api/v1/help-requests/pending-count 
+ */
+export function createPendingHelpRequestApi(
+  options?: PendingHelpRequestApiOptions,
+): PendingHelpRequestApi {
+  const helpApi = createHelpRequestApi(options);
+  return {
+    getPendingCount: async () => {
+      const response = await helpApi.countPending();
+      return response.pendingCount;
+    },
+  };
+}
+
 export function getPendingHelpRequestApi(
   authMode: string | undefined = process.env.EXPO_PUBLIC_AUTH_MODE,
-): PendingHelpRequestApi | null {
-  return authMode === 'mock' ? createMockPendingHelpRequestApi() : null;
+  options?: PendingHelpRequestApiOptions,
+): PendingHelpRequestApi {
+  return authMode === 'mock'
+    ? createMockPendingHelpRequestApi()
+    : createPendingHelpRequestApi(options);
 }
 
 /** 양수인 안전한 정수만 Figma 배지에 표시합니다. */
