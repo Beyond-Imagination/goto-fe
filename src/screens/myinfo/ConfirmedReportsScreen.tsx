@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
 import { FilterChips } from '@/components/myinfo/FilterChips';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
+import { ListDivider } from '@/components/myinfo/ListDivider';
 import { NoticeCard } from '@/components/myinfo/NoticeCard';
 import { ReportListItem } from '@/components/myinfo/ReportListItem';
 import { MY_INFO_SCREEN_X } from '@/components/myinfo/tokens';
@@ -38,28 +39,30 @@ export function ConfirmedReportsScreen({ onBack }: ConfirmedReportsScreenProps) 
     <SafeAreaView edges={['top']} style={styles.screen}>
       {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
       <MyInfoHeader onBack={onBack} title="내가 확인한 리포트" />
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}>
-      <View style={styles.filters}>
-        <FilterChips onSelect={setFilter} options={FILTERS} selected={filter} />
-      </View>
-      <Text color={colors.text.tertiary} style={styles.summary} variant="body-3">
-        {MOCK_CONFIRMED_SUMMARY}
-      </Text>
-      <View style={styles.list}>
-        {filtered.map((report, index) => (
-          <View key={report.id}>
-            {index > 0 ? <View style={styles.divider} /> : null}
-            <ReportListItem report={report} />
+      {/* TODO(BE): 목록 API 연동 시 onEndReached로 다음 페이지를 이어 붙입니다. */}
+      <FlatList
+        ItemSeparatorComponent={ListDivider}
+        ListFooterComponent={
+          <View style={styles.notice}>
+            <NoticeCard
+              body="같은 상태를 여러 사람이 확인하면 그 리포트의 신뢰도가 높아지고, 오래된 정보는 확인 필요로 내려갑니다."
+              title="확인이 쌓이면 신뢰도가 올라갑니다"
+            />
           </View>
-        ))}
-      </View>
-      <View style={styles.notice}>
-        <NoticeCard
-          body="같은 상태를 여러 사람이 확인하면 그 리포트의 신뢰도가 높아지고, 오래된 정보는 확인 필요로 내려갑니다."
-          title="확인이 쌓이면 신뢰도가 올라갑니다"
-        />
-      </View>
-      </ScrollView>
+        }
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <FilterChips onSelect={setFilter} options={FILTERS} selected={filter} />
+            <Text color={colors.text.tertiary} style={styles.summary} variant="body-3">
+              {MOCK_CONFIRMED_SUMMARY}
+            </Text>
+          </View>
+        }
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
+        data={filtered}
+        keyExtractor={report => report.id}
+        renderItem={({ item }) => <ReportListItem report={item} />}
+      />
     </SafeAreaView>
   );
 }
@@ -69,26 +72,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     flex: 1,
   },
-  content: {},
-  filters: {
-    marginTop: 38,
+  content: {
     paddingHorizontal: MY_INFO_SCREEN_X,
+  },
+  listHeader: {
+    marginBottom: 12,
+    marginTop: 38,
   },
   summary: {
     marginTop: 18,
-    paddingHorizontal: MY_INFO_SCREEN_X,
-  },
-  list: {
-    marginTop: 12,
-    paddingHorizontal: MY_INFO_SCREEN_X,
-  },
-  divider: {
-    backgroundColor: colors.border.regular,
-    height: StyleSheet.hairlineWidth,
-    marginVertical: 16,
   },
   notice: {
     marginTop: 26,
-    paddingHorizontal: MY_INFO_SCREEN_X,
   },
 });

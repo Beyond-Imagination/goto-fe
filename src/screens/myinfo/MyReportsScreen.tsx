@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
 import { FilterChips } from '@/components/myinfo/FilterChips';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
+import { ListDivider } from '@/components/myinfo/ListDivider';
 import { ReportListItem } from '@/components/myinfo/ReportListItem';
 import { MY_INFO_SCREEN_X } from '@/components/myinfo/tokens';
 import { MOCK_MY_REPORTS } from '@/screens/myinfo/mockData';
 import { colors } from '@/styles/tokens/colors';
 
 const FILTERS = ['전체', '장애물', '장소', '시설'] as const;
+
+/** 마지막 요소와 화면(홈 인디케이터) 사이 기본 여백. */
+const CONTENT_BOTTOM_GAP = 24;
 
 type Filter = (typeof FILTERS)[number];
 
@@ -67,22 +71,24 @@ export function MyReportsScreen({ onBack, onStartReport, forceEmpty = false }: M
     <SafeAreaView edges={['top']} style={styles.screen}>
       {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
       <MyInfoHeader onBack={onBack} title="내 제보 기록" />
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
-      <View style={styles.filters}>
-        <FilterChips onSelect={setFilter} options={FILTERS} selected={filter} />
-      </View>
-      <View style={styles.list}>
-        {filtered.map((report, index) => (
-          <View key={report.id}>
-            {index > 0 ? <View style={styles.divider} /> : null}
-            <ReportListItem report={report} />
+      {/* TODO(BE): 목록 API 연동 시 onEndReached로 다음 페이지를 이어 붙입니다. */}
+      <FlatList
+        ItemSeparatorComponent={ListDivider}
+        ListFooterComponent={
+          <Text color={colors.text.disabled} style={styles.lastPage} variant="caption-1">
+            {filtered.length > 0 ? '마지막 페이지입니다.' : '이 분류의 제보가 아직 없습니다.'}
+          </Text>
+        }
+        ListHeaderComponent={
+          <View style={styles.filters}>
+            <FilterChips onSelect={setFilter} options={FILTERS} selected={filter} />
           </View>
-        ))}
-      </View>
-      <Text color={colors.text.disabled} style={styles.lastPage} variant="caption-1">
-        {filtered.length > 0 ? '마지막 페이지입니다.' : '이 분류의 제보가 아직 없습니다.'}
-      </Text>
-      </ScrollView>
+        }
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
+        data={filtered}
+        keyExtractor={report => report.id}
+        renderItem={({ item }) => <ReportListItem report={item} />}
+      />
     </SafeAreaView>
   );
 }
@@ -92,19 +98,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     flex: 1,
   },
-  content: {},
+  content: {
+    paddingHorizontal: MY_INFO_SCREEN_X,
+  },
   filters: {
+    marginBottom: 18,
     marginTop: 38,
-    paddingHorizontal: MY_INFO_SCREEN_X,
-  },
-  list: {
-    marginTop: 18,
-    paddingHorizontal: MY_INFO_SCREEN_X,
-  },
-  divider: {
-    backgroundColor: colors.border.regular,
-    height: StyleSheet.hairlineWidth,
-    marginVertical: 16,
   },
   lastPage: {
     marginTop: 50,
