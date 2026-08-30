@@ -73,8 +73,17 @@ const config: ExpoConfig = {
       'expo-build-properties',
       {
         android: {
-          extraMavenRepos: ['https://devrepo.kakao.com/nexus/content/groups/public/'],
+          extraMavenRepos: [
+            'https://devrepo.kakao.com/nexus/content/groups/public/',
+            'https://repository.map.naver.com/archive/maven',
+          ],
         },
+      },
+    ],
+    [
+      '@mj-studio/react-native-naver-map',
+      {
+        client_id: process.env.NAVER_MAP_CLIENT_ID,
       },
     ],
     // 환경변수가 없는 설정 확인 실행을 위해 조건부 적용
