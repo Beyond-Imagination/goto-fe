@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
 import { useAuth } from '@/auth';
 import { Text } from '@/components/common/Text';
+import { ErrorView, LoadingView } from '@/components/myinfo/LoadStateView';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { MY_INFO_SCREEN_X } from '@/components/myinfo/tokens';
-import { MOCK_PROFILE_SUMMARY } from '@/screens/myinfo/mockData';
+import { toProfileSummary, useAsyncResource, useMyInfoApi } from '@/myinfo';
 import { colors } from '@/styles/tokens/colors';
 
 type MenuItem = {
@@ -52,6 +53,9 @@ type MyInfoHomeScreenProps = {
 /** 내 정보 01 — 홈. 프로필 요약 + 활동 통계 + 메뉴 목록. */
 export function MyInfoHomeScreen({ onNavigate }: MyInfoHomeScreenProps) {
   const { clearSession } = useAuth();
+  const api = useMyInfoApi();
+  const loadProfile = useCallback(() => api.getProfile(), [api]);
+  const profile = useAsyncResource(loadProfile, '내 정보를 불러오지 못했어요. 다시 시도해주세요.');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
@@ -72,33 +76,61 @@ export function MyInfoHomeScreen({ onNavigate }: MyInfoHomeScreenProps) {
     }
   }
 
+  if (profile.state === 'loading') {
+    return (
+      <View style={styles.screen}>
+        <MyInfoHeader title="내 정보" />
+        <LoadingView message="내 정보를 불러오는 중입니다..." />
+      </View>
+    );
+  }
+
+  if (profile.state === 'error' || !profile.data) {
+    return (
+      <View style={styles.screen}>
+        <MyInfoHeader title="내 정보" />
+        <ErrorView
+          message={profile.errorMessage ?? '내 정보를 불러오지 못했어요.'}
+          onRetry={profile.reload}
+        />
+      </View>
+    );
+  }
+
+  const { nickname, mobilityModes, stats } = profile.data;
+  const statCards = [
+    { label: '내제보', value: stats.reportCount, unit: '건' },
+    { label: '도움 된 사람', value: stats.helpedPeopleCount, unit: '명' },
+    { label: '해결 확인', value: stats.resolvedConfirmationCount, unit: '건' },
+  ];
+
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <View style={styles.hero}>
         <MyInfoHeader title="내 정보" />
         <View style={styles.profileRow}>
           <View style={styles.profileText}>
-            {/* TODO(BE): 세션에 닉네임이 없어 목업 값입니다. 회원 정보 API 연동 시 교체합니다. */}
             <View style={styles.nameRow}>
               <Text color={colors.text.primary} variant="headline-1" weight="semibold">
-                {MOCK_PROFILE_SUMMARY.nickname}
+                {nickname}
               </Text>
               <Image source={require('../../assets/icons/chevron-right.png')} style={styles.nameChevron} />
             </View>
             <Text color={colors.text.tertiary} variant="body-1">
-              {MOCK_PROFILE_SUMMARY.profileSummary}
+              {toProfileSummary(mobilityModes)}
             </Text>
           </View>
+          {/* TODO(BE): 프로필 이미지 컬럼이 없어 기본 이미지를 씁니다. */}
           <Image source={require('../../assets/myinfo-avatar.png')} style={styles.avatar} />
         </View>
       </View>
 
       <View style={styles.stats}>
-        {MOCK_PROFILE_SUMMARY.stats.map(stat => (
+        {statCards.map(stat => (
           <View key={stat.label} style={styles.stat}>
             <View style={styles.statValueRow}>
               <Text color={colors.text.primary} variant="title-1" weight="semibold">
-                {stat.value}
+                {String(stat.value)}
               </Text>
               <Text color={colors.text.secondary} style={styles.statUnit} variant="body-3">
                 {stat.unit}

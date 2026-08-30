@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/common/Text';
 import { FilterChips } from '@/components/myinfo/FilterChips';
-import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { ListDivider } from '@/components/myinfo/ListDivider';
+import { ErrorView, LoadingView } from '@/components/myinfo/LoadStateView';
+import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { NoticeCard } from '@/components/myinfo/NoticeCard';
 import { ReportListItem } from '@/components/myinfo/ReportListItem';
 import { MY_INFO_SCREEN_X } from '@/components/myinfo/tokens';
-import { MOCK_CONFIRMED_REPORTS, MOCK_CONFIRMED_SUMMARY } from '@/screens/myinfo/mockData';
+import { toConfirmedListItem, useAsyncResource, useMyInfoApi } from '@/myinfo';
 import { colors } from '@/styles/tokens/colors';
 
 const FILTERS = ['전체', '아직 있음', '해결 됨'] as const;
@@ -26,20 +27,42 @@ type ConfirmedReportsScreenProps = {
 /** 내 정보 05 — 내가 확인한 리포트. */
 export function ConfirmedReportsScreen({ onBack }: ConfirmedReportsScreenProps) {
   const insets = useSafeAreaInsets();
+  const api = useMyInfoApi();
+  const load = useCallback(() => api.findMyConfirmedReports(), [api]);
+  const confirmations = useAsyncResource(load, '확인 기록을 불러오지 못했어요. 다시 시도해주세요.');
   const [filter, setFilter] = useState<Filter>('전체');
 
-  // TODO(BE): 확인 기록 API 연동 시 교체합니다.
-  const filtered =
-    filter === '전체'
-      ? MOCK_CONFIRMED_REPORTS
-      : MOCK_CONFIRMED_REPORTS.filter(report => report.resolution === filter);
+  if (confirmations.state === 'loading') {
+    return (
+      <SafeAreaView edges={['top']} style={styles.screen}>
+        <MyInfoHeader onBack={onBack} title="내가 확인한 리포트" />
+        <LoadingView message="확인 기록을 불러오는 중입니다..." />
+      </SafeAreaView>
+    );
+  }
+
+  if (confirmations.state === 'error' || !confirmations.data) {
+    return (
+      <SafeAreaView edges={['top']} style={styles.screen}>
+        <MyInfoHeader onBack={onBack} title="내가 확인한 리포트" />
+        <ErrorView
+          message={confirmations.errorMessage ?? '확인 기록을 불러오지 못했어요.'}
+          onRetry={confirmations.reload}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  const items = confirmations.data.map(toConfirmedListItem);
+  const filtered = filter === '전체' ? items : items.filter(item => item.resolution === filter);
+  const locationCount = new Set(items.map(item => item.address)).size;
 
   return (
     // 배경은 화면 끝까지 채우고, 하단 안전 영역은 스크롤 패딩으로만 확보합니다.
     <SafeAreaView edges={['top']} style={styles.screen}>
       {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
       <MyInfoHeader onBack={onBack} title="내가 확인한 리포트" />
-      {/* TODO(BE): 목록 API 연동 시 onEndReached로 다음 페이지를 이어 붙입니다. */}
+      {/* TODO(BE): 목록 API에 페이지네이션이 생기면 onEndReached로 다음 페이지를 이어 붙입니다. */}
       <FlatList
         ItemSeparatorComponent={ListDivider}
         ListFooterComponent={
@@ -54,13 +77,13 @@ export function ConfirmedReportsScreen({ onBack }: ConfirmedReportsScreenProps) 
           <View style={styles.listHeader}>
             <FilterChips onSelect={setFilter} options={FILTERS} selected={filter} />
             <Text color={colors.text.tertiary} style={styles.summary} variant="body-3">
-              {MOCK_CONFIRMED_SUMMARY}
+              {`총 ${items.length}건 · 최근 확인한 위치 ${locationCount}곳`}
             </Text>
           </View>
         }
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
         data={filtered}
-        keyExtractor={report => report.id}
+        keyExtractor={item => item.id}
         renderItem={({ item }) => <ReportListItem report={item} />}
       />
     </SafeAreaView>
