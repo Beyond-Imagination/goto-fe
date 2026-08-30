@@ -1,5 +1,7 @@
 import { ApiError, createHttpClient, getApiBaseUrl } from '@/api';
 
+import type { HelpKind } from './helpKind';
+
 export type PendingHelpCountResponse = Readonly<{
   pendingCount: number;
 }>;
@@ -11,6 +13,8 @@ export type CreateHelpRequestRequest = Readonly<{
   longitude: number;
   floorLevel?: number | null;
   message?: string | null;
+  /** BE @NotEmpty — 최소 한 개는 골라야 합니다. */
+  kinds: readonly HelpKind[];
   expiresInMinutes?: number | null;
 }>;
 
@@ -24,6 +28,7 @@ export type HelpRequestResponse = Readonly<{
   longitude: number;
   floorLevel: number | null;
   message: string | null;
+  kinds: readonly HelpKind[];
   requesterNickname: string;
   helperNickname: string | null;
   requestedAt: string;
@@ -32,7 +37,6 @@ export type HelpRequestResponse = Readonly<{
   completedAt: string | null;
   canceledAt: string | null;
   shareMessage: string;
-  emergencyCallRecommended: boolean;
 }>;
 
 export type NearbyHelpRequestResponse = Readonly<{
@@ -41,6 +45,7 @@ export type NearbyHelpRequestResponse = Readonly<{
   placeName: string | null;
   locationLabel: string;
   message: string | null;
+  kinds: readonly HelpKind[];
   distanceMeters: number;
   requestedAt: string;
   expiresAt: string;
@@ -71,6 +76,7 @@ export type PlaceContactResponse = Readonly<{
   contactAvailable: boolean;
   contacts: readonly ContactMethodResponse[];
   homepage: string | null;
+  thumbnailUrl: string | null;
 }>;
 
 export type HelpPlaceContactsResponse = Readonly<{
@@ -108,6 +114,7 @@ export type HelpRequestApi = Readonly<{
   findMine(): Promise<readonly HelpRequestResponse[]>;
   get(id: string): Promise<HelpRequestResponse>;
   accept(id: string): Promise<HelpRequestResponse>;
+  cancelAccept(id: string): Promise<HelpRequestResponse>;
   reject(id: string): Promise<void>;
   complete(id: string): Promise<HelpRequestResponse>;
   cancel(id: string): Promise<HelpRequestResponse>;
@@ -189,6 +196,16 @@ export function createHelpRequestApi(options?: HelpRequestApiOptions): HelpReque
       try {
         return await client.post<HelpRequestResponse>(
           `/api/v1/help-requests/${encodeURIComponent(id)}/accept`,
+        );
+      } catch (error) {
+        throw toHelpRequestApiError(error);
+      }
+    },
+
+    async cancelAccept(id: string): Promise<HelpRequestResponse> {
+      try {
+        return await client.post<HelpRequestResponse>(
+          `/api/v1/help-requests/${encodeURIComponent(id)}/cancel-accept`,
         );
       } catch (error) {
         throw toHelpRequestApiError(error);
