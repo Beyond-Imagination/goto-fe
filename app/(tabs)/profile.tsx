@@ -1,5 +1,9 @@
-import { AppRouteScreen } from '@/screens/AppRouteScreen';
+import { useRouter } from 'expo-router';
+
+import { MyInfoHomeScreen } from '@/screens/myinfo/MyInfoHomeScreen';
 
 export default function ProfileRoute() {
-  return <AppRouteScreen route="profile" />;
+  const router = useRouter();
+
+  return <MyInfoHomeScreen onNavigate={href => router.push(href as never)} />;
 }
