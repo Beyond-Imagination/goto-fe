@@ -13,6 +13,7 @@ import {
   HelpPrimaryButton,
   HelpStepProgress,
   DurationChips,
+  InfoMark,
 } from '@/components/help';
 import {
   HELP_KINDS,
@@ -116,9 +117,12 @@ export function HelpRequestFormScreen({ onBack, onSubmitted }: HelpRequestFormSc
           value={draft.message}
         />
 
-        <Text color={colors.text.primary} style={styles.sectionTitle} variant="title-2" weight="semibold">
-          언제까지 도움이 필요하세요?
-        </Text>
+        <View style={[styles.sectionTitle, styles.sectionTitleRow]}>
+          <Text color={colors.text.primary} variant="title-2" weight="semibold">
+            언제까지 도움이 필요하세요?
+          </Text>
+          <InfoMark />
+        </View>
         <DurationChips
           onChange={expiresInMinutes => patchDraft({ expiresInMinutes })}
           options={DURATION_OPTIONS}
@@ -168,6 +172,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginTop: 20,
+  },
+  sectionTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   emergency: {
     marginVertical: 20,

@@ -11,5 +11,6 @@ export * from './HelpPrimaryButton';
 export * from './HelpSegmented';
 export * from './HelpStepProgress';
 export * from './HelpTag';
+export * from './InfoMark';
 export * from './PlaceSelectCard';
 export * from './tokens';

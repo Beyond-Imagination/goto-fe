@@ -5,15 +5,15 @@ import { formatDistance } from '@/help';
 import { colors } from '@/styles/tokens/colors';
 
 type PlaceSelectCardProps = {
-  /** 시안의 왼쪽 순번. */
-  readonly index: number;
+  /** 시안의 왼쪽 순번. 값이 없으면 번호를 그리지 않습니다. */
+  readonly index?: number;
   readonly placeName: string;
   readonly thumbnailUrl?: string | null;
   readonly distanceMeters: number | null;
   readonly address: string | null;
   readonly selected?: boolean;
   readonly onPress?: () => void;
-  /** 연락처 화면은 펼침 화살표를, 장소 선택 화면은 이동 화살표를 씁니다. */
+  /** 연락처 화면만 펼침 화살표를 씁니다. 값이 없으면 화살표를 그리지 않습니다. */
   readonly expanded?: boolean;
 };
 
@@ -36,9 +36,11 @@ export function PlaceSelectCard({
       onPress={onPress}
       style={[styles.card, selected ? styles.cardSelected : null]}
     >
-      <Text color={colors.text.secondary} style={styles.index} variant="body-3" weight="semibold">
-        {index}
-      </Text>
+      {index === undefined ? null : (
+        <Text color={colors.text.secondary} style={styles.index} variant="body-3" weight="semibold">
+          {index}
+        </Text>
+      )}
 
       {/* 서버에 사진이 없는 장소는 빈 자리로 둡니다. */}
       <View style={styles.thumbnail}>
@@ -63,9 +65,11 @@ export function PlaceSelectCard({
         ) : null}
       </View>
 
-      <Text color={colors.icon.primary} variant="body-2">
-        {expanded === undefined ? '›' : expanded ? '⌃' : '⌄'}
-      </Text>
+      {expanded === undefined ? null : (
+        <Text color={colors.icon.primary} variant="body-2">
+          {expanded ? '⌃' : '⌄'}
+        </Text>
+      )}
     </Pressable>
   );
 }

@@ -18,7 +18,13 @@ export default function HelpLayout() {
   return (
     // 위치 → 내용 → 대기 3단계가 같은 요청 초안을 공유합니다.
     <HelpRequestDraftProvider>
-      <Stack screenOptions={{ animation: 'slide_from_right', headerShown: false }} />
+      <Stack screenOptions={{ animation: 'slide_from_right', headerShown: false }}>
+        {/* 요청 상세는 지도 위에 겹쳐 뜨는 팝업입니다. */}
+        <Stack.Screen
+          name="request-review"
+          options={{ animation: 'fade', presentation: 'transparentModal' }}
+        />
+      </Stack>
     </HelpRequestDraftProvider>
   );
 }

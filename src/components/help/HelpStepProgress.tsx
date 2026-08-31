@@ -31,11 +31,9 @@ export function HelpStepProgress({ step, totalSteps = HELP_REQUEST_TOTAL_STEPS }
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    gap: 2,
   },
   segment: {
     backgroundColor: colors.background.regular,
-    borderRadius: 2,
     flex: 1,
     height: 3,
   },

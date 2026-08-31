@@ -110,7 +110,12 @@ export function HelpAcceptedScreen({ helpRequestId, onBack, onCanceled }: HelpAc
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.hero}>
-          <Image source={require('../../assets/logo-mark.png')} style={styles.logo} />
+          {/* logo-mark.png는 스플래시용 흰색 마크라 브랜드 색으로 틴트해서 씁니다. */}
+          <Image
+            source={require('../../assets/logo-mark.png')}
+            style={styles.logo}
+            tintColor={colors.brand.mainAlt}
+          />
           <Text color={colors.text.primary} style={styles.heroTitle} variant="title-1" weight="semibold">
             도움 요청을 수락했어요
           </Text>

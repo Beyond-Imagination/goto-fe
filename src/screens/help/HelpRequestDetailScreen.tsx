@@ -1,13 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { useFocusEffect } from 'expo-router';
 
 import { Text } from '@/components/common/Text';
 import {
   HELP_SCREEN_X,
   HelpDetailTable,
-  HelpHeader,
   HelpMapPlaceholder,
   HelpNoticeBox,
   HelpTag,
@@ -37,7 +37,6 @@ export function HelpRequestDetailScreen({
   onAccepted,
   onRejected,
 }: HelpRequestDetailScreenProps) {
-  const insets = useSafeAreaInsets();
   const helpApi = useHelpRequestApi();
 
   const [request, setRequest] = useState<HelpRequestResponse | null>(null);
@@ -108,8 +107,7 @@ export function HelpRequestDetailScreen({
 
   if (!request) {
     return (
-      <SafeAreaView edges={['top']} style={styles.screen}>
-        <HelpHeader onBack={onBack} title="도움 요청 상세" />
+      <ModalShell onClose={onBack}>
         <View style={styles.loadingArea}>
           {errorMessage ? (
             <Text color={colors.semantic.danger.DEFAULT} variant="body-3">
@@ -119,7 +117,7 @@ export function HelpRequestDetailScreen({
             <ActivityIndicator color={colors.brand.mainAlt} />
           )}
         </View>
-      </SafeAreaView>
+      </ModalShell>
     );
   }
 
@@ -132,10 +130,8 @@ export function HelpRequestDetailScreen({
   ];
 
   return (
-    <SafeAreaView edges={['top']} style={styles.screen}>
-      <HelpHeader onBack={onBack} title="도움 요청 상세" />
-
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
+    <ModalShell onClose={onBack}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Text color={colors.text.primary} variant="title-1" weight="semibold">
           요청 내용
         </Text>
@@ -184,7 +180,7 @@ export function HelpRequestDetailScreen({
         ) : null}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={styles.footer}>
         <Pressable
           accessibilityLabel="지금은 어려워요"
           accessibilityRole="button"
@@ -211,19 +207,87 @@ export function HelpRequestDetailScreen({
           </Text>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </ModalShell>
+  );
+}
+
+/** 지도 위에 겹쳐 뜨는 팝업 껍데기. 어두운 배경을 누르면 닫힙니다. */
+function ModalShell({ children, onClose }: { readonly children: ReactNode; readonly onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={styles.backdrop}>
+      <Pressable
+        accessibilityLabel="닫기"
+        accessibilityRole="button"
+        onPress={onClose}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <SafeAreaView
+        edges={['top', 'bottom']}
+        pointerEvents="box-none"
+        style={[styles.cardArea, { paddingBottom: Math.max(insets.bottom, 24) }]}
+      >
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text color={colors.text.primary} variant="title-2" weight="semibold">
+              도움 요청 상세
+            </Text>
+            <Pressable
+              accessibilityLabel="닫기"
+              accessibilityRole="button"
+              hitSlop={12}
+              onPress={onClose}
+              style={styles.closeButton}
+            >
+              <Text color={colors.text.primary} variant="title-2">
+                ✕
+              </Text>
+            </Pressable>
+          </View>
+
+          {children}
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background.primary,
+  backdrop: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     flex: 1,
+  },
+  cardArea: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingHorizontal: HELP_SCREEN_X,
+    // 지도와 상단 헤더가 팝업 위로 보이도록 위쪽을 비워 둡니다.
+    paddingTop: 56,
+  },
+  card: {
+    backgroundColor: colors.background.primary,
+    borderRadius: 20,
+    flex: 1,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 12,
+    paddingTop: 20,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: HELP_SCREEN_X,
+    top: 18,
   },
   content: {
     gap: 12,
+    paddingBottom: 12,
     paddingHorizontal: HELP_SCREEN_X,
-    paddingTop: 24,
+    paddingTop: 4,
   },
   loadingArea: {
     alignItems: 'center',
@@ -250,6 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     flexDirection: 'row',
     gap: 12,
+    paddingBottom: 20,
     paddingHorizontal: HELP_SCREEN_X,
     paddingTop: 12,
   },

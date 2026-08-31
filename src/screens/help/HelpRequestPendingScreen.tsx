@@ -100,7 +100,6 @@ export function HelpRequestPendingScreen({
   }
 
   const remainingMinutes = minutesUntil(request.expiresAt);
-  const message = request.message ?? '';
 
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
@@ -112,6 +111,7 @@ export function HelpRequestPendingScreen({
             coordinates={{ latitude: request.latitude, longitude: request.longitude }}
             height={300}
             pinLabel="요청 위치"
+            style={styles.map}
           />
           <Pressable
             accessibilityLabel="요청 취소"
@@ -138,7 +138,7 @@ export function HelpRequestPendingScreen({
           반경 {HELP_REQUEST_REACH_METERS}m 안의 주변 사용자에게 요청을 보내고 있어요
         </Text>
 
-        <Text color={colors.text.primary} variant="title-1" weight="semibold">
+        <Text color={colors.text.primary} style={styles.headline} variant="title-1" weight="semibold">
           <Text color={colors.brand.mainAlt} variant="title-1" weight="semibold">
             {remainingMinutes}분
           </Text>
@@ -146,28 +146,23 @@ export function HelpRequestPendingScreen({
         </Text>
 
         {request.placeName ? (
-          <PlaceSelectCard
-            address={null}
-            distanceMeters={null}
-            index={1}
-            placeName={request.placeName}
-          />
+          <View style={styles.placeCard}>
+            <PlaceSelectCard address={null} distanceMeters={null} placeName={request.placeName} />
+          </View>
         ) : null}
 
+        {/* 위치 설명은 요청 대기 중에도 고칠 수 있어야 해서 편집 아이콘을 함께 둡니다. */}
         <View style={styles.locationBox}>
-          <Text color={colors.text.secondary} variant="body-2">
+          <Text color={colors.text.secondary} style={styles.locationText} variant="body-2">
             {request.locationLabel}
+          </Text>
+          <Text color={colors.icon.disabled} variant="body-2">
+            ✎
           </Text>
         </View>
 
-        {message ? (
-          <Text color={colors.text.secondary} variant="body-3">
-            {message}
-          </Text>
-        ) : null}
-
         {errorMessage ? (
-          <Text color={colors.semantic.danger.DEFAULT} variant="body-3">
+          <Text color={colors.semantic.danger.DEFAULT} style={styles.reach} variant="body-3">
             {errorMessage}
           </Text>
         ) : null}
@@ -187,8 +182,10 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 12,
-    paddingHorizontal: HELP_SCREEN_X,
-    paddingTop: 16,
+  },
+  map: {
+    borderRadius: 0,
+    borderWidth: 0,
   },
   loadingArea: {
     alignItems: 'center',
@@ -208,15 +205,30 @@ const styles = StyleSheet.create({
   },
   reach: {
     marginTop: 8,
+    paddingHorizontal: HELP_SCREEN_X,
   },
   locationBox: {
+    alignItems: 'center',
     borderColor: colors.border.black,
     borderRadius: 12,
     borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: HELP_SCREEN_X,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
+  locationText: {
+    flex: 1,
+  },
+  headline: {
+    paddingHorizontal: HELP_SCREEN_X,
+  },
+  placeCard: {
+    paddingHorizontal: HELP_SCREEN_X,
+  },
   emergency: {
     marginTop: 16,
+    paddingHorizontal: HELP_SCREEN_X,
   },
 });

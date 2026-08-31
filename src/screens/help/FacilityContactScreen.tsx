@@ -25,8 +25,8 @@ import { colors } from '@/styles/tokens/colors';
 /** 처음에는 3곳만 보여주고 「더보기」로 나머지를 펼칩니다. */
 const INITIAL_VISIBLE_PLACES = 3;
 
-/** BE place-contacts의 radiusMeters 상한이 500m라서 그 값을 그대로 씁니다. */
-const PLACE_SEARCH_RADIUS_METERS = 500;
+/** BE place-contacts의 radiusMeters 상한(1000m). 화면기획의 「내 주위 1km」와 같습니다. */
+const PLACE_SEARCH_RADIUS_METERS = 1000;
 const PLACE_SEARCH_LIMIT = 10;
 
 type FacilityContactScreenProps = {
@@ -102,7 +102,7 @@ export function FacilityContactScreen({ onBack }: FacilityContactScreenProps) {
             어떤 장소에 계신가요?
           </Text>
           <Text color={colors.text.secondary} variant="body-1">
-            내 주위 {PLACE_SEARCH_RADIUS_METERS}m 내에 있는 장소의 연락처를 제공합니다
+            내 주위 {PLACE_SEARCH_RADIUS_METERS / 1000}km 내에 있는 장소의 연락처를 제공합니다
           </Text>
         </View>
 

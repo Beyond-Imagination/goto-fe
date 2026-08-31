@@ -12,6 +12,7 @@ import {
   HelpPrimaryButton,
   HelpSegmented,
   HelpStepProgress,
+  InfoMark,
   PlaceSelectCard,
 } from '@/components/help';
 import {
@@ -29,8 +30,8 @@ const MODE_OPTIONS = [
   { value: HELP_LOCATION_MODE.onRoad, label: '길 위에 있어요' },
 ] as const;
 
-/** BE place-contacts의 radiusMeters 상한이 500m입니다. */
-const PLACE_SEARCH_RADIUS_METERS = 500;
+/** BE place-contacts의 radiusMeters 상한(1000m)에 맞춘 값. 화면기획의 「내 주위 1km」와 같습니다. */
+const PLACE_SEARCH_RADIUS_METERS = 1000;
 
 type HelpLocationScreenProps = {
   readonly onBack: () => void;
@@ -127,9 +128,12 @@ export function HelpLocationScreen({ onBack, onNext }: HelpLocationScreenProps) 
 
             <View style={styles.divider} />
 
-            <Text color={colors.text.primary} variant="title-2" weight="semibold">
-              장소 선택
-            </Text>
+            <View style={styles.sectionTitleRow}>
+              <Text color={colors.text.primary} variant="title-2" weight="semibold">
+                장소 선택
+              </Text>
+              <InfoMark />
+            </View>
 
             {isLoading ? (
               <ActivityIndicator color={colors.brand.mainAlt} style={styles.loading} />
@@ -231,6 +235,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginTop: 20,
+  },
+  sectionTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   footer: {
     backgroundColor: colors.background.primary,
