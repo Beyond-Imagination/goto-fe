@@ -16,7 +16,7 @@ test('닉네임 사용 가능 여부는 URL 인코딩된 REST 조회로 확인�
 
   assert.equal(available, true);
   assert.deepEqual(request, {
-    method: undefined,
+    method: 'GET',
     url: 'https://api.example.test/api/v1/nicknames/%ED%95%A8%EA%BB%98%20%EA%B0%80%EA%B8%B8/availability',
   });
 });

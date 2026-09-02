@@ -23,7 +23,7 @@ function createDeferredApi(pending: ReturnType<typeof deferred<number>>): Pendin
 
 test('포커스 시 이전 건수를 지운 뒤 조회한 양수 건수를 반영한다', async () => {
   const pending = deferred<number>();
-  const counts: Array<number | null> = [];
+  const counts: (number | null)[] = [];
 
   startPendingHelpRequestCountLoad(createDeferredApi(pending), (count) => {
     counts.push(count);
@@ -40,7 +40,7 @@ test('포커스 시 이전 건수를 지운 뒤 조회한 양수 건수를 반�
 test('다시 포커스되면 이전 숫자를 지우고 최신 건수를 반영한다', async () => {
   const first = deferred<number>();
   const second = deferred<number>();
-  const counts: Array<number | null> = [];
+  const counts: (number | null)[] = [];
   const onCount = (count: number | null) => {
     counts.push(count);
   };
@@ -62,7 +62,7 @@ test('다시 포커스되면 이전 숫자를 지우고 최신 건수를 반영�
 test('포커스를 잃으면 이전 요청 결과는 버린다', async () => {
   const stale = deferred<number>();
   const latest = deferred<number>();
-  const counts: Array<number | null> = [];
+  const counts: (number | null)[] = [];
   const onCount = (count: number | null) => {
     counts.push(count);
   };
@@ -80,7 +80,7 @@ test('포커스를 잃으면 이전 요청 결과는 버린다', async () => {
 });
 
 test('API가 없으면 배지를 숨긴 채로 유지한다', () => {
-  const counts: Array<number | null> = [];
+  const counts: (number | null)[] = [];
 
   startPendingHelpRequestCountLoad(null, (count) => {
     counts.push(count);
@@ -92,8 +92,8 @@ test('API가 없으면 배지를 숨긴 채로 유지한다', () => {
 test('조회 실패나 잘못된 건수는 배지를 숨긴다', async () => {
   const invalid = deferred<number>();
   const failed = deferred<number>();
-  const invalidCounts: Array<number | null> = [];
-  const failedCounts: Array<number | null> = [];
+  const invalidCounts: (number | null)[] = [];
+  const failedCounts: (number | null)[] = [];
 
   startPendingHelpRequestCountLoad(createDeferredApi(invalid), (count) => {
     invalidCounts.push(count);
