@@ -1,5 +1,9 @@
-import { HelpDestinationPlaceholderScreen } from '@/screens/help/HelpDestinationPlaceholderScreen';
+import { useRouter } from 'expo-router';
+
+import { FacilityContactScreen } from '@/screens/help/FacilityContactScreen';
 
 export default function ContactFacilityRoute() {
-  return <HelpDestinationPlaceholderScreen title="시설 관리자 연락" />;
+  const router = useRouter();
+
+  return <FacilityContactScreen onBack={() => router.back()} />;
 }

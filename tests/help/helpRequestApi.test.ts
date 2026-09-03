@@ -67,7 +67,6 @@ test('createHelpRequestApi.create()는 POST /api/v1/help-requests로 올바른 p
         completedAt: null,
         canceledAt: null,
         shareMessage: '현재 정문 앞 1층 근처에서 이동 도움이 필요합니다.',
-        emergencyCallRecommended: false,
       }),
       { status: 201, headers: { 'Content-Type': 'application/json' } },
     );
@@ -85,6 +84,7 @@ test('createHelpRequestApi.create()는 POST /api/v1/help-requests로 올바른 p
     longitude: 129.2286,
     floorLevel: 1,
     message: '도움이 필요합니다.',
+    kinds: ['MOBILITY_ASSIST'],
     expiresInMinutes: 30,
   };
 

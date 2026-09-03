@@ -44,7 +44,7 @@ export function createTermsApi(
 export async function fetchTermsList(
   // 기본 인자에서 getApiBaseUrl()을 부르면 mock 분기보다 먼저 평가돼 mock 모드에서도 URL 검증이 터집니다.
   apiBaseUrl?: string,
-  fetchImplementation: typeof fetch,
+  fetchImplementation?: typeof fetch,
 ): Promise<readonly TermDetail[]> {
   if (process.env.EXPO_PUBLIC_AUTH_MODE === 'mock') {
     const mockApi = createMockTermsApi();

@@ -1,5 +1,15 @@
-import { HelpDestinationPlaceholderScreen } from '@/screens/help/HelpDestinationPlaceholderScreen';
+import { useRouter } from 'expo-router';
+
+import { HELP_ROUTE } from '@/help';
+import { HelpLocationScreen } from '@/screens/help/HelpLocationScreen';
 
 export default function RequestNearbyRoute() {
-  return <HelpDestinationPlaceholderScreen title="내 위치 입력" />;
+  const router = useRouter();
+
+  return (
+    <HelpLocationScreen
+      onBack={() => router.back()}
+      onNext={() => router.push(HELP_ROUTE.requestDetail)}
+    />
+  );
 }
