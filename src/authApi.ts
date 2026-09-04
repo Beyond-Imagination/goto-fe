@@ -1,4 +1,5 @@
 import { createHttpClient, getApiBaseUrl } from '@/api';
+import { logger } from '@/utils/logger';
 
 export { getApiBaseUrl };
 
@@ -76,14 +77,14 @@ function decodeTokens(response: LoginResponse | RefreshResponse): DecodedTokens 
   try {
     decoded.accessToken = decodeJwt(response.accessToken);
   } catch (error) {
-    console.warn('Failed to decode accessToken:', error);
+    logger.warn('Failed to decode accessToken:', error);
   }
 
   if ('refreshToken' in response) {
     try {
       decoded.refreshToken = decodeJwt(response.refreshToken);
     } catch (error) {
-      console.warn('Failed to decode refreshToken:', error);
+      logger.warn('Failed to decode refreshToken:', error);
     }
   }
 

@@ -6,6 +6,7 @@ import NaverLogin from '@react-native-seoul/naver-login';
 
 import { OAuthProviderUnavailableError } from '@/auth/common';
 import type { SocialProvider } from '@/components/auth/socialProviders';
+import { logger } from '@/utils/logger';
 
 import { createGoogleLoginAdapter } from './googleLoginAdapter';
 import { supportsGoogleNativeLogin } from './googleLoginPlatform';
@@ -51,7 +52,7 @@ export function initializeSocialSDKs(): void {
       initializeKakaoSDK(kakaoKey);
     }
   } catch (error) {
-    console.warn('[Kakao OAuth] Early initialization failed:', error);
+    logger.warn('[Kakao OAuth] Early initialization failed:', error);
   }
 
   try {
@@ -66,7 +67,7 @@ export function initializeSocialSDKs(): void {
       });
     }
   } catch (error) {
-    console.warn('[Naver OAuth] Early initialization failed:', error);
+    logger.warn('[Naver OAuth] Early initialization failed:', error);
   }
 
   try {
@@ -80,7 +81,7 @@ export function initializeSocialSDKs(): void {
       });
     }
   } catch (error) {
-    console.warn('[Google OAuth] Early initialization failed:', error);
+    logger.warn('[Google OAuth] Early initialization failed:', error);
   }
 }
 

@@ -2,6 +2,7 @@ import {
   OAuthLoginCancelledError,
   OAuthProviderConfigurationError,
 } from '@/auth/common';
+import { logger } from '@/utils/logger';
 import type { SocialLoginAdapter } from './socialLoginAdapter';
 
 type KakaoLogin = () => Promise<{ accessToken: string }>;
@@ -43,7 +44,7 @@ export function createKakaoLoginAdapter(
           throw new OAuthLoginCancelledError();
         }
 
-        console.warn('[Kakao OAuth] Native login failed.', toSafeErrorDetails(error));
+        logger.warn('[Kakao OAuth] Native login failed.', toSafeErrorDetails(error));
         throw error;
       }
     },

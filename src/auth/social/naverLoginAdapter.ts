@@ -2,6 +2,7 @@ import {
   OAuthLoginCancelledError,
   OAuthProviderConfigurationError,
 } from '@/auth/common';
+import { logger } from '@/utils/logger';
 import type { SocialLoginAdapter } from './socialLoginAdapter';
 
 export interface NaverLoginConfig {
@@ -55,7 +56,7 @@ export function createNaverLoginAdapter(
 
       try {
         const result = await login();
-        console.log('[Naver OAuth] Raw login result:', JSON.stringify(result));
+        logger.debug('[Naver OAuth] Raw login result:', JSON.stringify(result));
 
         if (result.isSuccess && result.successResponse?.accessToken) {
           return {
@@ -79,7 +80,7 @@ export function createNaverLoginAdapter(
           throw new OAuthLoginCancelledError();
         }
 
-        console.warn('[Naver OAuth] Native login failed.', toSafeErrorDetails(error));
+        logger.warn('[Naver OAuth] Native login failed.', toSafeErrorDetails(error));
         throw error;
       }
     },

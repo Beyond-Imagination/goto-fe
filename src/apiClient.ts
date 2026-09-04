@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "./authApi";
+import { logger } from "@/utils/logger";
 
 // API 실패 시 서버가 내려주는 원본 JSON을 그대로 화면(및 스크린리더)에 노출하지 않기 위해,
 // 상세 payload는 이 객체에 보존하고 사용자에게는 고정 문구를 보여준다.
@@ -30,7 +31,7 @@ export async function getJson<TResponse>(path: string, accessToken: string): Pro
   }
 
   if (!response.ok) {
-    console.error(`[api] ${path} failed (${String(response.status)})`, payload);
+    logger.error(`[api] ${path} failed (${String(response.status)})`, payload);
     throw new ApiError(response.status, payload);
   }
 
