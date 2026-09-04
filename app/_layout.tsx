@@ -1,3 +1,6 @@
+// Reactotron 디버거 및 런타임 Fallback 초기화 (반드시 최상단에 위치)
+import '@/config/reactotron';
+
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
