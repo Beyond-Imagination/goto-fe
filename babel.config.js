@@ -8,8 +8,8 @@ module.exports = function (api) {
     plugins.push([
       'transform-remove-console',
       {
-        // 운영 환경에서 크리티컬 에러 및 Sentry 등의 추적을 위해 error 레벨만 보존
-        exclude: ['error'],
+        // error 로그와 console.tron 안전장치는 운영 번들에서도 보존합니다.
+        exclude: ['error', 'tron'],
       },
     ]);
   }
