@@ -14,7 +14,7 @@ export interface ReactotronDisplayConfig {
 
 export interface ReactotronTron {
   log: (...args: unknown[]) => void;
-  warn: (message?: unknown, ...args: unknown[]) => void;
+  warn: (message?: unknown) => void;
   error: (message?: unknown, stack?: unknown) => void;
   display: (config: ReactotronDisplayConfig) => void;
   clear: () => void;
