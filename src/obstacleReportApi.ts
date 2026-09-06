@@ -1,6 +1,6 @@
-import { createHttpClient, getApiBaseUrl } from "./api";
+import { createHttpClient, getApiBaseUrl, type TokenProvider } from "./api";
 
-export type TokenProvider = () => string | null | undefined | Promise<string | null | undefined>;
+export type { TokenProvider };
 
 export type MobilityType = "WHEELCHAIR" | "STROLLER" | "SLOW_WALKER";
 

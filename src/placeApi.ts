@@ -1,7 +1,7 @@
-import { createHttpClient, getApiBaseUrl } from "./api";
+import { createHttpClient, getApiBaseUrl, type TokenProvider } from "./api";
 import { MobilityType, ObstacleIssueType } from "./obstacleReportApi";
 
-export type TokenProvider = () => string | null | undefined | Promise<string | null | undefined>;
+export type { TokenProvider };
 
 export type NearbyAccessibilitySummary = {
   detourRecommendedCount: number;
