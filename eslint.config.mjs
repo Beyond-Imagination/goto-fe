@@ -10,4 +10,18 @@ export default defineConfig([
       '@typescript-eslint/no-require-imports': 'error',
     },
   },
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['src/config/reactotron.ts', 'src/utils/logger.ts'],
+    rules: {
+      'no-console': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='console'][property.name='tron']",
+          message: 'Do not access console.tron directly. Use logger from "@/utils/logger" instead.',
+        },
+      ],
+    },
+  },
 ]);

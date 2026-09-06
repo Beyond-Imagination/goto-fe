@@ -11,6 +11,7 @@ import {
 
 import { useAuth } from "@/auth";
 import { Card, Text as AppText } from "@/components";
+import { logger } from "@/utils/logger";
 import { IconStroller } from "@/components/icons/IconStroller";
 import { IconWheelchair } from "@/components/icons/IconWheelchair";
 import { colors } from "@/styles/tokens/colors";
@@ -182,7 +183,7 @@ export function MapHomeScreen() {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error("[MapHomeScreen] failed to load obstacle clusters", error);
+          logger.error("[MapHomeScreen] failed to load obstacle clusters", error);
           setClusterError("제보 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
         }
       }

@@ -7,6 +7,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/global": [
+        "./global.d.ts"
       ]
     }
   },
@@ -14,6 +17,7 @@
     "app",
     "src",
     "tests",
+    "global.d.ts",
     "env.d.ts",
     "expo-env.d.ts",
     ".expo/types/**/*.ts"

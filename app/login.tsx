@@ -9,6 +9,7 @@ import {
 } from '@/auth';
 import { type SocialProvider } from '@/components/auth';
 import { LoginScreen } from '@/screens/LoginScreen';
+import { logger } from '@/utils/logger';
 
 export default function LoginRoute() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function LoginRoute() {
         return;
       }
 
-      console.error(`[LoginRoute] ${provider} login error:`, error);
+      logger.error(`[LoginRoute] ${provider} login error:`, error);
       setErrorMessage(getLoginUserErrorMessage(error, provider));
     } finally {
       setLoadingProvider(null);

@@ -10,6 +10,7 @@ import {
 } from '@/auth';
 import { SignupCompleteScreen } from '@/screens/SignupCompleteScreen';
 import { useProfile } from '@/state/profile';
+import { logger } from '@/utils/logger';
 
 export default function SignupCompleteRoute() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function SignupCompleteRoute() {
         return;
       }
 
-      console.error('[SignupCompleteRoute] Signup error:', nextError);
+      logger.error('[SignupCompleteRoute] Signup error:', nextError);
       setError(nextError);
     }
   }, [completeOAuthSignup, profile, router]);
