@@ -1,10 +1,12 @@
-import type { ReactotronBenchmark, ReactotronDisplayConfig } from '../../global';
+import type { ReactotronBenchmark, ReactotronDisplayConfig } from '@/global';
 
 export type LoggerBenchmarkSession = ReactotronBenchmark;
 
-const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
+export function isDev(): boolean {
+  return typeof __DEV__ !== 'undefined' ? Boolean(__DEV__) : process.env.NODE_ENV !== 'production';
+}
 
-function normalizeLogValue(value: unknown): unknown {
+export function normalizeLogValue(value: unknown): unknown {
   if (value instanceof Error) {
     return {
       name: value.name,
@@ -16,7 +18,7 @@ function normalizeLogValue(value: unknown): unknown {
   return value;
 }
 
-function formatLogMessage(message: unknown): string {
+export function formatLogMessage(message: unknown): string {
   return typeof message === 'string' ? message : String(message);
 }
 
@@ -29,7 +31,7 @@ export const logger = {
    * 개발 전용 디버그 로그 (운영 환경에서는 완전히 무음화)
    */
   debug: (message: unknown, ...optionalParams: unknown[]): void => {
-    if (isDev) {
+    if (isDev()) {
       console.log('[DEBUG]', message, ...optionalParams);
       console.tron?.log?.(message, ...optionalParams);
     }
@@ -39,7 +41,7 @@ export const logger = {
    * Reactotron 전용 구조화된 데이터 시각화 로그 (개발 환경 전용)
    */
   display: (config: ReactotronDisplayConfig): void => {
-    if (isDev) {
+    if (isDev()) {
       console.log(`[DISPLAY: ${config.name}]`, config.value ?? config.preview ?? '');
       console.tron?.display?.(config);
     }
@@ -49,7 +51,7 @@ export const logger = {
    * 경고 로그
    */
   warn: (message: unknown, ...optionalParams: unknown[]): void => {
-    if (isDev) {
+    if (isDev()) {
       console.warn('[WARN]', message, ...optionalParams);
       console.tron?.warn?.(
         optionalParams.length === 0
@@ -66,7 +68,7 @@ export const logger = {
    * 에러 로그 (운영 환경에서도 크래시 추적을 위해 보존되며, 향후 Sentry 등 에러 모니터링 연동 가능)
    */
   error: (message: unknown, error?: unknown, ...optionalParams: unknown[]): void => {
-    if (isDev) {
+    if (isDev()) {
       if (error === undefined) {
         console.error('[ERROR]', message, ...optionalParams);
       } else {
@@ -101,20 +103,33 @@ export const logger = {
    * 성능 벤치마크 측정 유틸리티
    */
   benchmark: (title: string): LoggerBenchmarkSession => {
-    if (isDev) {
+    if (isDev()) {
       if (console.tron?.benchmark) {
         return console.tron.benchmark(title);
       }
       const start = Date.now();
+      let last = start;
       return {
         step: (stepName?: string) => {
-          console.log(`[BENCHMARK STEP] ${title} - ${stepName ?? ''}: +${Date.now() - start}ms`);
+          const now = Date.now();
+          const delta = now - last;
+          const total = now - start;
+          last = now;
+          const name = stepName ? ` - ${stepName}` : '';
+          console.log(`[BENCHMARK STEP] ${title}${name}: +${delta}ms (누적: ${total}ms)`);
         },
         last: (stepName?: string) => {
-          console.log(`[BENCHMARK LAP] ${title} - ${stepName ?? ''}`);
+          const now = Date.now();
+          const lap = now - last;
+          last = now;
+          const name = stepName ? ` - ${stepName}` : '';
+          console.log(`[BENCHMARK LAP] ${title}${name}: 구간: ${lap}ms`);
         },
         stop: (stepName?: string) => {
-          console.log(`[BENCHMARK STOP] ${title} - ${stepName ?? ''}: Total ${Date.now() - start}ms`);
+          const now = Date.now();
+          const total = now - start;
+          const name = stepName ? ` - ${stepName}` : '';
+          console.log(`[BENCHMARK STOP] ${title}${name}: 총 소요 시간: ${total}ms`);
         },
       };
     }
