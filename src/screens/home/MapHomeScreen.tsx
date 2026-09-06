@@ -18,20 +18,18 @@ import { radius } from "@/styles/tokens/radius";
 import { spacing } from "@/styles/tokens/spacing";
 
 import {
-  fetchObstacleClusters,
   type MobilityType,
   type ObstacleIssueType,
   type ObstacleReportCluster
 } from "@/obstacleReportApi";
 import {
-  fetchNearbyAccessibilitySummary,
-  searchPlaces,
   type NearbyAccessibilitySummary,
   type PlaceSearchItem
 } from "@/placeApi";
+import { useObstacleReportApi } from "@/useObstacleReportApi";
+import { usePlaceApi } from "@/usePlaceApi";
+import { useAsyncResource, useMyInfoApi } from "@/myinfo";
 import { getRecentlyViewedPlaces, recordPlaceView, type RecentlyViewedPlace } from "@/state/recentlyViewedPlaces";
-// TODO(BE): 내 정보 관련 API(닉네임 조회)가 아직 없어서, myinfo와 동일한 목업으로 대체 (src/screens/myinfo/mockData.ts 패턴 재사용).
-import { MOCK_PROFILE_SUMMARY } from "@/screens/myinfo/mockData";
 
 import { MapHomeSheet } from "./MapHomeSheet";
 import {
@@ -123,6 +121,12 @@ export function MapHomeScreen() {
   const { session } = useAuth();
   const accessToken = session?.accessToken ?? null;
   const mapRef = useRef<NaverMapViewRef>(null);
+  const myInfoApi = useMyInfoApi();
+  const placeApi = usePlaceApi();
+  const obstacleReportApi = useObstacleReportApi();
+  const loadProfile = useCallback(() => myInfoApi.getProfile(), [myInfoApi]);
+  const profile = useAsyncResource(loadProfile, "내 정보를 불러오지 못했어요. 다시 시도해주세요.");
+  const nickname = profile.data?.nickname;
 
   const [viewport, setViewport] = useState<Viewport | null>(null);
   const [clusters, setClusters] = useState<ObstacleReportCluster[]>([]);
@@ -160,14 +164,12 @@ export function MapHomeScreen() {
       return;
     }
     const currentViewport = viewport;
-    const currentAccessToken = accessToken;
     let cancelled = false;
 
     async function loadClusters() {
       setClusterError(null);
       try {
-        const result = await fetchObstacleClusters(
-          currentAccessToken,
+        const result = await obstacleReportApi.getClusters(
           regionToBbox(currentViewport.region),
           roundedZoom,
           {
@@ -191,7 +193,7 @@ export function MapHomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [viewport, accessToken, selectedMobilityTypes, selectedAvoidIssueTypes, roundedZoom]);
+  }, [viewport, accessToken, selectedMobilityTypes, selectedAvoidIssueTypes, roundedZoom, obstacleReportApi]);
 
   // 먼 줌 / 가까운 줌 전용 바텀시트 데이터: "현재 화면 접근성 현황" + "추천 관광지".
   // 중간 줌은 클러스터 응답의 nearbyPlaceLabel만으로 콘텐츠를 구성하므로 별도 호출이 필요 없다.
@@ -201,7 +203,6 @@ export function MapHomeScreen() {
     }
     const latitude = viewport.center.latitude;
     const longitude = viewport.center.longitude;
-    const currentAccessToken = accessToken;
     const currentZoomTier = zoomTier;
     const mobilityTypes = Array.from(selectedMobilityTypes);
     const avoid = Array.from(selectedAvoidIssueTypes);
@@ -211,9 +212,9 @@ export function MapHomeScreen() {
       try {
         const [summary, searchResult] = await Promise.all([
           currentZoomTier === "far"
-            ? fetchNearbyAccessibilitySummary(currentAccessToken, latitude, longitude, { avoid, mobilityTypes })
+            ? placeApi.getNearbySummary(latitude, longitude, { avoid, mobilityTypes })
             : Promise.resolve(null),
-          searchPlaces(currentAccessToken, latitude, longitude, { k: RECOMMENDED_PLACES_MAX_COUNT })
+          placeApi.searchPlaces(latitude, longitude, { k: RECOMMENDED_PLACES_MAX_COUNT })
         ]);
         if (!cancelled) {
           if (summary) {
@@ -240,7 +241,8 @@ export function MapHomeScreen() {
     accessToken,
     zoomTier,
     selectedMobilityTypes,
-    selectedAvoidIssueTypes
+    selectedAvoidIssueTypes,
+    placeApi
   ]);
 
   const handleCameraIdle = useCallback((params: Camera & { region: Region }) => {
@@ -350,6 +352,7 @@ export function MapHomeScreen() {
         {zoomTier === "far" ? (
           <FarZoomContent
             nearbySummary={nearbySummary}
+            nickname={nickname}
             onPlacePress={handlePlacePress}
             recentlyViewedPlaces={recentlyViewedPlaces}
             recommendedPlaces={recommendedPlaces}
@@ -359,6 +362,7 @@ export function MapHomeScreen() {
         {zoomTier === "close" ? (
           <CloseZoomContent
             clusters={clusters}
+            nickname={nickname}
             onPlacePress={handlePlacePress}
             recentlyViewedPlaces={recentlyViewedPlaces}
             recommendedPlaces={recommendedPlaces}
@@ -400,6 +404,7 @@ function FilterChip({ Icon, label, onPress, selected }: FilterChipProps) {
 
 type FarZoomContentProps = {
   readonly nearbySummary: NearbyAccessibilitySummary | null;
+  readonly nickname: string | undefined;
   readonly onPlacePress: (place: PlaceSearchItem) => void;
   readonly recentlyViewedPlaces: readonly RecentlyViewedPlace[];
   readonly recommendedPlaces: readonly PlaceSearchItem[];
@@ -407,6 +412,7 @@ type FarZoomContentProps = {
 
 function FarZoomContent({
   nearbySummary,
+  nickname,
   onPlacePress,
   recentlyViewedPlaces,
   recommendedPlaces
@@ -414,7 +420,7 @@ function FarZoomContent({
   return (
     <View style={styles.sections}>
       {nearbySummary ? <AccessibilitySummaryCard summary={nearbySummary} /> : null}
-      <RecommendedPlacesSection onPlacePress={onPlacePress} places={recommendedPlaces} />
+      <RecommendedPlacesSection nickname={nickname} onPlacePress={onPlacePress} places={recommendedPlaces} />
       <RecentlyViewedPlacesSection places={recentlyViewedPlaces} />
     </View>
   );
@@ -494,12 +500,19 @@ function MidZoomContent({ clusters }: MidZoomContentProps) {
 
 type CloseZoomContentProps = {
   readonly clusters: readonly ObstacleReportCluster[];
+  readonly nickname: string | undefined;
   readonly onPlacePress: (place: PlaceSearchItem) => void;
   readonly recentlyViewedPlaces: readonly RecentlyViewedPlace[];
   readonly recommendedPlaces: readonly PlaceSearchItem[];
 };
 
-function CloseZoomContent({ clusters, onPlacePress, recentlyViewedPlaces, recommendedPlaces }: CloseZoomContentProps) {
+function CloseZoomContent({
+  clusters,
+  nickname,
+  onPlacePress,
+  recentlyViewedPlaces,
+  recommendedPlaces
+}: CloseZoomContentProps) {
   // 가까운 줌은 언클러스터링 상태라 클러스터 하나 = 제보 하나. topIssueTypes를 합산하면
   // 뷰포트 전체의 유형별 분포가 정확히 나온다(각 클러스터가 이미 리포트 1건이라 손실 없음).
   const issueTypeCounts = new Map<ObstacleIssueType, number>();
@@ -568,13 +581,14 @@ function CloseZoomContent({ clusters, onPlacePress, recentlyViewedPlaces, recomm
         )}
       </View>
 
-      <RecommendedPlacesSection onPlacePress={onPlacePress} places={recommendedPlaces} />
+      <RecommendedPlacesSection nickname={nickname} onPlacePress={onPlacePress} places={recommendedPlaces} />
       <RecentlyViewedPlacesSection places={recentlyViewedPlaces} />
     </View>
   );
 }
 
 type RecommendedPlacesSectionProps = {
+  readonly nickname: string | undefined;
   readonly onPlacePress: (place: PlaceSearchItem) => void;
   readonly places: readonly PlaceSearchItem[];
 };
@@ -584,7 +598,7 @@ const RECOMMENDED_PLACES_PAGE_SIZE = 6;
 // 진짜 페이지네이션(offset) 없이 상위 K개를 한 번에 받아와 클라이언트에서 순차 공개한다 — 이 값이 노출 가능한 최대 순위다.
 const RECOMMENDED_PLACES_MAX_COUNT = 15;
 
-function RecommendedPlacesSection({ onPlacePress, places }: RecommendedPlacesSectionProps) {
+function RecommendedPlacesSection({ nickname, onPlacePress, places }: RecommendedPlacesSectionProps) {
   const [visibleCount, setVisibleCount] = useState(RECOMMENDED_PLACES_INITIAL_COUNT);
   const [renderedPlaces, setRenderedPlaces] = useState(places);
 
@@ -608,10 +622,16 @@ function RecommendedPlacesSection({ onPlacePress, places }: RecommendedPlacesSec
   return (
     <View style={styles.sections}>
       <AppText style={styles.sectionHeading} variant="title-2" weight="semibold">
-        <AppText color={colors.brand.main} variant="title-2" weight="semibold">
-          {MOCK_PROFILE_SUMMARY.nickname}
-        </AppText>
-        님을 위한 추천 관광지
+        {nickname ? (
+          <>
+            <AppText color={colors.brand.main} variant="title-2" weight="semibold">
+              {nickname}
+            </AppText>
+            님을 위한 추천 관광지
+          </>
+        ) : (
+          "추천 관광지"
+        )}
       </AppText>
       <View style={styles.placeGrid}>
         {visiblePlaces.map((place, index) => (

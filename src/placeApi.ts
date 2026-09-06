@@ -1,5 +1,7 @@
-import { getJson } from "./apiClient";
+import { createHttpClient, getApiBaseUrl, type TokenProvider } from "./api";
 import { MobilityType, ObstacleIssueType } from "./obstacleReportApi";
+
+export type { TokenProvider };
 
 export type NearbyAccessibilitySummary = {
   detourRecommendedCount: number;
@@ -12,22 +14,6 @@ export type NearbyAccessibilitySummaryOptions = {
   mobilityTypes?: readonly MobilityType[];
   avoid?: readonly ObstacleIssueType[];
 };
-
-export async function fetchNearbyAccessibilitySummary(
-  accessToken: string,
-  lat: number,
-  lng: number,
-  options: NearbyAccessibilitySummaryOptions = {}
-): Promise<NearbyAccessibilitySummary> {
-  const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
-  for (const mobilityType of options.mobilityTypes ?? []) {
-    params.append("mobilityTypes", mobilityType);
-  }
-  for (const issueType of options.avoid ?? []) {
-    params.append("avoid", issueType);
-  }
-  return getJson<NearbyAccessibilitySummary>(`/api/v1/places/nearby-summary?${params.toString()}`, accessToken);
-}
 
 export type PlaceSearchItem = {
   placeId: number;
@@ -53,26 +39,91 @@ export type SearchPlacesOptions = {
   avoid?: readonly ObstacleIssueType[];
 };
 
+export type PlaceApiOptions = Readonly<{
+  baseUrl?: string;
+  apiBaseUrl?: string;
+  getAccessToken?: TokenProvider;
+  fetchImplementation?: typeof fetch;
+}>;
+
+export type PlaceApi = Readonly<{
+  getNearbySummary(
+    lat: number,
+    lng: number,
+    options?: NearbyAccessibilitySummaryOptions,
+  ): Promise<NearbyAccessibilitySummary>;
+  searchPlaces(
+    lat: number,
+    lng: number,
+    options?: SearchPlacesOptions,
+  ): Promise<PlaceSearchResult>;
+}>;
+
+export function createPlaceApi(options?: PlaceApiOptions): PlaceApi {
+  const client = createHttpClient({
+    baseUrl: options?.baseUrl ?? options?.apiBaseUrl ?? getApiBaseUrl(),
+    getAccessToken: options?.getAccessToken,
+    fetch: options?.fetchImplementation,
+  });
+
+  return {
+    async getNearbySummary(lat, lng, options = {}) {
+      const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+      for (const mobilityType of options.mobilityTypes ?? []) {
+        params.append("mobilityTypes", mobilityType);
+      }
+      for (const issueType of options.avoid ?? []) {
+        params.append("avoid", issueType);
+      }
+      return client.get<NearbyAccessibilitySummary>(`/api/v1/places/nearby-summary?${params.toString()}`);
+    },
+
+    async searchPlaces(lat, lng, options = {}) {
+      const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+      if (options.k !== undefined) {
+        params.set("k", String(options.k));
+      }
+      for (const prefix of options.categoryPrefixes ?? []) {
+        params.append("categoryPrefixes", prefix);
+      }
+      for (const mobilityType of options.mobilityTypes ?? []) {
+        params.append("mobilityTypes", mobilityType);
+      }
+      for (const issueType of options.avoid ?? []) {
+        params.append("avoid", issueType);
+      }
+      return client.get<PlaceSearchResult>(`/api/v1/places/search?${params.toString()}`);
+    },
+  };
+}
+
+// 하위 호환성을 위한 standalone 래퍼 함수
+export async function fetchNearbyAccessibilitySummary(
+  accessToken: string,
+  lat: number,
+  lng: number,
+  options: NearbyAccessibilitySummaryOptions = {},
+  clientOptions?: { baseUrl?: string; apiBaseUrl?: string; fetchImplementation?: typeof fetch }
+): Promise<NearbyAccessibilitySummary> {
+  const api = createPlaceApi({
+    baseUrl: clientOptions?.baseUrl ?? clientOptions?.apiBaseUrl,
+    getAccessToken: () => accessToken,
+    fetchImplementation: clientOptions?.fetchImplementation,
+  });
+  return api.getNearbySummary(lat, lng, options);
+}
+
 export async function searchPlaces(
   accessToken: string,
   lat: number,
   lng: number,
-  options: SearchPlacesOptions = {}
+  options: SearchPlacesOptions = {},
+  clientOptions?: { baseUrl?: string; apiBaseUrl?: string; fetchImplementation?: typeof fetch }
 ): Promise<PlaceSearchResult> {
-  const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
-
-  if (options.k !== undefined) {
-    params.set("k", String(options.k));
-  }
-  for (const prefix of options.categoryPrefixes ?? []) {
-    params.append("categoryPrefixes", prefix);
-  }
-  for (const mobilityType of options.mobilityTypes ?? []) {
-    params.append("mobilityTypes", mobilityType);
-  }
-  for (const issueType of options.avoid ?? []) {
-    params.append("avoid", issueType);
-  }
-
-  return getJson<PlaceSearchResult>(`/api/v1/places/search?${params.toString()}`, accessToken);
+  const api = createPlaceApi({
+    baseUrl: clientOptions?.baseUrl ?? clientOptions?.apiBaseUrl,
+    getAccessToken: () => accessToken,
+    fetchImplementation: clientOptions?.fetchImplementation,
+  });
+  return api.searchPlaces(lat, lng, options);
 }
