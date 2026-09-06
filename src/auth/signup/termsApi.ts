@@ -1,4 +1,4 @@
-import { createHttpClient, getApiBaseUrl } from '@/api';
+import { ApiError, createHttpClient, getApiBaseUrl } from '@/api';
 import { createMockTermsApi } from '@/mock/adapters/mockTermsApi';
 import type { TermDetail, TermsListResponse } from './termsContent';
 
@@ -6,6 +6,20 @@ export type TermsApi = {
   getTerms(): Promise<TermsListResponse>;
   getTerm(termId: string): Promise<TermDetail>;
 };
+
+function formatTermsError(error: unknown): Error {
+  if (error instanceof ApiError) {
+    return new Error(`API request failed with status ${error.status}: ${error.message || 'Error'}`);
+  }
+  if (error && typeof error === 'object' && 'status' in error) {
+    const err = error as { status?: number; message?: string };
+    return new Error(`API request failed with status ${err.status || 500}: ${err.message || 'Error'}`);
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error('API request failed with status 500: Error');
+}
 
 export function createTermsApi(
   apiBaseUrl: string = getApiBaseUrl(),
@@ -20,19 +34,15 @@ export function createTermsApi(
     async getTerms() {
       try {
         return await client.get<TermsListResponse>('/api/v1/terms');
-      } catch (error: any) {
-        throw new Error(
-          `API request failed with status ${error.status || 500}: ${error.message || 'Error'}`,
-        );
+      } catch (error: unknown) {
+        throw formatTermsError(error);
       }
     },
     async getTerm(termId: string) {
       try {
         return await client.get<TermDetail>(`/api/v1/terms/${encodeURIComponent(termId)}`);
-      } catch (error: any) {
-        throw new Error(
-          `API request failed with status ${error.status || 500}: ${error.message || 'Error'}`,
-        );
+      } catch (error: unknown) {
+        throw formatTermsError(error);
       }
     },
   };

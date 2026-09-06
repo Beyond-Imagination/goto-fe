@@ -1,4 +1,6 @@
-import { getJson } from "./apiClient";
+import { createHttpClient, getApiBaseUrl } from "./api";
+
+export type TokenProvider = () => string | null | undefined | Promise<string | null | undefined>;
 
 export type MobilityType = "WHEELCHAIR" | "STROLLER" | "SLOW_WALKER";
 
@@ -49,26 +51,64 @@ export type ObstacleReportClusterFilters = {
   avoid?: readonly ObstacleIssueType[];
 };
 
+export type ObstacleReportApiOptions = Readonly<{
+  baseUrl?: string;
+  apiBaseUrl?: string;
+  getAccessToken?: TokenProvider;
+  fetchImplementation?: typeof fetch;
+}>;
+
+export type ObstacleReportApi = Readonly<{
+  getClusters(
+    bbox: ObstacleReportClusterBbox,
+    zoom: number,
+    filters?: ObstacleReportClusterFilters,
+  ): Promise<ObstacleReportCluster[]>;
+}>;
+
+export function createObstacleReportApi(options?: ObstacleReportApiOptions): ObstacleReportApi {
+  const client = createHttpClient({
+    baseUrl: options?.baseUrl ?? options?.apiBaseUrl ?? getApiBaseUrl(),
+    getAccessToken: options?.getAccessToken,
+    fetch: options?.fetchImplementation,
+  });
+
+  return {
+    async getClusters(bbox, zoom, filters = {}) {
+      const params = new URLSearchParams({
+        minLat: String(bbox.minLat),
+        minLng: String(bbox.minLng),
+        maxLat: String(bbox.maxLat),
+        maxLng: String(bbox.maxLng),
+        zoom: String(zoom),
+      });
+
+      for (const mobilityType of filters.mobilityTypes ?? []) {
+        params.append("mobilityTypes", mobilityType);
+      }
+      for (const issueType of filters.avoid ?? []) {
+        params.append("avoid", issueType);
+      }
+
+      return client.get<ObstacleReportCluster[]>(
+        `/api/v1/obstacle-reports/clusters?${params.toString()}`
+      );
+    },
+  };
+}
+
+// 하위 호환성을 위한 standalone 래퍼 함수
 export async function fetchObstacleClusters(
   accessToken: string,
   bbox: ObstacleReportClusterBbox,
   zoom: number,
-  filters: ObstacleReportClusterFilters = {}
+  filters: ObstacleReportClusterFilters = {},
+  clientOptions?: { baseUrl?: string; apiBaseUrl?: string; fetchImplementation?: typeof fetch }
 ): Promise<ObstacleReportCluster[]> {
-  const params = new URLSearchParams({
-    minLat: String(bbox.minLat),
-    minLng: String(bbox.minLng),
-    maxLat: String(bbox.maxLat),
-    maxLng: String(bbox.maxLng),
-    zoom: String(zoom)
+  const api = createObstacleReportApi({
+    baseUrl: clientOptions?.baseUrl ?? clientOptions?.apiBaseUrl,
+    getAccessToken: () => accessToken,
+    fetchImplementation: clientOptions?.fetchImplementation,
   });
-
-  for (const mobilityType of filters.mobilityTypes ?? []) {
-    params.append("mobilityTypes", mobilityType);
-  }
-  for (const issueType of filters.avoid ?? []) {
-    params.append("avoid", issueType);
-  }
-
-  return getJson<ObstacleReportCluster[]>(`/api/v1/obstacle-reports/clusters?${params.toString()}`, accessToken);
+  return api.getClusters(bbox, zoom, filters);
 }
