@@ -69,9 +69,8 @@ function formatDate(isoDate: string): string {
 }
 
 /**
- * TODO(GOTO-110): BE가 address를 채워주면 이 좌표 대체 표기를 제거합니다.
- *  디자인(내 정보 03·05)은 "서울시 마포구 월드컵로 23길" 같은 주소를 기대하는데,
- *  현재 BE는 역지오코딩이 없어 address가 항상 null이라 좌표로 대신 보여줍니다.
+ * BE가 네이버 리버스 지오코딩으로 행정동 주소를 채워 주지만,
+ * 키 미설정·호출 실패·매칭 없음이면 null이 오므로 그때만 좌표로 대체 표기합니다.
  */
 function toLocationLabel(report: MyObstacleReportResponse): string {
   if (report.address) {
@@ -104,6 +103,9 @@ export function toReportListItem(report: MyObstacleReportResponse): ReportListIt
     category: '장애물',
     title: `${ISSUE_TYPE_LABELS[report.issueType] ?? report.issueType} · ${SEVERITY_LABELS[report.severity]}`,
     address: toLocationLabel(report),
+    latitude: report.latitude,
+    longitude: report.longitude,
+    photoUrl: report.photoUrls[0] ?? null,
     meta: `${formatDate(report.createdAt)} · 제보 ID ${report.id}`,
     tags: toReportTags(report),
   };

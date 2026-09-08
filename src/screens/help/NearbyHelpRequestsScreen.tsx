@@ -4,7 +4,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from 'expo-router';
 
 import { Text } from '@/components/common/Text';
-import { HELP_SCREEN_X, HelpHeader, HelpMapPlaceholder, HelpTag, InfoMark } from '@/components/help';
+import {
+  HELP_SCREEN_X,
+  HelpHeader,
+  HelpTag,
+  InfoMark,
+  NearbyRequestsMap,
+  type NearbyRequestMarker,
+} from '@/components/help';
 import {
   formatDistance,
   formatElapsed,
@@ -35,6 +42,8 @@ export function NearbyHelpRequestsScreen({ onBack, onSelect }: NearbyHelpRequest
   const [requests, setRequests] = useState<readonly NearbyHelpRequestResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  /** 지도 마커를 눌러 강조된 요청. 목록 카드도 같이 강조합니다. */
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -77,12 +86,28 @@ export function NearbyHelpRequestsScreen({ onBack, onSelect }: NearbyHelpRequest
     }, [helpApi]),
   );
 
+  // 근사 좌표가 없는 요청(구버전 데이터)은 지도에 올리지 않고 목록에만 남깁니다.
+  const markers: readonly NearbyRequestMarker[] = requests
+    .filter(request => request.approximateLatitude !== null && request.approximateLongitude !== null)
+    .map(request => ({
+      id: request.id,
+      label: request.placeName ?? request.locationLabel,
+      latitude: request.approximateLatitude as number,
+      longitude: request.approximateLongitude as number,
+    }));
+
   return (
     <SafeAreaView edges={['top']} style={styles.screen}>
       <HelpHeader onBack={onBack} title="도움 주기" />
 
       <View>
-        <HelpMapPlaceholder coordinates={coordinates} height={300} style={styles.map} />
+        <NearbyRequestsMap
+          center={coordinates}
+          height={300}
+          onSelect={setSelectedId}
+          requests={markers}
+          selectedId={selectedId}
+        />
         <View style={styles.countBadge}>
           {/* 흰색 마크라 브랜드 색 원 위에 얹어 파란 배지로 씁니다. */}
           <View style={styles.countBadgeMark}>
@@ -133,7 +158,7 @@ export function NearbyHelpRequestsScreen({ onBack, onSelect }: NearbyHelpRequest
               accessibilityRole="button"
               key={request.id}
               onPress={() => onSelect(request.id)}
-              style={styles.card}
+              style={[styles.card, request.id === selectedId ? styles.cardSelected : null]}
             >
               <View style={styles.cardBody}>
                 <View style={styles.cardHeader}>
@@ -167,9 +192,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     flex: 1,
   },
-  map: {
-    borderRadius: 0,
-    borderWidth: 0,
+  cardSelected: {
+    // 지도에서 마커를 누른 요청을 목록에서도 찾기 쉽게 테두리를 강조합니다.
+    borderColor: colors.brand.mainAlt,
+    borderWidth: 2,
   },
   countBadge: {
     alignItems: 'center',

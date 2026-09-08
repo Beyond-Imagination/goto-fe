@@ -8,7 +8,7 @@ import {
   HELP_SCREEN_X,
   HelpFieldBox,
   HelpHeader,
-  HelpMapPlaceholder,
+  HelpLocationMap,
   HelpPrimaryButton,
   HelpSegmented,
   HelpStepProgress,
@@ -124,7 +124,7 @@ export function HelpLocationScreen({ onBack, onNext }: HelpLocationScreenProps) 
 
         {isInsidePlace ? (
           <>
-            <HelpMapPlaceholder coordinates={draft.coordinates} />
+            <HelpLocationMap coordinates={draft.coordinates} pinLabel="현재 위치" />
 
             <View style={styles.divider} />
 
@@ -181,7 +181,11 @@ export function HelpLocationScreen({ onBack, onNext }: HelpLocationScreenProps) 
             <Text color={colors.text.primary} variant="title-2" weight="semibold">
               지도에서 위치 찍기
             </Text>
-            <HelpMapPlaceholder coordinates={draft.coordinates} />
+            <HelpLocationMap
+              coordinates={draft.coordinates}
+              onSelect={coordinates => patchDraft({ coordinates })}
+              pinLabel="요청 위치"
+            />
           </>
         )}
 

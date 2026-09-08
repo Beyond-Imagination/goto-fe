@@ -47,6 +47,12 @@ export type NearbyHelpRequestResponse = Readonly<{
   message: string | null;
   kinds: readonly HelpKind[];
   distanceMeters: number;
+  /**
+   * 지도 표시용 근사 좌표. 수락 전에는 정확한 위치를 노출하지 않도록
+   * BE가 약 100m 격자로 뭉갠 값을 보냅니다 (화면기획 20.1).
+   */
+  approximateLatitude: number | null;
+  approximateLongitude: number | null;
   requestedAt: string;
   expiresAt: string;
 }>;
