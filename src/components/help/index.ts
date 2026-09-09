@@ -6,7 +6,6 @@ export * from './HelpDetailTable';
 export * from './HelpFieldBox';
 export * from './HelpHeader';
 export * from './HelpLocationMap';
-export * from './HelpMapPlaceholder';
 export * from './HelpNoticeBox';
 export * from './HelpPrimaryButton';
 export * from './HelpSegmented';

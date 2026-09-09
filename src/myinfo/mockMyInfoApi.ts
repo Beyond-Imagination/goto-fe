@@ -1,8 +1,13 @@
 import type {
+  MyConfirmedReportPageQuery,
   MyConfirmedReportResponse,
   MyInfoApi,
+  MyFacilityReportResponse,
   MyObstacleReportResponse,
+  MyPlaceStateReportResponse,
   MyPreferencesResponse,
+  MyReportItemResponse,
+  MyReportPageQuery,
   MyProfileResponse,
   MySettingsResponse,
   UpdateMyPreferencesRequest,
@@ -21,6 +26,7 @@ const MOCK_REPORTS: readonly MyObstacleReportResponse[] = [
     longitude: 126.978,
     address: '마포구 상암동',
     photoUrls: [],
+    description: '보도가 깨져서 휠체어가 지나가기 어려워요',
     confirmedCount: 5,
     lastConfirmedAt: '2026-08-20T04:15:30Z',
     createdAt: '2026-08-12T04:15:30Z',
@@ -36,6 +42,7 @@ const MOCK_REPORTS: readonly MyObstacleReportResponse[] = [
     longitude: 126.9768,
     address: '종로구 세종로',
     photoUrls: [],
+    description: null,
     confirmedCount: 2,
     lastConfirmedAt: '2026-08-18T04:15:30Z',
     createdAt: '2026-08-08T04:15:30Z',
@@ -51,9 +58,44 @@ const MOCK_REPORTS: readonly MyObstacleReportResponse[] = [
     longitude: 126.9366,
     address: '서대문구 연희동',
     photoUrls: [],
+    description: null,
     confirmedCount: 3,
     lastConfirmedAt: '2026-08-05T04:15:30Z',
     createdAt: '2026-08-03T04:15:30Z',
+  },
+];
+
+const MOCK_PLACE_REPORTS: readonly MyPlaceStateReportResponse[] = [
+  {
+    id: 31,
+    placeId: 5012,
+    placeName: '서울숲 공원',
+    address: '서울 성동구 뚝섬로 273',
+    latitude: 37.544,
+    longitude: 127.037,
+    accessStatus: 'PARTIALLY_ACCESSIBLE',
+    facilityStatuses: { ELEVATOR: 'BROKEN', ACCESSIBLE_TOILET: 'AVAILABLE' },
+    photoUrls: [],
+    description: '정문 경사로는 있지만 문이 무거워요',
+    createdAt: '2026-08-15T04:15:30Z',
+  },
+];
+
+const MOCK_FACILITY_REPORTS: readonly MyFacilityReportResponse[] = [
+  {
+    id: 77,
+    nodeId: 9001,
+    nodeType: 'ELEVATOR',
+    nodeName: '본관 엘리베이터',
+    floorLevel: 1,
+    placeId: 5013,
+    placeName: '성수동 주민센터',
+    address: '서울 성동구 성수이로 118',
+    latitude: 37.5445,
+    longitude: 127.0553,
+    issueType: 'BROKEN',
+    description: '점검 안내문만 붙어 있고 언제 고쳐지는지 안 적혀 있어요',
+    createdAt: '2026-08-18T04:15:30Z',
   },
 ];
 
@@ -111,6 +153,35 @@ export function resetMockMyInfoStore(): void {
   };
 }
 
+function toObstacleItem(report: MyObstacleReportResponse): MyReportItemResponse {
+  return { kind: 'OBSTACLE', createdAt: report.createdAt, obstacle: report, place: null, facility: null };
+}
+
+function toPlaceItem(report: MyPlaceStateReportResponse): MyReportItemResponse {
+  return { kind: 'PLACE', createdAt: report.createdAt, obstacle: null, place: report, facility: null };
+}
+
+function toFacilityItem(report: MyFacilityReportResponse): MyReportItemResponse {
+  return { kind: 'FACILITY', createdAt: report.createdAt, obstacle: null, place: null, facility: report };
+}
+
+/**
+ * mock 커서는 "다음에 읽을 위치(offset)" 문자열입니다. 실제 서버 커서는 분류별 (created_at, id)를
+ * 담은 base64지만, 화면 입장에서는 받은 값을 그대로 돌려주는 불투명한 문자열이라 이걸로 충분합니다.
+ */
+function sliceMockPage<T>(
+  all: readonly T[],
+  cursor: string | null | undefined,
+  size: number | undefined,
+): { items: readonly T[]; nextCursor: string | null } {
+  const pageSize = size ?? 20;
+  const offset = cursor ? Number(cursor) : 0;
+  const items = all.slice(offset, offset + pageSize);
+  const nextOffset = offset + items.length;
+
+  return { items, nextCursor: nextOffset < all.length ? String(nextOffset) : null };
+}
+
 /**
  * mock 모드에서 쓰는 인메모리 어댑터.
  */
@@ -143,8 +214,29 @@ export function createMockMyInfoApi(): MyInfoApi {
       return mockStore.settings;
     },
 
-    findMyReports: async () => MOCK_REPORTS,
+    findMyObstacleReports: async () => MOCK_REPORTS,
 
-    findMyConfirmedReports: async () => MOCK_CONFIRMATIONS,
+    findMyReportPage: async (query: MyReportPageQuery = {}) => {
+      const all = [
+        ...(query.kind === undefined || query.kind === 'OBSTACLE'
+          ? MOCK_REPORTS.map(toObstacleItem)
+          : []),
+        ...(query.kind === undefined || query.kind === 'PLACE' ? MOCK_PLACE_REPORTS.map(toPlaceItem) : []),
+        ...(query.kind === undefined || query.kind === 'FACILITY'
+          ? MOCK_FACILITY_REPORTS.map(toFacilityItem)
+          : []),
+      ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+      return sliceMockPage(all, query.cursor, query.size);
+    },
+
+    findMyConfirmedReportPage: async (query: MyConfirmedReportPageQuery = {}) => {
+      const filtered =
+        query.status === undefined
+          ? MOCK_CONFIRMATIONS
+          : MOCK_CONFIRMATIONS.filter(confirmation => confirmation.report.status === query.status);
+
+      return sliceMockPage([...filtered], query.cursor, query.size);
+    },
   };
 }

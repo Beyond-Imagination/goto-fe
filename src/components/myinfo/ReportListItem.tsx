@@ -13,6 +13,8 @@ export type ReportStatusTag = {
 
 export type ReportListItemData = {
   readonly id: string;
+  /** 상세 화면이 다르므로 어떤 제보인지 함께 들고 다닙니다. */
+  readonly kind: 'obstacle' | 'place' | 'facility';
   readonly category: '시설' | '장소' | '장애물';
   readonly title: string;
   readonly address: string;

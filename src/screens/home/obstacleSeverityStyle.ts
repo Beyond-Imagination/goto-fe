@@ -29,7 +29,13 @@ export const ISSUE_TYPE_LABEL: Record<ObstacleIssueType, string> = {
   NARROW_PASSAGE: "좁은통로",
   SIDEWALK_DAMAGE: "보도파손",
   STAIRS: "계단",
-  STEEP_SLOPE: "급경사"
+  STEEP_SLOPE: "급경사",
+  // 아래 5종은 전용 아이콘이 아직 없어 Icon.tsx 기본 아이콘으로 표시됩니다.
+  OBSTRUCTION: "적치물",
+  ILLEGAL_PARKING: "불법주차",
+  BRAILLE_BLOCK_DAMAGE: "점자블록훼손",
+  SLIPPERY_SURFACE: "미끄러운길",
+  OTHER: "기타"
 };
 
 export function formatClusterMarkerLabel(severity: ObstacleSeverity, reportCount: number): string {

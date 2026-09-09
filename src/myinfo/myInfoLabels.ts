@@ -4,8 +4,12 @@ import type {
   AvoidCondition,
   MobilityMode,
   MyConfirmedReportResponse,
+  MyFacilityReportResponse,
   MyObstacleReportResponse,
+  MyPlaceStateReportResponse,
+  MyReportItemResponse,
   ObstacleIssueType,
+  PlaceAccessStatus,
   PriorityFacility,
 } from './myInfoApi';
 
@@ -37,6 +41,11 @@ const ISSUE_TYPE_LABELS: Record<ObstacleIssueType, string> = {
   CONSTRUCTION: '공사 구간',
   SIDEWALK_DAMAGE: '보도 파손',
   LONG_WALKING_DISTANCE: '긴 보행 거리',
+  OBSTRUCTION: '적치물',
+  ILLEGAL_PARKING: '불법 주차',
+  BRAILLE_BLOCK_DAMAGE: '점자블록 훼손',
+  SLIPPERY_SURFACE: '미끄러운 길',
+  OTHER: '기타',
 };
 
 /** 심각도는 색이 아니라 문장으로 함께 전달합니다 (화면기획 설계 원칙 #5). */
@@ -95,11 +104,16 @@ function toReportTags(report: MyObstacleReportResponse): ReportStatusTag[] {
   return tags;
 }
 
-export function toReportListItem(report: MyObstacleReportResponse): ReportListItemData {
+const PLACE_ACCESS_STATUS_LABELS: Record<PlaceAccessStatus, string> = {
+  ACCESSIBLE: '이용 편했어요',
+  PARTIALLY_ACCESSIBLE: '일부 불편했어요',
+  INACCESSIBLE: '이용 어려웠어요',
+};
+
+export function toObstacleReportListItem(report: MyObstacleReportResponse): ReportListItemData {
   return {
     id: String(report.id),
-    // TODO(GOTO-110): BE에 장소·시설 제보 조회가 추가되면 응답의 제보 종류로 분류를 정합니다.
-    //  지금은 장애물 제보만 내려오므로 고정값이고, 내 제보 기록의 「장소」·「시설」 필터는 항상 빈 목록입니다.
+    kind: 'obstacle',
     category: '장애물',
     title: `${ISSUE_TYPE_LABELS[report.issueType] ?? report.issueType} · ${SEVERITY_LABELS[report.severity]}`,
     address: toLocationLabel(report),
@@ -111,6 +125,92 @@ export function toReportListItem(report: MyObstacleReportResponse): ReportListIt
   };
 }
 
+/** 내 제보 기록의 「장소」 분류 항목. 위치·주소는 장소에서 옵니다. */
+export function toPlaceReportListItem(report: MyPlaceStateReportResponse): ReportListItemData {
+  return {
+    id: String(report.id),
+    kind: 'place',
+    category: '장소',
+    title: `${report.placeName} · ${PLACE_ACCESS_STATUS_LABELS[report.accessStatus]}`,
+    address: report.address ?? report.placeName,
+    // 좌표가 없는 장소도 있어 지도 표시용 값은 0으로 두고, 지도 화면에서 걸러냅니다.
+    latitude: report.latitude ?? 0,
+    longitude: report.longitude ?? 0,
+    photoUrl: report.photoUrls[0] ?? null,
+    meta: `${formatDate(report.createdAt)} · 제보 ID ${report.id}`,
+    tags: [],
+  };
+}
+
+/** BE FacilityIssueType 라벨. 목록에 없는 예전 값은 원문을 그대로 보여줍니다. */
+const FACILITY_ISSUE_LABELS: Readonly<Record<string, string>> = {
+  BROKEN: '고장',
+  OUT_OF_SERVICE: '운영 중지',
+  BLOCKED: '통행 막힘',
+  DAMAGED: '파손',
+  MISSING: '없어짐',
+  REPAIRED: '수리 완료',
+  OTHER: '기타',
+};
+
+const FACILITY_NODE_TYPE_LABELS: Readonly<Record<string, string>> = {
+  ELEVATOR: '엘리베이터',
+  TOILET: '장애인 화장실',
+  RAMP: '경사로',
+  STAIRS: '계단',
+  HANDRAIL: '손잡이',
+  ENTRANCE: '출입구',
+  PARKING: '장애인 주차장',
+  ESCALATOR: '에스컬레이터',
+};
+
+function toFloorLabel(floorLevel: number | null): string {
+  if (floorLevel === null) {
+    return '층 정보 없음';
+  }
+  return floorLevel < 0 ? `지하 ${String(Math.abs(floorLevel))}층` : `${String(floorLevel)}층`;
+}
+
+/** 내 제보 기록의 「시설」 분류 항목. 위치·주소는 시설이 속한 장소에서 옵니다. */
+export function toFacilityReportListItem(report: MyFacilityReportResponse): ReportListItemData {
+  const facilityLabel =
+    report.nodeName ?? FACILITY_NODE_TYPE_LABELS[report.nodeType] ?? report.nodeType;
+  const issueLabel = FACILITY_ISSUE_LABELS[report.issueType] ?? report.issueType;
+
+  return {
+    id: String(report.id),
+    kind: 'facility',
+    category: '시설',
+    title: `${facilityLabel} · ${issueLabel}`,
+    address: `${report.placeName} · ${toFloorLabel(report.floorLevel)}`,
+    // 좌표가 없는 노드도 있어 지도 표시용 값은 0으로 두고, 지도 화면에서 걸러냅니다.
+    latitude: report.latitude ?? 0,
+    longitude: report.longitude ?? 0,
+    photoUrl: null,
+    meta: `${formatDate(report.createdAt)} · 제보 ID ${report.id}`,
+    tags: [],
+  };
+}
+
+/**
+ * 내 제보 기록 목록 항목(분류 합친 응답) → 리스트 아이템.
+ * kind에 해당하는 본문만 채워져 오므로, 그 본문을 분류별 변환에 넘깁니다.
+ */
+export function toReportListItem(item: MyReportItemResponse): ReportListItemData {
+  if (item.kind === 'PLACE' && item.place) {
+    return toPlaceReportListItem(item.place);
+  }
+  if (item.kind === 'FACILITY' && item.facility) {
+    return toFacilityReportListItem(item.facility);
+  }
+  if (item.obstacle) {
+    return toObstacleReportListItem(item.obstacle);
+  }
+
+  // BE가 kind와 본문을 짝지어 내려주므로 여기까지 오면 응답 계약이 깨진 것입니다.
+  throw new Error(`제보 본문이 비어 있습니다: kind=${item.kind}`);
+}
+
 /** 내가 확인한 리포트(05)는 「아직 있음 / 해결 됨」으로 필터하므로 해결 상태를 함께 넘깁니다. */
 export type ConfirmedListItem = ReportListItemData & {
   readonly resolution: '아직 있음' | '해결 됨';
@@ -120,7 +220,7 @@ export function toConfirmedListItem(confirmation: MyConfirmedReportResponse): Co
   const resolved = confirmation.report.status === 'RESOLVED';
 
   return {
-    ...toReportListItem(confirmation.report),
+    ...toObstacleReportListItem(confirmation.report),
     id: String(confirmation.confirmationId),
     tags: resolved
       ? [{ label: '해결됨', tone: 'blue' }]

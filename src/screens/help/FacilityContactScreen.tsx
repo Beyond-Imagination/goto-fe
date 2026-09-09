@@ -9,7 +9,7 @@ import {
   EmergencyCallNotice,
   HELP_SCREEN_X,
   HelpHeader,
-  HelpMapPlaceholder,
+  HelpLocationMap,
   HelpNoticeBox,
   PlaceSelectCard,
 } from '@/components/help';
@@ -95,7 +95,7 @@ export function FacilityContactScreen({ onBack }: FacilityContactScreenProps) {
       <HelpHeader onBack={onBack} title="시설 관리자 연락" />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
-        <HelpMapPlaceholder coordinates={coordinates} />
+        <HelpLocationMap coordinates={coordinates} pinLabel="현재 위치" />
 
         <View style={styles.intro}>
           <Text color={colors.text.primary} variant="title-1" weight="semibold">

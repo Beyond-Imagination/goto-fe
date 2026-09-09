@@ -5,16 +5,28 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Text } from '@/components/common/Text';
 import { FilterChips } from '@/components/myinfo/FilterChips';
 import { ListDivider } from '@/components/myinfo/ListDivider';
+import { ListFooter } from '@/components/myinfo/ListFooter';
 import { ErrorView, LoadingView } from '@/components/myinfo/LoadStateView';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { ReportListItem } from '@/components/myinfo/ReportListItem';
 import { MY_INFO_SCREEN_X } from '@/components/myinfo/tokens';
-import { toReportListItem, useAsyncResource, useMyInfoApi } from '@/myinfo';
+import type { ReportListItemData } from '@/components/myinfo/ReportListItem';
+import type { MyReportKind } from '@/myinfo';
+import { toReportListItem, useMyInfoApi, usePaginatedResource } from '@/myinfo';
 import { colors } from '@/styles/tokens/colors';
 
-// TODO(GOTO-110): 「장소」·「시설」은 BE에 해당 제보 조회 API가 없어 현재 항상 빈 목록입니다.
-//  MyPageService.listMyObstacleReports가 장애물 제보만 반환하며, 확장되면 이 칩들이 자동으로 채워집니다.
 const FILTERS = ['전체', '장애물', '장소', '시설'] as const;
+
+/** 필터 칩 → BE kind 파라미터. 「전체」는 파라미터를 보내지 않습니다. */
+const FILTER_KINDS: Readonly<Record<Filter, MyReportKind | undefined>> = {
+  전체: undefined,
+  장애물: 'OBSTACLE',
+  장소: 'PLACE',
+  시설: 'FACILITY',
+};
+
+/** 한 번에 불러오는 제보 수. */
+const PAGE_SIZE = 20;
 
 /** 마지막 요소와 화면(홈 인디케이터) 사이 기본 여백. */
 const CONTENT_BOTTOM_GAP = 24;
@@ -25,6 +37,8 @@ type MyReportsScreenProps = {
   readonly onBack: () => void;
   readonly onStartReport: () => void;
   readonly onOpenMap: () => void;
+  /** 항목을 누르면 제보 상세로 이동합니다. */
+  readonly onOpenReport: (item: ReportListItemData) => void;
   /** 데모용 — 빈 상태(내 정보 04) 프레임을 바로 확인하고 싶을 때 true. */
   readonly forceEmpty?: boolean;
 };
@@ -34,13 +48,28 @@ export function MyReportsScreen({
   onBack,
   onStartReport,
   onOpenMap,
+  onOpenReport,
   forceEmpty = false,
 }: MyReportsScreenProps) {
   const insets = useSafeAreaInsets();
   const api = useMyInfoApi();
-  const load = useCallback(() => api.findMyReports(), [api]);
-  const reports = useAsyncResource(load, '제보 기록을 불러오지 못했어요. 다시 시도해주세요.');
   const [filter, setFilter] = useState<Filter>('전체');
+
+  // 분류 필터는 서버에서 걸러야 합니다. 페이지 단위로 받아오므로 화면에서 걸러내면
+  // "이 페이지에 우연히 없는 분류"가 빈 목록처럼 보입니다.
+  const loadPage = useCallback(
+    async (cursor: string | null) => {
+      const page = await api.findMyReportPage({
+        kind: FILTER_KINDS[filter],
+        cursor,
+        size: PAGE_SIZE,
+      });
+
+      return { items: page.items.map(toReportListItem), nextCursor: page.nextCursor };
+    },
+    [api, filter],
+  );
+  const reports = usePaginatedResource(loadPage, '제보 기록을 불러오지 못했어요. 다시 시도해주세요.');
 
   if (reports.state === 'loading') {
     return (
@@ -51,7 +80,7 @@ export function MyReportsScreen({
     );
   }
 
-  if (reports.state === 'error' || !reports.data) {
+  if (reports.state === 'error') {
     return (
       <SafeAreaView edges={['top']} style={styles.screen}>
         <MyInfoHeader onBack={onBack} title="내 제보 기록" />
@@ -63,10 +92,10 @@ export function MyReportsScreen({
     );
   }
 
-  const items = forceEmpty ? [] : reports.data.map(toReportListItem);
-  const filtered = filter === '전체' ? items : items.filter(item => item.category === filter);
+  const items = forceEmpty ? [] : reports.items;
 
-  if (items.length === 0) {
+  // 첫 페이지가 비어 있고 더 불러올 것도 없으면 진짜 기록이 없는 경우입니다.
+  if (items.length === 0 && filter === '전체' && !reports.hasNext) {
     return (
       <SafeAreaView edges={['top']} style={styles.screen}>
         <MyInfoHeader onBack={onBack} title="내 제보 기록" />
@@ -103,13 +132,16 @@ export function MyReportsScreen({
     <SafeAreaView edges={['top']} style={styles.screen}>
       {/* 헤더는 스크롤과 무관하게 고정해 뒤로가기가 항상 보이게 합니다. */}
       <MyInfoHeader onBack={onBack} title="내 제보 기록" />
-      {/* TODO(BE): 목록 API에 페이지네이션이 생기면 onEndReached로 다음 페이지를 이어 붙입니다. */}
       <FlatList
         ItemSeparatorComponent={ListDivider}
         ListFooterComponent={
-          <Text color={colors.text.disabled} style={styles.lastPage} variant="caption-1">
-            {filtered.length > 0 ? '마지막 페이지입니다.' : '이 분류의 제보가 아직 없습니다.'}
-          </Text>
+          <ListFooter
+            endMessage={items.length > 0 ? '마지막 페이지입니다.' : '이 분류의 제보가 아직 없습니다.'}
+            errorMessage={reports.loadMoreErrorMessage}
+            hasNext={reports.hasNext}
+            isLoadingMore={reports.isLoadingMore}
+            onRetry={reports.loadMore}
+          />
         }
         ListHeaderComponent={
           <View style={styles.filters}>
@@ -127,9 +159,13 @@ export function MyReportsScreen({
           </View>
         }
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
-        data={filtered}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => <ReportListItem report={item} />}
+        data={items}
+        keyExtractor={item => `${item.kind}:${item.id}`}
+        onEndReached={reports.loadMore}
+        onEndReachedThreshold={0.4}
+        renderItem={({ item }) => (
+          <ReportListItem onPress={() => onOpenReport(item)} report={item} />
+        )}
       />
     </SafeAreaView>
   );
@@ -151,10 +187,6 @@ const styles = StyleSheet.create({
   mapLink: {
     alignSelf: 'flex-start',
     paddingVertical: 4,
-  },
-  lastPage: {
-    marginTop: 50,
-    textAlign: 'center',
   },
   empty: {
     alignItems: 'center',
