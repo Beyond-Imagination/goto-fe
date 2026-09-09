@@ -32,8 +32,7 @@ const MENU_ITEMS: readonly MenuItem[] = [
     label: '내가 확인한 리포트',
     href: '/profile/confirmed',
   },
-  // TODO: 저장 장소 화면은 저장 탭과 함께 정의될 예정이라 아직 연결하지 않았습니다.
-  { icon: require('../../assets/icons/menu-saved.png'), label: '저장 장소' },
+  { icon: require('../../assets/icons/menu-saved.png'), label: '저장 장소', href: '/(tabs)/saved' },
   {
     icon: require('../../assets/icons/menu-notification.png'),
     label: '알림 설정',
