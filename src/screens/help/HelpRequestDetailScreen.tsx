@@ -8,7 +8,7 @@ import { Text } from '@/components/common/Text';
 import {
   HELP_SCREEN_X,
   HelpDetailTable,
-  HelpMapPlaceholder,
+  HelpLocationMap,
   HelpNoticeBox,
   HelpTag,
   type HelpDetailRow,
@@ -162,7 +162,8 @@ export function HelpRequestDetailScreen({
           📍 {request.locationLabel}
         </Text>
 
-        <HelpMapPlaceholder
+        {/* 수락 전에는 서버가 좌표를 소수점 3자리로 뭉갠 값(≈100m)만 내려줍니다. */}
+        <HelpLocationMap
           coordinates={{ latitude: request.latitude, longitude: request.longitude }}
           height={200}
           pinLabel="요청 위치"

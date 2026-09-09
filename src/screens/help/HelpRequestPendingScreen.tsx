@@ -8,7 +8,7 @@ import {
   EmergencyCallNotice,
   HELP_SCREEN_X,
   HelpHeader,
-  HelpMapPlaceholder,
+  HelpLocationMap,
   PlaceSelectCard,
 } from '@/components/help';
 import {
@@ -107,7 +107,7 @@ export function HelpRequestPendingScreen({
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
         <View>
-          <HelpMapPlaceholder
+          <HelpLocationMap
             coordinates={{ latitude: request.latitude, longitude: request.longitude }}
             height={300}
             pinLabel="요청 위치"
