@@ -24,12 +24,18 @@ type Filter = (typeof FILTERS)[number];
 type MyReportsScreenProps = {
   readonly onBack: () => void;
   readonly onStartReport: () => void;
+  readonly onOpenMap: () => void;
   /** 데모용 — 빈 상태(내 정보 04) 프레임을 바로 확인하고 싶을 때 true. */
   readonly forceEmpty?: boolean;
 };
 
 /** 내 정보 03·04 — 내 제보 기록. 기록이 하나도 없으면 빈 상태 화면을 보여줍니다. */
-export function MyReportsScreen({ onBack, onStartReport, forceEmpty = false }: MyReportsScreenProps) {
+export function MyReportsScreen({
+  onBack,
+  onStartReport,
+  onOpenMap,
+  forceEmpty = false,
+}: MyReportsScreenProps) {
   const insets = useSafeAreaInsets();
   const api = useMyInfoApi();
   const load = useCallback(() => api.findMyReports(), [api]);
@@ -108,6 +114,16 @@ export function MyReportsScreen({ onBack, onStartReport, forceEmpty = false }: M
         ListHeaderComponent={
           <View style={styles.filters}>
             <FilterChips onSelect={setFilter} options={FILTERS} selected={filter} />
+            <Pressable
+              accessibilityLabel="제보 위치를 지도로 보기"
+              accessibilityRole="button"
+              onPress={onOpenMap}
+              style={styles.mapLink}
+            >
+              <Text color={colors.brand.mainAlt} variant="body-3" weight="semibold">
+                지도로 보기 ›
+              </Text>
+            </Pressable>
           </View>
         }
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
@@ -128,8 +144,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: MY_INFO_SCREEN_X,
   },
   filters: {
+    gap: 12,
     marginBottom: 18,
     marginTop: 38,
+  },
+  mapLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
   },
   lastPage: {
     marginTop: 50,

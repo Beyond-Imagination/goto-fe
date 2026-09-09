@@ -39,6 +39,19 @@ describe('myInfoLabels', () => {
     assert.equal(item.category, '장애물');
   });
 
+  it('썸네일 지도에 쓸 좌표와 첨부 사진을 그대로 넘긴다', () => {
+    const withoutPhoto = toReportListItem(BASE_REPORT);
+    assert.equal(withoutPhoto.latitude, 37.5665);
+    assert.equal(withoutPhoto.longitude, 126.978);
+    assert.equal(withoutPhoto.photoUrl, null);
+
+    const withPhoto = toReportListItem({
+      ...BASE_REPORT,
+      photoUrls: ['https://cdn.example.test/a.jpg', 'https://cdn.example.test/b.jpg'],
+    });
+    assert.equal(withPhoto.photoUrl, 'https://cdn.example.test/a.jpg');
+  });
+
   it('주소가 없으면 좌표로 대체 표기하고, 있으면 주소를 쓴다', () => {
     assert.equal(toReportListItem(BASE_REPORT).address, '위치 37.56650, 126.97800');
     assert.equal(

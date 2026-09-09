@@ -1,6 +1,7 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/common/Text';
+import { ReportThumbnail } from '@/components/myinfo/ReportThumbnail';
 import { CategoryTag, StatusTag } from '@/components/myinfo/Tags';
 import type { StatusTagToneName } from '@/components/myinfo/tokens';
 import { colors } from '@/styles/tokens/colors';
@@ -15,6 +16,11 @@ export type ReportListItemData = {
   readonly category: '시설' | '장소' | '장애물';
   readonly title: string;
   readonly address: string;
+  /** 썸네일 지도에 찍을 제보 위치. */
+  readonly latitude: number;
+  readonly longitude: number;
+  /** 첨부 사진이 있으면 지도 대신 사진을 보여줍니다. */
+  readonly photoUrl?: string | null;
   /** «2024.05.12 · 제보 ID 1247» 형태의 보조 정보 줄. */
   readonly meta: string;
   readonly tags: readonly ReportStatusTag[];
@@ -24,8 +30,6 @@ type ReportListItemProps = {
   readonly report: ReportListItemData;
   readonly onPress?: () => void;
 };
-
-const THUMB_PLACEHOLDER = require('../../assets/report-thumb-sample.png');
 
 /** 내 제보 기록 · 내가 확인한 리포트의 공용 리스트 아이템. */
 export function ReportListItem({ report, onPress }: ReportListItemProps) {
@@ -38,8 +42,7 @@ export function ReportListItem({ report, onPress }: ReportListItemProps) {
     >
       <View style={styles.body}>
         <View>
-          {/* TODO(BE): 제보에 첨부한 사진이 오면 교체합니다. 지금은 피그마 목업과 같은 샘플 사진입니다. */}
-          <Image source={THUMB_PLACEHOLDER} style={styles.thumb} />
+          <ReportThumbnail photoUrl={report.photoUrl} />
           <View style={styles.categoryTag}>
             <CategoryTag label={report.category} />
           </View>

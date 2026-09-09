@@ -11,6 +11,7 @@ export default function MyReportsRoute() {
     <MyReportsScreen
       forceEmpty={empty === '1'}
       onBack={() => router.back()}
+      onOpenMap={() => router.push('/profile/reports-map')}
       onStartReport={() => router.navigate('/report')}
     />
   );
