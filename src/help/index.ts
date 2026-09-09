@@ -1,6 +1,7 @@
 export * from './currentLocation';
 export * from './helpKind';
 export * from './helpRequestApi';
+export * from './mockHelpRequestApi';
 export * from './helpRequestDraft';
 export * from './helpTime';
 export * from './pendingHelpRequestApi';
