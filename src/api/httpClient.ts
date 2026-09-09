@@ -8,6 +8,11 @@ import type {
   RequestParams,
 } from './types';
 
+/** 이미지 업로드처럼 JSON 직렬화를 우회해야 하는 본문. */
+function isMultipartBody(body: unknown): body is FormData {
+  return typeof FormData !== 'undefined' && body instanceof FormData;
+}
+
 export function createHttpClient(config?: HttpClientConfig): HttpClient {
   const fetchImpl = config?.fetch ?? fetch;
 
@@ -56,7 +61,9 @@ export function createHttpClient(config?: HttpClientConfig): HttpClient {
       ...options?.headers,
     };
 
-    if (body !== undefined && !headers['Content-Type']) {
+    // FormData는 fetch가 boundary를 붙인 multipart/form-data를 직접 설정합니다.
+    // 여기서 Content-Type을 넣으면 boundary가 빠져 서버가 파트를 읽지 못합니다.
+    if (body !== undefined && !isMultipartBody(body) && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }
 
@@ -100,7 +107,11 @@ export function createHttpClient(config?: HttpClientConfig): HttpClient {
     };
 
     if (body !== undefined) {
-      requestInit.body = typeof body === 'string' ? body : JSON.stringify(body);
+      if (typeof body === 'string' || isMultipartBody(body)) {
+        requestInit.body = body as BodyInit;
+      } else {
+        requestInit.body = JSON.stringify(body);
+      }
     }
 
     const response = await fetchImpl(url, requestInit);

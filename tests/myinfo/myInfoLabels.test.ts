@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import type { MyObstacleReportResponse } from '../../src/myinfo/myInfoApi';
+import type {
+  MyFacilityReportResponse,
+  MyObstacleReportResponse,
+  MyPlaceStateReportResponse,
+} from '../../src/myinfo/myInfoApi';
 import {
   toConfirmedListItem,
+  toFacilityReportListItem,
+  toPlaceReportListItem,
   toProfileSummary,
   toReportListItem,
 } from '../../src/myinfo/myInfoLabels';
@@ -19,6 +25,7 @@ const BASE_REPORT: MyObstacleReportResponse = {
   longitude: 126.978,
   address: null,
   photoUrls: [],
+  description: null,
   confirmedCount: 5,
   lastConfirmedAt: '2026-08-20T04:15:30Z',
   createdAt: '2026-08-12T04:15:30Z',
@@ -91,5 +98,107 @@ describe('myInfoLabels', () => {
     });
     assert.equal(resolved.resolution, '해결 됨');
     assert.deepEqual(resolved.tags, [{ label: '해결됨', tone: 'blue' }]);
+  });
+});
+
+describe('장소 상태 제보 목록 항목', () => {
+  const PLACE_REPORT: MyPlaceStateReportResponse = {
+    id: 31,
+    placeId: 5012,
+    placeName: '서울숲 공원',
+    address: '서울 성동구 뚝섬로 273',
+    latitude: 37.544,
+    longitude: 127.037,
+    accessStatus: 'PARTIALLY_ACCESSIBLE',
+    facilityStatuses: { ELEVATOR: 'BROKEN' },
+    photoUrls: [],
+    description: '정문 경사로는 있지만 문이 무거워요',
+    createdAt: '2026-08-15T04:15:30Z',
+  };
+
+  it('「장소」 분류로 장소명·이용 난이도를 제목에 담는다', () => {
+    const item = toPlaceReportListItem(PLACE_REPORT);
+
+    assert.equal(item.kind, 'place');
+    assert.equal(item.category, '장소');
+    assert.equal(item.title, '서울숲 공원 · 일부 불편했어요');
+    assert.equal(item.address, '서울 성동구 뚝섬로 273');
+    assert.equal(item.meta, '2026.08.15 · 제보 ID 31');
+  });
+
+  it('주소가 없으면 장소명으로 대체하고, 좌표가 없으면 0으로 둔다', () => {
+    const item = toPlaceReportListItem({
+      ...PLACE_REPORT,
+      address: null,
+      latitude: null,
+      longitude: null,
+    });
+
+    assert.equal(item.address, '서울숲 공원');
+    assert.equal(item.latitude, 0);
+    assert.equal(item.longitude, 0);
+  });
+});
+
+describe('시설 상태 제보 목록 항목', () => {
+  const FACILITY_REPORT: MyFacilityReportResponse = {
+    id: 77,
+    nodeId: 9001,
+    nodeType: 'ELEVATOR',
+    nodeName: '본관 엘리베이터',
+    floorLevel: 2,
+    placeId: 5013,
+    placeName: '성수동 주민센터',
+    address: '서울 성동구 성수이로 118',
+    latitude: 37.5445,
+    longitude: 127.0553,
+    issueType: 'BROKEN',
+    description: '점검 안내문만 붙어 있어요',
+    createdAt: '2026-08-18T04:15:30Z',
+  };
+
+  it('「시설」 분류로 시설명·이슈를 제목에, 장소·층을 위치 줄에 담는다', () => {
+    const item = toFacilityReportListItem(FACILITY_REPORT);
+
+    assert.equal(item.kind, 'facility');
+    assert.equal(item.category, '시설');
+    assert.equal(item.title, '본관 엘리베이터 · 고장');
+    assert.equal(item.address, '성수동 주민센터 · 2층');
+    assert.equal(item.meta, '2026.08.18 · 제보 ID 77');
+    // 시설 제보는 BE에 사진 필드가 없습니다.
+    assert.equal(item.photoUrl, null);
+  });
+
+  it('지하층은 「지하 N층」으로, 층 정보가 없으면 안내 문구로 보여준다', () => {
+    assert.equal(
+      toFacilityReportListItem({ ...FACILITY_REPORT, floorLevel: -2 }).address,
+      '성수동 주민센터 · 지하 2층',
+    );
+    assert.equal(
+      toFacilityReportListItem({ ...FACILITY_REPORT, floorLevel: null }).address,
+      '성수동 주민센터 · 층 정보 없음',
+    );
+  });
+
+  it('시설 이름이 없으면 유형 라벨로, 모르는 값은 원문으로 대체한다', () => {
+    assert.equal(
+      toFacilityReportListItem({ ...FACILITY_REPORT, nodeName: null }).title,
+      '엘리베이터 · 고장',
+    );
+    assert.equal(
+      toFacilityReportListItem({ ...FACILITY_REPORT, nodeName: null, nodeType: 'GONDOLA' }).title,
+      'GONDOLA · 고장',
+    );
+    assert.equal(
+      toFacilityReportListItem({ ...FACILITY_REPORT, issueType: 'LEGACY_VALUE' }).title,
+      '본관 엘리베이터 · LEGACY_VALUE',
+    );
+  });
+
+  it('좌표가 없는 노드는 지도 표시용 값을 0으로 둔다', () => {
+    const item = toFacilityReportListItem({ ...FACILITY_REPORT, latitude: null, longitude: null });
+
+    assert.equal(item.latitude, 0);
+    assert.equal(item.longitude, 0);
   });
 });

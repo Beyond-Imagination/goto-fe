@@ -22,10 +22,12 @@ type Filter = (typeof FILTERS)[number];
 
 type ConfirmedReportsScreenProps = {
   readonly onBack: () => void;
+  /** 항목을 누르면 제보 상세로 이동합니다. */
+  readonly onOpenReport: (reportId: string) => void;
 };
 
 /** 내 정보 05 — 내가 확인한 리포트. */
-export function ConfirmedReportsScreen({ onBack }: ConfirmedReportsScreenProps) {
+export function ConfirmedReportsScreen({ onBack, onOpenReport }: ConfirmedReportsScreenProps) {
   const insets = useSafeAreaInsets();
   const api = useMyInfoApi();
   const load = useCallback(() => api.findMyConfirmedReports(), [api]);
@@ -84,7 +86,9 @@ export function ConfirmedReportsScreen({ onBack }: ConfirmedReportsScreenProps) 
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
         data={filtered}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => <ReportListItem report={item} />}
+        renderItem={({ item }) => (
+          <ReportListItem onPress={() => onOpenReport(item.id)} report={item} />
+        )}
       />
     </SafeAreaView>
   );

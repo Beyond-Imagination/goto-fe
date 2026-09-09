@@ -1,7 +1,9 @@
 import type {
   MyConfirmedReportResponse,
   MyInfoApi,
+  MyFacilityReportResponse,
   MyObstacleReportResponse,
+  MyPlaceStateReportResponse,
   MyPreferencesResponse,
   MyProfileResponse,
   MySettingsResponse,
@@ -21,6 +23,7 @@ const MOCK_REPORTS: readonly MyObstacleReportResponse[] = [
     longitude: 126.978,
     address: '마포구 상암동',
     photoUrls: [],
+    description: '보도가 깨져서 휠체어가 지나가기 어려워요',
     confirmedCount: 5,
     lastConfirmedAt: '2026-08-20T04:15:30Z',
     createdAt: '2026-08-12T04:15:30Z',
@@ -36,6 +39,7 @@ const MOCK_REPORTS: readonly MyObstacleReportResponse[] = [
     longitude: 126.9768,
     address: '종로구 세종로',
     photoUrls: [],
+    description: null,
     confirmedCount: 2,
     lastConfirmedAt: '2026-08-18T04:15:30Z',
     createdAt: '2026-08-08T04:15:30Z',
@@ -51,9 +55,44 @@ const MOCK_REPORTS: readonly MyObstacleReportResponse[] = [
     longitude: 126.9366,
     address: '서대문구 연희동',
     photoUrls: [],
+    description: null,
     confirmedCount: 3,
     lastConfirmedAt: '2026-08-05T04:15:30Z',
     createdAt: '2026-08-03T04:15:30Z',
+  },
+];
+
+const MOCK_PLACE_REPORTS: readonly MyPlaceStateReportResponse[] = [
+  {
+    id: 31,
+    placeId: 5012,
+    placeName: '서울숲 공원',
+    address: '서울 성동구 뚝섬로 273',
+    latitude: 37.544,
+    longitude: 127.037,
+    accessStatus: 'PARTIALLY_ACCESSIBLE',
+    facilityStatuses: { ELEVATOR: 'BROKEN', ACCESSIBLE_TOILET: 'AVAILABLE' },
+    photoUrls: [],
+    description: '정문 경사로는 있지만 문이 무거워요',
+    createdAt: '2026-08-15T04:15:30Z',
+  },
+];
+
+const MOCK_FACILITY_REPORTS: readonly MyFacilityReportResponse[] = [
+  {
+    id: 77,
+    nodeId: 9001,
+    nodeType: 'ELEVATOR',
+    nodeName: '본관 엘리베이터',
+    floorLevel: 1,
+    placeId: 5013,
+    placeName: '성수동 주민센터',
+    address: '서울 성동구 성수이로 118',
+    latitude: 37.5445,
+    longitude: 127.0553,
+    issueType: 'BROKEN',
+    description: '점검 안내문만 붙어 있고 언제 고쳐지는지 안 적혀 있어요',
+    createdAt: '2026-08-18T04:15:30Z',
   },
 ];
 
@@ -144,6 +183,10 @@ export function createMockMyInfoApi(): MyInfoApi {
     },
 
     findMyReports: async () => MOCK_REPORTS,
+
+    findMyPlaceStateReports: async () => MOCK_PLACE_REPORTS,
+
+    findMyFacilityReports: async () => MOCK_FACILITY_REPORTS,
 
     findMyConfirmedReports: async () => MOCK_CONFIRMATIONS,
   };

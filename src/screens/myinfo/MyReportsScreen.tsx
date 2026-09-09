@@ -9,11 +9,16 @@ import { ErrorView, LoadingView } from '@/components/myinfo/LoadStateView';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { ReportListItem } from '@/components/myinfo/ReportListItem';
 import { MY_INFO_SCREEN_X } from '@/components/myinfo/tokens';
-import { toReportListItem, useAsyncResource, useMyInfoApi } from '@/myinfo';
+import type { ReportListItemData } from '@/components/myinfo/ReportListItem';
+import {
+  toFacilityReportListItem,
+  toPlaceReportListItem,
+  toReportListItem,
+  useAsyncResource,
+  useMyInfoApi,
+} from '@/myinfo';
 import { colors } from '@/styles/tokens/colors';
 
-// TODO(GOTO-110): 「장소」·「시설」은 BE에 해당 제보 조회 API가 없어 현재 항상 빈 목록입니다.
-//  MyPageService.listMyObstacleReports가 장애물 제보만 반환하며, 확장되면 이 칩들이 자동으로 채워집니다.
 const FILTERS = ['전체', '장애물', '장소', '시설'] as const;
 
 /** 마지막 요소와 화면(홈 인디케이터) 사이 기본 여백. */
@@ -25,6 +30,8 @@ type MyReportsScreenProps = {
   readonly onBack: () => void;
   readonly onStartReport: () => void;
   readonly onOpenMap: () => void;
+  /** 항목을 누르면 제보 상세로 이동합니다. */
+  readonly onOpenReport: (item: ReportListItemData) => void;
   /** 데모용 — 빈 상태(내 정보 04) 프레임을 바로 확인하고 싶을 때 true. */
   readonly forceEmpty?: boolean;
 };
@@ -34,11 +41,28 @@ export function MyReportsScreen({
   onBack,
   onStartReport,
   onOpenMap,
+  onOpenReport,
   forceEmpty = false,
 }: MyReportsScreenProps) {
   const insets = useSafeAreaInsets();
   const api = useMyInfoApi();
-  const load = useCallback(() => api.findMyReports(), [api]);
+  // 장애물·장소·시설 제보를 함께 불러와 한 목록으로 합칩니다 (BE 엔드포인트가 종류별로 나뉘어 있습니다).
+  const load = useCallback(async (): Promise<readonly ReportListItemData[]> => {
+    const [obstacleReports, placeReports, facilityReports] = await Promise.all([
+      api.findMyReports(),
+      api.findMyPlaceStateReports(),
+      api.findMyFacilityReports(),
+    ]);
+
+    return [
+      ...obstacleReports.map(toReportListItem),
+      ...placeReports.map(toPlaceReportListItem),
+      ...facilityReports.map(toFacilityReportListItem),
+    ].sort(
+      // meta 첫 토큰이 «YYYY.MM.DD»라 문자열 비교로도 최신순 정렬이 됩니다.
+      (left, right) => right.meta.localeCompare(left.meta),
+    );
+  }, [api]);
   const reports = useAsyncResource(load, '제보 기록을 불러오지 못했어요. 다시 시도해주세요.');
   const [filter, setFilter] = useState<Filter>('전체');
 
@@ -63,7 +87,7 @@ export function MyReportsScreen({
     );
   }
 
-  const items = forceEmpty ? [] : reports.data.map(toReportListItem);
+  const items = forceEmpty ? [] : reports.data;
   const filtered = filter === '전체' ? items : items.filter(item => item.category === filter);
 
   if (items.length === 0) {
@@ -128,8 +152,10 @@ export function MyReportsScreen({
         }
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + CONTENT_BOTTOM_GAP }]}
         data={filtered}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => <ReportListItem report={item} />}
+        keyExtractor={item => `${item.kind}:${item.id}`}
+        renderItem={({ item }) => (
+          <ReportListItem onPress={() => onOpenReport(item)} report={item} />
+        )}
       />
     </SafeAreaView>
   );

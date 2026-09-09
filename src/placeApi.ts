@@ -46,6 +46,20 @@ export type PlaceApiOptions = Readonly<{
   fetchImplementation?: typeof fetch;
 }>;
 
+/** 실내 층 도면의 시설 노드. BE FacilityNodeResponse와 1:1. */
+export type FacilityNode = {
+  id: number;
+  floorMapId: number;
+  targetFeatureId: string | null;
+  nodeType: string;
+  name: string | null;
+  lat: number | null;
+  lng: number | null;
+  isCheckpoint: boolean | null;
+  snapRadius: number | null;
+  locationDescription: string | null;
+};
+
 export type PlaceApi = Readonly<{
   getNearbySummary(
     lat: number,
@@ -57,6 +71,9 @@ export type PlaceApi = Readonly<{
     lng: number,
     options?: SearchPlacesOptions,
   ): Promise<PlaceSearchResult>;
+  /** 실내 도면이 있는 층 목록. 지하는 음수입니다. */
+  listFloors(placeId: number): Promise<number[]>;
+  listFacilityNodes(placeId: number, floor: number): Promise<FacilityNode[]>;
 }>;
 
 export function createPlaceApi(options?: PlaceApiOptions): PlaceApi {
@@ -76,6 +93,16 @@ export function createPlaceApi(options?: PlaceApiOptions): PlaceApi {
         params.append("avoid", issueType);
       }
       return client.get<NearbyAccessibilitySummary>(`/api/v1/places/nearby-summary?${params.toString()}`);
+    },
+
+    async listFloors(placeId) {
+      return client.get<number[]>(`/api/v1/places/${String(placeId)}/floors`);
+    },
+
+    async listFacilityNodes(placeId, floor) {
+      return client.get<FacilityNode[]>(
+        `/api/v1/places/${String(placeId)}/floors/${String(floor)}/nodes`
+      );
     },
 
     async searchPlaces(lat, lng, options = {}) {
