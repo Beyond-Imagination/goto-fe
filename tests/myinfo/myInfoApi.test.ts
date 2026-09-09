@@ -76,18 +76,58 @@ describe('myInfoApi', () => {
     });
   });
 
-  it('내 제보 목록과 확인 목록은 각자의 경로를 호출한다', async () => {
+  it('지도용 전체 조회와 커서 페이지 조회는 각자의 경로를 호출한다', async () => {
     const calls: Call[] = [];
     const api = createMyInfoApi({
       apiBaseUrl: BASE_URL,
-      fetchImplementation: stubFetch([], calls),
+      fetchImplementation: stubFetch({ items: [], nextCursor: null }, calls),
     });
 
-    await api.findMyReports();
-    await api.findMyConfirmedReports();
+    await api.findMyObstacleReports();
+    await api.findMyReportPage();
+    await api.findMyConfirmedReportPage();
 
     assert.equal(calls[0].url, `${BASE_URL}/api/v1/members/me/obstacle-reports`);
-    assert.equal(calls[1].url, `${BASE_URL}/api/v1/members/me/obstacle-report-confirmations`);
+    // 조건이 없으면 쿼리스트링도 붙이지 않는다.
+    assert.equal(calls[1].url, `${BASE_URL}/api/v1/members/me/reports`);
+    assert.equal(calls[2].url, `${BASE_URL}/api/v1/members/me/obstacle-report-confirmations`);
+  });
+
+  it('커서 페이지 조회는 kind·status·cursor·size를 쿼리스트링으로 보낸다', async () => {
+    const calls: Call[] = [];
+    const api = createMyInfoApi({
+      apiBaseUrl: BASE_URL,
+      fetchImplementation: stubFetch({ items: [], nextCursor: null }, calls),
+    });
+
+    await api.findMyReportPage({ kind: 'PLACE', cursor: 'T0JTVEFDTEU', size: 20 });
+    await api.findMyConfirmedReportPage({ status: 'RESOLVED', cursor: 'Q09ORklSTQ', size: 5 });
+
+    const reportsUrl = new URL(calls[0].url);
+    assert.equal(reportsUrl.pathname, '/api/v1/members/me/reports');
+    assert.equal(reportsUrl.searchParams.get('kind'), 'PLACE');
+    assert.equal(reportsUrl.searchParams.get('cursor'), 'T0JTVEFDTEU');
+    assert.equal(reportsUrl.searchParams.get('size'), '20');
+
+    const confirmationsUrl = new URL(calls[1].url);
+    assert.equal(confirmationsUrl.pathname, '/api/v1/members/me/obstacle-report-confirmations');
+    assert.equal(confirmationsUrl.searchParams.get('status'), 'RESOLVED');
+    assert.equal(confirmationsUrl.searchParams.get('cursor'), 'Q09ORklSTQ');
+    assert.equal(confirmationsUrl.searchParams.get('size'), '5');
+  });
+
+  it('커서가 null이면 첫 페이지 요청이라 cursor 파라미터를 보내지 않는다', async () => {
+    const calls: Call[] = [];
+    const api = createMyInfoApi({
+      apiBaseUrl: BASE_URL,
+      fetchImplementation: stubFetch({ items: [], nextCursor: null }, calls),
+    });
+
+    await api.findMyReportPage({ cursor: null, size: 10 });
+
+    const url = new URL(calls[0].url);
+    assert.equal(url.searchParams.has('cursor'), false);
+    assert.equal(url.searchParams.get('size'), '10');
   });
 
   it('실패 응답은 MyInfoApiError로 감싸 상태 코드를 유지한다', async () => {

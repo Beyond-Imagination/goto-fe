@@ -15,8 +15,9 @@ type HelpMapPlaceholderProps = {
 /**
  * 지도 자리.
  *
- * TODO: 지도 SDK가 아직 붙어 있지 않아 좌표 배지와 자리표시만 렌더링합니다.
- * (기존 홈 지도 화면도 같은 방식으로 SDK 연동 전까지 자리만 잡아두고 있습니다.)
+ * 네이버 지도 SDK는 이미 붙어 있습니다(HelpLocationMap·NearbyRequestsMap·홈 지도).
+ * TODO: 아직 실지도로 옮기지 않은 도움 요청 상세·대기·시설 연락 화면만 이 자리표시자를 쓰며,
+ * 좌표 배지와 자리만 렌더링합니다. 세 화면을 옮기면 이 컴포넌트는 지울 수 있습니다.
  */
 export function HelpMapPlaceholder({
   coordinates,

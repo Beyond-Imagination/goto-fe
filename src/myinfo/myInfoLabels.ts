@@ -7,6 +7,7 @@ import type {
   MyFacilityReportResponse,
   MyObstacleReportResponse,
   MyPlaceStateReportResponse,
+  MyReportItemResponse,
   ObstacleIssueType,
   PlaceAccessStatus,
   PriorityFacility,
@@ -109,11 +110,10 @@ const PLACE_ACCESS_STATUS_LABELS: Record<PlaceAccessStatus, string> = {
   INACCESSIBLE: '이용 어려웠어요',
 };
 
-export function toReportListItem(report: MyObstacleReportResponse): ReportListItemData {
+export function toObstacleReportListItem(report: MyObstacleReportResponse): ReportListItemData {
   return {
     id: String(report.id),
     kind: 'obstacle',
-    // TODO(GOTO-110): BE에 실내 시설 제보 조회가 추가되면 「시설」 분류도 채워집니다.
     category: '장애물',
     title: `${ISSUE_TYPE_LABELS[report.issueType] ?? report.issueType} · ${SEVERITY_LABELS[report.severity]}`,
     address: toLocationLabel(report),
@@ -192,6 +192,25 @@ export function toFacilityReportListItem(report: MyFacilityReportResponse): Repo
   };
 }
 
+/**
+ * 내 제보 기록 목록 항목(분류 합친 응답) → 리스트 아이템.
+ * kind에 해당하는 본문만 채워져 오므로, 그 본문을 분류별 변환에 넘깁니다.
+ */
+export function toReportListItem(item: MyReportItemResponse): ReportListItemData {
+  if (item.kind === 'PLACE' && item.place) {
+    return toPlaceReportListItem(item.place);
+  }
+  if (item.kind === 'FACILITY' && item.facility) {
+    return toFacilityReportListItem(item.facility);
+  }
+  if (item.obstacle) {
+    return toObstacleReportListItem(item.obstacle);
+  }
+
+  // BE가 kind와 본문을 짝지어 내려주므로 여기까지 오면 응답 계약이 깨진 것입니다.
+  throw new Error(`제보 본문이 비어 있습니다: kind=${item.kind}`);
+}
+
 /** 내가 확인한 리포트(05)는 「아직 있음 / 해결 됨」으로 필터하므로 해결 상태를 함께 넘깁니다. */
 export type ConfirmedListItem = ReportListItemData & {
   readonly resolution: '아직 있음' | '해결 됨';
@@ -201,7 +220,7 @@ export function toConfirmedListItem(confirmation: MyConfirmedReportResponse): Co
   const resolved = confirmation.report.status === 'RESOLVED';
 
   return {
-    ...toReportListItem(confirmation.report),
+    ...toObstacleReportListItem(confirmation.report),
     id: String(confirmation.confirmationId),
     tags: resolved
       ? [{ label: '해결됨', tone: 'blue' }]

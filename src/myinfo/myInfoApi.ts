@@ -76,8 +76,8 @@ export type MyObstacleReportResponse = Readonly<{
   latitude: number;
   longitude: number;
   /**
-   * TODO(GOTO-110): BE에 역지오코딩(또는 Place 연관)이 들어오면 실제 주소가 채워집니다.
-   *  지금은 ObstacleReport에 좌표만 있어 항상 null이고, toReportListItem이 좌표 문자열로 대체합니다.
+   * BE가 네이버 리버스 지오코딩으로 채우는 행정동 주소.
+   * 키 미설정·호출 실패·매칭 없음이면 null이고, 그때는 toObstacleReportListItem이 좌표 문자열로 대체합니다.
    */
   address: string | null;
   photoUrls: readonly string[];
@@ -128,10 +128,49 @@ export type MyFacilityReportResponse = Readonly<{
   createdAt: string;
 }>;
 
+/** 내 제보 기록의 분류. BE MyReportKind와 1:1. */
+export type MyReportKind = 'OBSTACLE' | 'PLACE' | 'FACILITY';
+
+/**
+ * 내 제보 기록 목록 항목.
+ * 분류마다 필요한 필드가 달라 kind에 해당하는 본문 하나만 채워집니다.
+ */
+export type MyReportItemResponse = Readonly<{
+  kind: MyReportKind;
+  createdAt: string;
+  obstacle: MyObstacleReportResponse | null;
+  place: MyPlaceStateReportResponse | null;
+  facility: MyFacilityReportResponse | null;
+}>;
+
+export type MyReportPage = Readonly<{
+  items: readonly MyReportItemResponse[];
+  /** 다음 페이지 커서. null이면 마지막 페이지입니다. */
+  nextCursor: string | null;
+}>;
+
+export type MyReportPageQuery = Readonly<{
+  kind?: MyReportKind;
+  cursor?: string | null;
+  size?: number;
+}>;
+
 export type MyConfirmedReportResponse = Readonly<{
   confirmationId: number;
   confirmedAt: string;
   report: MyObstacleReportResponse;
+}>;
+
+export type MyConfirmedReportPage = Readonly<{
+  items: readonly MyConfirmedReportResponse[];
+  nextCursor: string | null;
+}>;
+
+export type MyConfirmedReportPageQuery = Readonly<{
+  /** 확인 대상 제보 상태 필터. 없으면 전체. */
+  status?: ObstacleReportStatus;
+  cursor?: string | null;
+  size?: number;
 }>;
 
 export type UpdateMyPreferencesRequest = Readonly<{
@@ -159,10 +198,10 @@ export type MyInfoApi = Readonly<{
   updatePreferences(request: UpdateMyPreferencesRequest): Promise<MyPreferencesResponse>;
   getSettings(): Promise<MySettingsResponse>;
   updateSettings(request: UpdateMySettingsRequest): Promise<MySettingsResponse>;
-  findMyReports(): Promise<readonly MyObstacleReportResponse[]>;
-  findMyPlaceStateReports(): Promise<readonly MyPlaceStateReportResponse[]>;
-  findMyFacilityReports(): Promise<readonly MyFacilityReportResponse[]>;
-  findMyConfirmedReports(): Promise<readonly MyConfirmedReportResponse[]>;
+  /** 「지도로 보기」가 핀을 한 번에 찍어야 해서 페이지네이션 없이 전체를 받습니다. */
+  findMyObstacleReports(): Promise<readonly MyObstacleReportResponse[]>;
+  findMyReportPage(query?: MyReportPageQuery): Promise<MyReportPage>;
+  findMyConfirmedReportPage(query?: MyConfirmedReportPageQuery): Promise<MyConfirmedReportPage>;
 }>;
 
 export class MyInfoApiError extends ApiError {
@@ -228,7 +267,7 @@ export function createMyInfoApi(options?: MyInfoApiOptions): MyInfoApi {
       }
     },
 
-    async findMyReports() {
+    async findMyObstacleReports() {
       try {
         return await client.get<readonly MyObstacleReportResponse[]>(`${BASE_PATH}/obstacle-reports`);
       } catch (error) {
@@ -236,34 +275,53 @@ export function createMyInfoApi(options?: MyInfoApiOptions): MyInfoApi {
       }
     },
 
-    async findMyPlaceStateReports() {
+    async findMyReportPage(query = {}) {
       try {
-        return await client.get<readonly MyPlaceStateReportResponse[]>(
-          `${BASE_PATH}/place-state-reports`,
-        );
+        return await client.get<MyReportPage>(`${BASE_PATH}/reports${toPageQueryString(query)}`);
       } catch (error) {
         throw toMyInfoApiError(error);
       }
     },
 
-    async findMyFacilityReports() {
+    async findMyConfirmedReportPage(query = {}) {
       try {
-        return await client.get<readonly MyFacilityReportResponse[]>(`${BASE_PATH}/facility-reports`);
-      } catch (error) {
-        throw toMyInfoApiError(error);
-      }
-    },
-
-    async findMyConfirmedReports() {
-      try {
-        return await client.get<readonly MyConfirmedReportResponse[]>(
-          `${BASE_PATH}/obstacle-report-confirmations`,
+        return await client.get<MyConfirmedReportPage>(
+          `${BASE_PATH}/obstacle-report-confirmations${toPageQueryString(query)}`,
         );
       } catch (error) {
         throw toMyInfoApiError(error);
       }
     },
   };
+}
+
+/**
+ * 커서 페이지 조회의 쿼리스트링.
+ * 커서는 BE가 준 값을 그대로 돌려주기만 하면 되므로 인코딩만 하고 해석하지 않습니다.
+ */
+function toPageQueryString(query: {
+  kind?: string;
+  status?: string;
+  cursor?: string | null;
+  size?: number;
+}): string {
+  const params = new URLSearchParams();
+
+  if (query.kind) {
+    params.set('kind', query.kind);
+  }
+  if (query.status) {
+    params.set('status', query.status);
+  }
+  if (query.cursor) {
+    params.set('cursor', query.cursor);
+  }
+  if (query.size !== undefined) {
+    params.set('size', String(query.size));
+  }
+
+  const queryString = params.toString();
+  return queryString.length > 0 ? `?${queryString}` : '';
 }
 
 function toMyInfoApiError(error: unknown): unknown {

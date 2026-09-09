@@ -1,5 +1,5 @@
-import { AppRouteScreen } from '@/screens/AppRouteScreen';
+import { SavedPlacesPlaceholderScreen } from '@/screens/SavedPlacesPlaceholderScreen';
 
 export default function SavedRoute() {
-  return <AppRouteScreen route="saved" />;
+  return <SavedPlacesPlaceholderScreen />;
 }

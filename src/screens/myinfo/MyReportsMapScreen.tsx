@@ -12,7 +12,7 @@ import { ErrorView, LoadingView } from '@/components/myinfo/LoadStateView';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { StatusTag } from '@/components/myinfo/Tags';
 import { MY_INFO_SCREEN_X } from '@/components/myinfo/tokens';
-import { toReportListItem, useAsyncResource, useMyInfoApi } from '@/myinfo';
+import { toObstacleReportListItem, useAsyncResource, useMyInfoApi } from '@/myinfo';
 import { colors } from '@/styles/tokens/colors';
 
 /** 제보들이 한 화면에 들어오도록 잡은 기본 줌. */
@@ -28,7 +28,7 @@ type MyReportsMapScreenProps = {
  */
 export function MyReportsMapScreen({ onBack }: MyReportsMapScreenProps) {
   const api = useMyInfoApi();
-  const load = useCallback(() => api.findMyReports(), [api]);
+  const load = useCallback(() => api.findMyObstacleReports(), [api]);
   const reports = useAsyncResource(load, '제보 위치를 불러오지 못했어요. 다시 시도해주세요.');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const mapRef = useRef<NaverMapViewRef>(null);
@@ -117,7 +117,7 @@ export function MyReportsMapScreen({ onBack }: MyReportsMapScreenProps) {
           <ScrollView contentContainerStyle={styles.sheet} style={styles.sheetWrapper}>
             {selected ? (
               (() => {
-                const item = toReportListItem(selected);
+                const item = toObstacleReportListItem(selected);
 
                 return (
                   <View style={styles.detail}>

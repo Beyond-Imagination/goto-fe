@@ -9,6 +9,7 @@ import type {
 import {
   toConfirmedListItem,
   toFacilityReportListItem,
+  toObstacleReportListItem,
   toPlaceReportListItem,
   toProfileSummary,
   toReportListItem,
@@ -39,7 +40,7 @@ describe('myInfoLabels', () => {
   });
 
   it('제보 항목은 유형과 심각도를 제목으로 합치고 날짜를 점 표기로 바꾼다', () => {
-    const item = toReportListItem(BASE_REPORT);
+    const item = toObstacleReportListItem(BASE_REPORT);
 
     assert.equal(item.title, '보도 파손 · 통행 주의');
     assert.equal(item.meta, '2026.08.12 · 제보 ID 1247');
@@ -47,12 +48,12 @@ describe('myInfoLabels', () => {
   });
 
   it('썸네일 지도에 쓸 좌표와 첨부 사진을 그대로 넘긴다', () => {
-    const withoutPhoto = toReportListItem(BASE_REPORT);
+    const withoutPhoto = toObstacleReportListItem(BASE_REPORT);
     assert.equal(withoutPhoto.latitude, 37.5665);
     assert.equal(withoutPhoto.longitude, 126.978);
     assert.equal(withoutPhoto.photoUrl, null);
 
-    const withPhoto = toReportListItem({
+    const withPhoto = toObstacleReportListItem({
       ...BASE_REPORT,
       photoUrls: ['https://cdn.example.test/a.jpg', 'https://cdn.example.test/b.jpg'],
     });
@@ -60,23 +61,23 @@ describe('myInfoLabels', () => {
   });
 
   it('주소가 없으면 좌표로 대체 표기하고, 있으면 주소를 쓴다', () => {
-    assert.equal(toReportListItem(BASE_REPORT).address, '위치 37.56650, 126.97800');
+    assert.equal(toObstacleReportListItem(BASE_REPORT).address, '위치 37.56650, 126.97800');
     assert.equal(
-      toReportListItem({ ...BASE_REPORT, address: '서울시 마포구 월드컵로 23길' }).address,
+      toObstacleReportListItem({ ...BASE_REPORT, address: '서울시 마포구 월드컵로 23길' }).address,
       '서울시 마포구 월드컵로 23길',
     );
   });
 
   it('확인 수가 있으면 확인 태그를, 해결되면 해결됨 태그를 붙인다', () => {
-    assert.deepEqual(toReportListItem(BASE_REPORT).tags, [{ label: '확인 5명', tone: 'green' }]);
+    assert.deepEqual(toObstacleReportListItem(BASE_REPORT).tags, [{ label: '확인 5명', tone: 'green' }]);
 
-    const resolved = toReportListItem({ ...BASE_REPORT, status: 'RESOLVED' });
+    const resolved = toObstacleReportListItem({ ...BASE_REPORT, status: 'RESOLVED' });
     assert.equal(resolved.tags[0].label, '해결됨');
     assert.equal(resolved.tags[0].tone, 'blue');
   });
 
   it('오래된 제보는 확인 필요 태그를 붙인다', () => {
-    const stale = toReportListItem({ ...BASE_REPORT, stale: true, confirmedCount: 0 });
+    const stale = toObstacleReportListItem({ ...BASE_REPORT, stale: true, confirmedCount: 0 });
 
     assert.deepEqual(stale.tags, [{ label: '확인 필요', tone: 'amber' }]);
   });
@@ -200,5 +201,78 @@ describe('시설 상태 제보 목록 항목', () => {
 
     assert.equal(item.latitude, 0);
     assert.equal(item.longitude, 0);
+  });
+});
+
+describe('내 제보 기록 합친 응답 → 목록 항목', () => {
+  it('kind에 맞는 본문으로 변환한다', () => {
+    const obstacleItem = toReportListItem({
+      kind: 'OBSTACLE',
+      createdAt: BASE_REPORT.createdAt,
+      obstacle: BASE_REPORT,
+      place: null,
+      facility: null,
+    });
+    const placeItem = toReportListItem({
+      kind: 'PLACE',
+      createdAt: '2026-08-15T04:15:30Z',
+      obstacle: null,
+      place: {
+        id: 31,
+        placeId: 5012,
+        placeName: '서울숲 공원',
+        address: '서울 성동구 뚝섬로 273',
+        latitude: 37.544,
+        longitude: 127.037,
+        accessStatus: 'PARTIALLY_ACCESSIBLE',
+        facilityStatuses: {},
+        photoUrls: [],
+        description: null,
+        createdAt: '2026-08-15T04:15:30Z',
+      },
+      facility: null,
+    });
+    const facilityItem = toReportListItem({
+      kind: 'FACILITY',
+      createdAt: '2026-08-18T04:15:30Z',
+      obstacle: null,
+      place: null,
+      facility: {
+        id: 77,
+        nodeId: 9001,
+        nodeType: 'ELEVATOR',
+        nodeName: '본관 엘리베이터',
+        floorLevel: 1,
+        placeId: 5013,
+        placeName: '성수동 주민센터',
+        address: null,
+        latitude: null,
+        longitude: null,
+        issueType: 'BROKEN',
+        description: null,
+        createdAt: '2026-08-18T04:15:30Z',
+      },
+    });
+
+    assert.equal(obstacleItem.kind, 'obstacle');
+    assert.equal(obstacleItem.category, '장애물');
+    assert.equal(placeItem.kind, 'place');
+    assert.equal(placeItem.title, '서울숲 공원 · 일부 불편했어요');
+    assert.equal(facilityItem.kind, 'facility');
+    assert.equal(facilityItem.title, '본관 엘리베이터 · 고장');
+  });
+
+  it('kind와 본문이 어긋난 응답은 조용히 넘기지 않고 바로 실패한다', () => {
+    assert.throws(
+      () =>
+        toReportListItem({
+          kind: 'PLACE',
+          createdAt: '2026-08-15T04:15:30Z',
+          obstacle: null,
+          place: null,
+          facility: null,
+        }),
+      /제보 본문이 비어 있습니다/,
+    );
   });
 });

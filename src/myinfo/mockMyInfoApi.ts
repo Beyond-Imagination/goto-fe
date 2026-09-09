@@ -1,10 +1,13 @@
 import type {
+  MyConfirmedReportPageQuery,
   MyConfirmedReportResponse,
   MyInfoApi,
   MyFacilityReportResponse,
   MyObstacleReportResponse,
   MyPlaceStateReportResponse,
   MyPreferencesResponse,
+  MyReportItemResponse,
+  MyReportPageQuery,
   MyProfileResponse,
   MySettingsResponse,
   UpdateMyPreferencesRequest,
@@ -150,6 +153,35 @@ export function resetMockMyInfoStore(): void {
   };
 }
 
+function toObstacleItem(report: MyObstacleReportResponse): MyReportItemResponse {
+  return { kind: 'OBSTACLE', createdAt: report.createdAt, obstacle: report, place: null, facility: null };
+}
+
+function toPlaceItem(report: MyPlaceStateReportResponse): MyReportItemResponse {
+  return { kind: 'PLACE', createdAt: report.createdAt, obstacle: null, place: report, facility: null };
+}
+
+function toFacilityItem(report: MyFacilityReportResponse): MyReportItemResponse {
+  return { kind: 'FACILITY', createdAt: report.createdAt, obstacle: null, place: null, facility: report };
+}
+
+/**
+ * mock 커서는 "다음에 읽을 위치(offset)" 문자열입니다. 실제 서버 커서는 분류별 (created_at, id)를
+ * 담은 base64지만, 화면 입장에서는 받은 값을 그대로 돌려주는 불투명한 문자열이라 이걸로 충분합니다.
+ */
+function sliceMockPage<T>(
+  all: readonly T[],
+  cursor: string | null | undefined,
+  size: number | undefined,
+): { items: readonly T[]; nextCursor: string | null } {
+  const pageSize = size ?? 20;
+  const offset = cursor ? Number(cursor) : 0;
+  const items = all.slice(offset, offset + pageSize);
+  const nextOffset = offset + items.length;
+
+  return { items, nextCursor: nextOffset < all.length ? String(nextOffset) : null };
+}
+
 /**
  * mock 모드에서 쓰는 인메모리 어댑터.
  */
@@ -182,12 +214,29 @@ export function createMockMyInfoApi(): MyInfoApi {
       return mockStore.settings;
     },
 
-    findMyReports: async () => MOCK_REPORTS,
+    findMyObstacleReports: async () => MOCK_REPORTS,
 
-    findMyPlaceStateReports: async () => MOCK_PLACE_REPORTS,
+    findMyReportPage: async (query: MyReportPageQuery = {}) => {
+      const all = [
+        ...(query.kind === undefined || query.kind === 'OBSTACLE'
+          ? MOCK_REPORTS.map(toObstacleItem)
+          : []),
+        ...(query.kind === undefined || query.kind === 'PLACE' ? MOCK_PLACE_REPORTS.map(toPlaceItem) : []),
+        ...(query.kind === undefined || query.kind === 'FACILITY'
+          ? MOCK_FACILITY_REPORTS.map(toFacilityItem)
+          : []),
+      ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
-    findMyFacilityReports: async () => MOCK_FACILITY_REPORTS,
+      return sliceMockPage(all, query.cursor, query.size);
+    },
 
-    findMyConfirmedReports: async () => MOCK_CONFIRMATIONS,
+    findMyConfirmedReportPage: async (query: MyConfirmedReportPageQuery = {}) => {
+      const filtered =
+        query.status === undefined
+          ? MOCK_CONFIRMATIONS
+          : MOCK_CONFIRMATIONS.filter(confirmation => confirmation.report.status === query.status);
+
+      return sliceMockPage([...filtered], query.cursor, query.size);
+    },
   };
 }
