@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { toPushNotificationType, toPushTarget } from '@/push';
+import { toPushNotificationType, toPushTarget } from '@/push/pushRouting';
 
 describe('toPushTarget', () => {
   it('저장 탭 알림은 저장 탭으로 보내고 placeId를 넘긴다', () => {

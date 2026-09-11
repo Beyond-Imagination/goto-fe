@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { createMockMyInfoApi, resetMockMyInfoStore } from '@/myinfo';
+import { createMockMyInfoApi, resetMockMyInfoStore } from '@/myinfo/mockMyInfoApi';
 
 describe('mockMyInfoApi', () => {
   beforeEach(() => {

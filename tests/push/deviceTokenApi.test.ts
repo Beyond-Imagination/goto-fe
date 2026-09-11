@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { createDeviceTokenApi, DeviceTokenApiError } from '@/push';
+import { createDeviceTokenApi, DeviceTokenApiError } from '@/push/deviceTokenApi';
 import {
   createMockDeviceTokenApi,
   mockRegisteredDeviceTokens,
   resetMockDeviceTokenStore,
-} from '@/push';
+} from '@/push/mockDeviceTokenApi';
 
 type Call = Readonly<{ url: string; method: string; authorization: string | null; body: string | null }>;
 
