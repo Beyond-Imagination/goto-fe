@@ -17,6 +17,10 @@ export const statusTagTone = {
   green: { color: myInfoPalette.tagGreen, background: 'rgba(67,160,71,0.08)' },
   blue: { color: '#383CFF', background: 'rgba(56,60,255,0.08)' },
   amber: { color: myInfoPalette.tagAmber, background: 'rgba(249,168,37,0.04)' },
+  /** 「이용 어려움」처럼 통행을 막는 상태. 전역 semantic.danger(#D32F2F)와 같은 값입니다. */
+  red: { color: '#D32F2F', background: 'rgba(211,47,47,0.06)' },
+  /** 아직 제보가 없어 상태를 말할 수 없을 때. 색으로 판단을 유도하지 않게 무채색입니다. */
+  muted: { color: '#767676', background: 'rgba(118,118,118,0.06)' },
 } as const;
 
 export type StatusTagToneName = keyof typeof statusTagTone;
