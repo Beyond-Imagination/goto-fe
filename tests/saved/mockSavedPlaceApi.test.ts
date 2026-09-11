@@ -1,11 +1,8 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import {
-  createMockSavedPlaceApi,
-  resetMockSavedPlaceStore,
-} from '@/saved';
-import { SavedPlaceApiError } from '@/saved';
+import { createMockSavedPlaceApi, resetMockSavedPlaceStore } from '@/saved/mockSavedPlaceApi';
+import { SavedPlaceApiError } from '@/saved/savedPlaceApi';
 
 describe('mockSavedPlaceApi', () => {
   beforeEach(() => {

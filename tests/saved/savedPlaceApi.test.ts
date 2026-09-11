@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { ApiError } from '@/api';
-import { createSavedPlaceApi, SavedPlaceApiError } from '@/saved';
+import { createSavedPlaceApi, SavedPlaceApiError } from '@/saved/savedPlaceApi';
 
 type Call = Readonly<{
   url: string;

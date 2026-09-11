@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/common/Text';
 import { HELP_SCREEN_X } from '@/components/help';
 import { FilterChips } from '@/components/myinfo/FilterChips';
 import { ListDivider } from '@/components/myinfo/ListDivider';
 import { ErrorView, LoadingView } from '@/components/myinfo/LoadStateView';
+import { UnreadBadge } from '@/components/notifications/UnreadBadge';
 import { SavedPlaceCard } from '@/components/saved/SavedPlaceCard';
+import { useUnreadNotificationCount } from '@/notifications';
 import {
   SAVED_FILTERS,
   countNotificationEnabled,
@@ -24,6 +26,8 @@ type SavedPlacesScreenProps = {
   readonly onOpenPlace?: (placeId: number) => void;
   /** 빈 상태에서 「지도에서 장소 찾기」를 눌렀을 때. */
   readonly onOpenMap: () => void;
+  /** 우측 상단 벨 — 받은 알림 목록(저장 04). */
+  readonly onOpenNotifications: () => void;
 };
 
 /**
@@ -32,9 +36,14 @@ type SavedPlacesScreenProps = {
  * 저장은 장소 상세·검색 결과의 하트이고, 저장한 장소는 상태 변경 알림을 받습니다.
  * 카드의 스위치는 그 장소의 알림만 끄고, 어떤 알림을 받을지는 내 정보 › 알림 설정이 정합니다.
  */
-export function SavedPlacesScreen({ onOpenPlace, onOpenMap }: SavedPlacesScreenProps) {
+export function SavedPlacesScreen({
+  onOpenPlace,
+  onOpenMap,
+  onOpenNotifications,
+}: SavedPlacesScreenProps) {
   const api = useSavedPlaceApi();
   const saved = useSavedPlaces(api);
+  const unreadCount = useUnreadNotificationCount();
   const [filter, setFilter] = useState<SavedFilter>('전체');
 
   const visible = useMemo(() => filterSavedPlaces(saved.places, filter), [saved.places, filter]);
@@ -43,7 +52,11 @@ export function SavedPlacesScreen({ onOpenPlace, onOpenMap }: SavedPlacesScreenP
   if (saved.state === 'loading') {
     return (
       <View style={styles.screen}>
-        <SavedHeader subtitle="저장한 장소를 불러오는 중입니다" />
+        <SavedHeader
+          onOpenNotifications={onOpenNotifications}
+          subtitle="저장한 장소를 불러오는 중입니다"
+          unreadCount={unreadCount}
+        />
         <LoadingView message="저장한 장소를 불러오는 중입니다..." />
       </View>
     );
@@ -52,7 +65,11 @@ export function SavedPlacesScreen({ onOpenPlace, onOpenMap }: SavedPlacesScreenP
   if (saved.state === 'error') {
     return (
       <View style={styles.screen}>
-        <SavedHeader subtitle="목록을 불러오지 못했습니다" />
+        <SavedHeader
+          onOpenNotifications={onOpenNotifications}
+          subtitle="목록을 불러오지 못했습니다"
+          unreadCount={unreadCount}
+        />
         <ErrorView
           message={saved.errorMessage ?? '저장한 장소를 불러오지 못했어요.'}
           onRetry={saved.reload}
@@ -64,7 +81,11 @@ export function SavedPlacesScreen({ onOpenPlace, onOpenMap }: SavedPlacesScreenP
   if (saved.places.length === 0) {
     return (
       <View style={styles.screen}>
-        <SavedHeader subtitle="아직 저장한 장소가 없습니다" />
+        <SavedHeader
+          onOpenNotifications={onOpenNotifications}
+          subtitle="아직 저장한 장소가 없습니다"
+          unreadCount={unreadCount}
+        />
         <View style={styles.empty}>
           <Text
             color={colors.text.primary}
@@ -94,7 +115,11 @@ export function SavedPlacesScreen({ onOpenPlace, onOpenMap }: SavedPlacesScreenP
 
   return (
     <View style={styles.screen}>
-      <SavedHeader subtitle={`저장 ${saved.places.length}곳 · 알림 받는 곳 ${notifiedCount}곳`} />
+      <SavedHeader
+        onOpenNotifications={onOpenNotifications}
+        subtitle={`저장 ${saved.places.length}곳 · 알림 받는 곳 ${notifiedCount}곳`}
+        unreadCount={unreadCount}
+      />
       <FlatList
         ItemSeparatorComponent={ListDivider}
         ListEmptyComponent={
@@ -135,16 +160,39 @@ export function SavedPlacesScreen({ onOpenPlace, onOpenMap }: SavedPlacesScreenP
   );
 }
 
+type SavedHeaderProps = {
+  readonly subtitle: string;
+  readonly unreadCount: number | null;
+  readonly onOpenNotifications: () => void;
+};
+
 /**
  * 저장 탭 헤더.
- * 와이어프레임의 우측 상단 벨(저장 04 · 상태 변경 알림)은 알림 저장·발송이 아직 없어 두지 않았습니다.
+ * 우측 상단 벨이 받은 알림 목록(저장 04)으로 가는 유일한 입구이며, 안 읽은 알림 수를 배지로 얹습니다.
  */
-function SavedHeader({ subtitle }: { readonly subtitle: string }) {
+function SavedHeader({ subtitle, unreadCount, onOpenNotifications }: SavedHeaderProps) {
   return (
     <View style={styles.titleBlock}>
-      <Text color={colors.text.primary} variant="title-1" weight="semibold">
-        저장
-      </Text>
+      <View style={styles.titleRow}>
+        <Text color={colors.text.primary} variant="title-1" weight="semibold">
+          저장
+        </Text>
+        <Pressable
+          accessibilityLabel={
+            unreadCount === null ? '알림 목록 열기' : `알림 목록 열기, 안 읽은 알림 ${unreadCount}개`
+          }
+          accessibilityRole="button"
+          hitSlop={10}
+          onPress={onOpenNotifications}
+          style={styles.bell}
+        >
+          <Image
+            source={require('../../assets/icons/menu-notification.png')}
+            style={styles.bellIcon}
+          />
+          <UnreadBadge count={unreadCount} />
+        </Pressable>
+      </View>
       <Text color={colors.text.secondary} variant="body-3">
         {subtitle}
       </Text>
@@ -161,6 +209,21 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: HELP_SCREEN_X,
     paddingTop: 24,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  bell: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  bellIcon: {
+    height: 24,
+    width: 24,
   },
   header: {
     gap: 12,

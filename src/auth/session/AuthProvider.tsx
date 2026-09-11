@@ -10,10 +10,10 @@ import type {
 } from '@/auth/common';
 import { type SocialProvider } from '@/components/auth/socialProviders';
 
-import { createAuthSession, type AuthSnapshot } from './authSession';
+import { createAuthSession, type AuthSnapshot } from '@/auth';
 import { createMockGoogleAdapter, createMockKakaoAdapter, createMockNaverAdapter, createMockOAuthApi } from '@/mock';
-import { isNicknameAvailable, oauthLogin, oauthSignup, refreshPlatformSession } from '../social/oauthApi';
-import { type KeyValueStorage } from './refreshTokenStore';
+import { isNicknameAvailable, oauthLogin, oauthSignup, refreshPlatformSession } from '@/auth';
+import { type KeyValueStorage } from '@/auth';
 
 type AuthContextValue = AuthSnapshot & {
   beginSocialLogin: (provider: SocialProvider) => Promise<OAuthLoginOutcome>;

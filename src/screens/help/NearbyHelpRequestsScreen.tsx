@@ -23,6 +23,7 @@ import {
   type NearbyHelpRequestResponse,
 } from '@/help';
 import { FALLBACK_COORDINATES } from '@/help';
+import { useDeviceLocationReporter } from '@/push';
 import { colors } from '@/styles/tokens/colors';
 
 /** BE nearby의 radiusMeters 상한은 5000m입니다. */
@@ -37,6 +38,7 @@ type NearbyHelpRequestsScreenProps = {
 export function NearbyHelpRequestsScreen({ onBack, onSelect }: NearbyHelpRequestsScreenProps) {
   const insets = useSafeAreaInsets();
   const helpApi = useHelpRequestApi();
+  const reportLocation = useDeviceLocationReporter();
 
   const [coordinates, setCoordinates] = useState<Coordinates>(FALLBACK_COORDINATES);
   const [requests, setRequests] = useState<readonly NearbyHelpRequestResponse[]>([]);
@@ -55,6 +57,10 @@ export function NearbyHelpRequestsScreen({ onBack, onSelect }: NearbyHelpRequest
 
         try {
           const current = await getCurrentCoordinates();
+          // 이 화면을 보고 있다는 건 "이 근처에서 도울 수 있다"는 뜻이라, 기기 위치를 갱신해
+          // 다음 도움 요청 푸시를 이 반경에서 받을 수 있게 합니다.
+          reportLocation(current);
+
           const response = await helpApi.findNearby({
             latitude: current.latitude,
             longitude: current.longitude,
@@ -83,7 +89,7 @@ export function NearbyHelpRequestsScreen({ onBack, onSelect }: NearbyHelpRequest
       return () => {
         isActive = false;
       };
-    }, [helpApi]),
+    }, [helpApi, reportLocation]),
   );
 
   // 근사 좌표가 없는 요청(구버전 데이터)은 지도에 올리지 않고 목록에만 남깁니다.

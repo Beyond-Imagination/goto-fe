@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import type { SavedPlaceResponse } from '@/saved';
+import type { SavedPlaceResponse } from '@/saved/savedPlaceApi';
 import {
   applyNotification,
   initialSavedSnapshot,
@@ -11,7 +11,7 @@ import {
   replacePlace,
   savedErrorSnapshot,
   settledView,
-} from '@/saved';
+} from '@/saved/savedListState';
 
 function place(placeId: number, overrides: Partial<SavedPlaceResponse> = {}): SavedPlaceResponse {
   return {

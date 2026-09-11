@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
-import { createMockMyInfoApi, resetMockMyInfoStore } from '../../src/myinfo/mockMyInfoApi';
+import { createMockMyInfoApi, resetMockMyInfoStore } from '@/myinfo';
 
 describe('mockMyInfoApi', () => {
   beforeEach(() => {
@@ -13,7 +13,7 @@ describe('mockMyInfoApi', () => {
     const before = await saving.getSettings();
 
     await saving.updateSettings({
-      notifications: { ...before.notifications, savedPlaceStatusChange: true },
+      notifications: { ...before.notifications, savedPlaceStatusChange: false },
       display: { ...before.display, largeText: true },
     });
 
@@ -21,9 +21,10 @@ describe('mockMyInfoApi', () => {
     const reopened = createMockMyInfoApi();
     const after = await reopened.getSettings();
 
-    assert.equal(after.notifications.savedPlaceStatusChange, true);
+    assert.equal(after.notifications.savedPlaceStatusChange, false);
     assert.equal(after.display.largeText, true);
-    assert.equal(after.notifications.myHelpRequestAccepted, false);
+    // 건드리지 않은 스위치는 기본값(켜짐) 그대로입니다.
+    assert.equal(after.notifications.myHelpRequestAccepted, true);
   });
 
   it('저장한 접근성 프로필도 어댑터를 새로 만들어도 남아 있다', async () => {
