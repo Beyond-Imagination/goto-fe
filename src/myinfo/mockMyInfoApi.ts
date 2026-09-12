@@ -116,13 +116,14 @@ const mockStore: { preferences: MyPreferencesResponse; settings: MySettingsRespo
     avoidConditions: ['STAIRS', 'STEEP_SLOPE'],
   },
   settings: {
+    // 서버 기본값과 같습니다 — 알림은 켜고 시작하고, 기기 알림 권한만 사용자가 허용하면 됩니다.
     notifications: {
-      savedPlaceStatusChange: false,
-      savedPlaceNearbyObstacle: false,
-      myReportConfirmed: false,
-      myReportConfirmationRequested: false,
-      nearbyHelpRequest: false,
-      myHelpRequestAccepted: false,
+      savedPlaceStatusChange: true,
+      savedPlaceNearbyObstacle: true,
+      myReportConfirmed: true,
+      myReportConfirmationRequested: true,
+      nearbyHelpRequest: true,
+      myHelpRequestAccepted: true,
     },
     display: {
       largeText: false,
@@ -141,13 +142,14 @@ export function resetMockMyInfoStore(): void {
     avoidConditions: ['STAIRS', 'STEEP_SLOPE'],
   };
   mockStore.settings = {
+    // 서버 기본값과 같습니다 — 알림은 켜고 시작하고, 기기 알림 권한만 사용자가 허용하면 됩니다.
     notifications: {
-      savedPlaceStatusChange: false,
-      savedPlaceNearbyObstacle: false,
-      myReportConfirmed: false,
-      myReportConfirmationRequested: false,
-      nearbyHelpRequest: false,
-      myHelpRequestAccepted: false,
+      savedPlaceStatusChange: true,
+      savedPlaceNearbyObstacle: true,
+      myReportConfirmed: true,
+      myReportConfirmationRequested: true,
+      nearbyHelpRequest: true,
+      myHelpRequestAccepted: true,
     },
     display: { largeText: false, highContrast: false, vibration: false, statusAlerts: false },
   };

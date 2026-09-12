@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ProfileProvider } from '@/state/profile';
 import { AuthProvider } from '@/auth';
+import { PushProvider } from '@/push';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -55,25 +56,28 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <ProfileProvider>
-            {/* 스플래시만 밝은 아이콘을 쓰고, 나머지 흰 배경 화면은 어두운 아이콘으로 돌아옵니다. */}
-            <StatusBar barStyle="dark-content" translucent />
-            <Stack
-              screenOptions={{
-                // 성격이 다른 화면으로 넘어가는 전환의 기본값.
-                animation: 'slide_from_right',
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="index" options={{ animation: 'fade' }} />
-              <Stack.Screen name="login" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
-              <Stack.Screen name="help" />
-              <Stack.Screen name="signup" />
-              <Stack.Screen name="onboarding" />
-              <Stack.Screen name="permission" options={STEP_TRANSITION} />
-              <Stack.Screen name="profile" options={STEP_TRANSITION} />
-              <Stack.Screen name="design-system" />
-            </Stack>
+            {/* 푸시 권한·토큰 등록과 알림 탭 이동은 세션이 필요해서 AuthProvider 안쪽에 둡니다. */}
+            <PushProvider>
+              {/* 스플래시만 밝은 아이콘을 쓰고, 나머지 흰 배경 화면은 어두운 아이콘으로 돌아옵니다. */}
+              <StatusBar barStyle="dark-content" translucent />
+              <Stack
+                screenOptions={{
+                  // 성격이 다른 화면으로 넘어가는 전환의 기본값.
+                  animation: 'slide_from_right',
+                  headerShown: false,
+                }}
+              >
+                <Stack.Screen name="index" options={{ animation: 'fade' }} />
+                <Stack.Screen name="login" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+                <Stack.Screen name="help" />
+                <Stack.Screen name="signup" />
+                <Stack.Screen name="onboarding" />
+                <Stack.Screen name="permission" options={STEP_TRANSITION} />
+                <Stack.Screen name="profile" options={STEP_TRANSITION} />
+                <Stack.Screen name="design-system" />
+              </Stack>
+            </PushProvider>
           </ProfileProvider>
         </AuthProvider>
       </SafeAreaProvider>

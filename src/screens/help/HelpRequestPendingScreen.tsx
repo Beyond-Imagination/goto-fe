@@ -128,14 +128,12 @@ export function HelpRequestPendingScreen({
         </View>
 
         {/*
-          TODO(푸시): 지금은 서버에 푸시 발송이 없어서, 도우미가 「도움 주기」에서 GET /nearby를
-          조회할 때 반경 안에 들어오면 목록에 노출되는 pull 방식입니다. 그래서 완료형("보냈어요") 대신
-          진행형으로 적었습니다. BE(기기 토큰 저장 + FCM 발송)와 FE(expo-notifications 권한·토큰 등록)에
-          푸시가 붙으면 요청 생성 시 반경 내 사용자에게 푸시를 보내는 플로우를 추가하고,
-          이 문구도 "요청을 보냈어요" 같은 완료형으로 되돌려야 합니다.
+          요청을 만들면 서버가 같은 반경 안에서 최근 위치를 보고한 기기로 푸시를 보냅니다
+          (BE PushNotificationService.sendNearby). 그래서 완료형으로 적습니다.
+          알림을 꺼 둔 사용자에게는 가지 않지만, 「도움 주기」 목록에는 그대로 노출됩니다.
         */}
         <Text color={colors.text.secondary} style={styles.reach} variant="body-2">
-          반경 {HELP_REQUEST_REACH_METERS}m 안의 주변 사용자에게 요청을 보내고 있어요
+          반경 {HELP_REQUEST_REACH_METERS}m 안의 주변 사용자에게 요청을 보냈어요
         </Text>
 
         <Text color={colors.text.primary} style={styles.headline} variant="title-1" weight="semibold">

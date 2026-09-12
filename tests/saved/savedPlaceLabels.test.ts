@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import type { SavedPlaceResponse } from '@/saved';
+import type { SavedPlaceResponse } from '@/saved/savedPlaceApi';
 import {
   RECENT_CHANGE_DAYS,
   STALE_DAYS,
@@ -10,7 +10,7 @@ import {
   filterSavedPlaces,
   toLastCheckedLabel,
   toSavedPlaceCard,
-} from '@/saved';
+} from '@/saved/savedPlaceLabels';
 
 const NOW = Date.parse('2026-09-09T00:00:00Z');
 const DAY_MS = 86_400_000;

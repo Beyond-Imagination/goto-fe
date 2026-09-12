@@ -6,6 +6,7 @@ import { Text } from '@/components/common/Text';
 import { ErrorView, LoadingView } from '@/components/myinfo/LoadStateView';
 import { MyInfoHeader } from '@/components/myinfo/MyInfoHeader';
 import { NotificationToggleRow } from '@/components/myinfo/NotificationToggleRow';
+import { PushPermissionNotice } from '@/components/myinfo/PushPermissionNotice';
 import { useAsyncResource, useMyInfoApi, type NotificationSettings } from '@/myinfo';
 import { colors } from '@/styles/tokens/colors';
 
@@ -139,6 +140,7 @@ export function NotificationSettingsScreen({ onBack }: NotificationSettingsScree
           style={styles.scroll}
         >
           <View style={styles.sections}>
+            <PushPermissionNotice />
             {SECTIONS.map((section, sectionIndex) => (
               <View key={section.label}>
                 {sectionIndex > 0 ? <View style={styles.divider} /> : null}

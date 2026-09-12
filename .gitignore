@@ -21,3 +21,7 @@ android/
 expo-env.d.ts
 # @end expo-cli
 /store-assets/
+
+# Firebase(FCM) 설정 파일 — 각자 Firebase 콘솔에서 받아 로컬에만 둡니다.
+google-services.json
+GoogleService-Info.plist
