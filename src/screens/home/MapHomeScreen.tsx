@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   NaverMapMarkerOverlay,
   NaverMapView,
@@ -10,10 +10,9 @@ import {
 } from "@mj-studio/react-native-naver-map";
 
 import { useAuth } from "@/auth";
-import { Card, Text as AppText } from "@/components";
-import { logger } from "@/utils/logger";
 import { IconStroller } from "@/components/icons/IconStroller";
 import { IconWheelchair } from "@/components/icons/IconWheelchair";
+import { logger } from "@/utils/logger";
 import { colors } from "@/styles/tokens/colors";
 import { radius } from "@/styles/tokens/radius";
 import { spacing } from "@/styles/tokens/spacing";
@@ -32,16 +31,24 @@ import { usePlaceApi } from "@/usePlaceApi";
 import { useAsyncResource, useMyInfoApi } from "@/myinfo";
 import { getRecentlyViewedPlaces, recordPlaceView, type RecentlyViewedPlace } from "@/state/recentlyViewedPlaces";
 
-import { MapHomeSheet } from "./MapHomeSheet";
 import {
-  formatClusterMarkerLabel,
-  ISSUE_TYPE_LABEL,
-  NEEDS_CONFIRMATION_COLOR,
-  NEEDS_CONFIRMATION_LABEL,
-  SEVERITY_COLOR,
-  SEVERITY_LABEL
-} from "./obstacleSeverityStyle";
+  ISSUE_TYPE_MARKER_ANCHOR_X,
+  ISSUE_TYPE_MARKER_ANCHOR_Y,
+  ISSUE_TYPE_MARKER_CAPTION_SIZE,
+  ISSUE_TYPE_MARKER_HEIGHT_RATIO,
+  ISSUE_TYPE_MARKER_WIDTH_RATIO,
+  issueTypeMarkerCaptionColor,
+  issueTypeMarkerIcon,
+  issueTypeMarkerSize
+} from "./issueTypeMarkerIcons";
+import { MapHomeSheet } from "./MapHomeSheet";
+import { clusterSeverityColor, clusterSeverityLabel } from "./obstacleSeverityStyle";
+import { RECOMMENDED_PLACES_MAX_COUNT } from "./sections/RecommendedPlacesSection";
+import { tieredValue } from "./tieredValue";
 import { getZoomTier, type ZoomTier } from "./zoomTiers";
+import { CloseZoomContent } from "./zoomContent/CloseZoomContent";
+import { FarZoomContent } from "./zoomContent/FarZoomContent";
+import { MidZoomContent } from "./zoomContent/MidZoomContent";
 
 // 실제 위치 권한 연동 전까지의 임시 기본 위치 (서울시청).
 const DEFAULT_CENTER: Coord = { latitude: 37.5665, longitude: 126.978 };
@@ -91,31 +98,23 @@ function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
 }
 
 // Figma 범례(*8 / *10이상 / *20이상) 기준 3단계 마커 크기.
+const CLUSTER_MARKER_SIZE_TIERS = [
+  { min: 20, value: 76 },
+  { min: 10, value: 62 }
+] as const;
+
 function clusterMarkerSize(reportCount: number): number {
-  if (reportCount >= 20) {
-    return 76;
-  }
-  if (reportCount >= 10) {
-    return 62;
-  }
-  return 48;
+  return tieredValue(reportCount, CLUSTER_MARKER_SIZE_TIERS, 48);
 }
 
-function formatRelativeTime(isoTimestamp: string): string {
-  const diffMs = Date.now() - new Date(isoTimestamp).getTime();
-  const diffMinutes = Math.max(0, Math.round(diffMs / 60000));
+// 마커 지름(size)에 따른 캡션/서브캡션 오프셋·글자 크기 — 원이 커질수록 텍스트도 커진다.
+const CLUSTER_MARKER_CAPTION_TIERS = [
+  { min: 76, value: { offset: -16, subCaptionTextSize: 19, textSize: 12 } },
+  { min: 62, value: { offset: -13, subCaptionTextSize: 17, textSize: 11 } }
+] as const;
 
-  if (diffMinutes < 1) {
-    return "방금 전";
-  }
-  if (diffMinutes < 60) {
-    return `${String(diffMinutes)}분 전`;
-  }
-  const diffHours = Math.round(diffMinutes / 60);
-  if (diffHours < 24) {
-    return `${String(diffHours)}시간 전`;
-  }
-  return `${String(Math.round(diffHours / 24))}일 전`;
+function clusterMarkerCaptionStyle(size: number) {
+  return tieredValue(size, CLUSTER_MARKER_CAPTION_TIERS, { offset: -10, subCaptionTextSize: 15, textSize: 10 });
 }
 
 export function MapHomeScreen() {
@@ -196,10 +195,10 @@ export function MapHomeScreen() {
     };
   }, [viewport, accessToken, selectedMobilityTypes, selectedAvoidIssueTypes, roundedZoom, obstacleReportApi]);
 
-  // 먼 줌 / 가까운 줌 전용 바텀시트 데이터: "현재 화면 접근성 현황" + "추천 관광지".
-  // 중간 줌은 클러스터 응답의 nearbyPlaceLabel만으로 콘텐츠를 구성하므로 별도 호출이 필요 없다.
+  // "추천 관광지"는 줌 구간과 무관하게 항상 불러온다. "현재 화면 접근성 현황" 요약 카드는
+  // 먼 줌 전용이라 아래 Promise.all에서 far일 때만 조건부로 호출한다.
   useEffect(() => {
-    if (!viewport || !accessToken || zoomTier === "mid") {
+    if (!viewport || !accessToken) {
       return;
     }
     const latitude = viewport.center.latitude;
@@ -280,30 +279,57 @@ export function MapHomeScreen() {
         style={styles.map}
       >
         {clusters.map((cluster, index) => {
+          const key =
+            cluster.id !== null
+              ? `report-${String(cluster.id)}`
+              : `cluster-${String(index)}-${String(cluster.centerLat)}-${String(cluster.centerLng)}`;
+
+          if (zoomTier === "mid") {
+            const dominantIssueType = cluster.topIssueTypes[0]?.issueType;
+            const midSize = issueTypeMarkerSize(cluster.reportCount);
+            return (
+              <NaverMapMarkerOverlay
+                anchor={{ x: ISSUE_TYPE_MARKER_ANCHOR_X, y: ISSUE_TYPE_MARKER_ANCHOR_Y }}
+                caption={{
+                  align: "Center",
+                  color: issueTypeMarkerCaptionColor(cluster.reportCount),
+                  text: String(cluster.reportCount),
+                  textSize: ISSUE_TYPE_MARKER_CAPTION_SIZE
+                }}
+                height={midSize * ISSUE_TYPE_MARKER_HEIGHT_RATIO}
+                image={dominantIssueType ? issueTypeMarkerIcon(dominantIssueType, cluster.reportCount) : undefined}
+                isHideCollidedMarkers
+                key={key}
+                latitude={cluster.centerLat}
+                longitude={cluster.centerLng}
+                onTap={() => handleClusterTap(cluster)}
+                width={midSize * ISSUE_TYPE_MARKER_WIDTH_RATIO}
+                zIndex={cluster.reportCount}
+              />
+            );
+          }
+
           const size = clusterMarkerSize(cluster.reportCount);
+          const captionStyle = clusterMarkerCaptionStyle(size);
           return (
             <NaverMapMarkerOverlay
               anchor={{ x: 0.5, y: 0.5 }}
               caption={{
                 align: "Center",
                 color: "#ffffff",
-                offset: size >= 76 ? -16 : size >= 62 ? -13 : -10,
-                text: SEVERITY_LABEL[cluster.maxSeverity],
-                textSize: size >= 76 ? 12 : size >= 62 ? 11 : 10
+                offset: captionStyle.offset,
+                text: clusterSeverityLabel(cluster),
+                textSize: captionStyle.textSize
               }}
               height={size}
-              key={
-                cluster.id !== null
-                  ? `report-${String(cluster.id)}`
-                  : `cluster-${String(index)}-${String(cluster.centerLat)}-${String(cluster.centerLng)}`
-              }
+              key={key}
               latitude={cluster.centerLat}
               longitude={cluster.centerLng}
               onTap={() => handleClusterTap(cluster)}
               subCaption={{
                 color: "#ffffff",
                 text: String(cluster.reportCount),
-                textSize: size >= 76 ? 19 : size >= 62 ? 17 : 15
+                textSize: captionStyle.subCaptionTextSize
               }}
               width={size}
             >
@@ -311,7 +337,7 @@ export function MapHomeScreen() {
                 collapsable={false}
                 style={[
                   styles.clusterMarker,
-                  { backgroundColor: SEVERITY_COLOR[cluster.maxSeverity], borderRadius: size / 2, height: size, width: size }
+                  { backgroundColor: clusterSeverityColor(cluster), borderRadius: size / 2, height: size, width: size }
                 ]}
               />
             </NaverMapMarkerOverlay>
@@ -359,7 +385,15 @@ export function MapHomeScreen() {
             recommendedPlaces={recommendedPlaces}
           />
         ) : null}
-        {zoomTier === "mid" ? <MidZoomContent clusters={clusters} /> : null}
+        {zoomTier === "mid" ? (
+          <MidZoomContent
+            clusters={clusters}
+            nickname={nickname}
+            onPlacePress={handlePlacePress}
+            recentlyViewedPlaces={recentlyViewedPlaces}
+            recommendedPlaces={recommendedPlaces}
+          />
+        ) : null}
         {zoomTier === "close" ? (
           <CloseZoomContent
             clusters={clusters}
@@ -403,331 +437,7 @@ function FilterChip({ Icon, label, onPress, selected }: FilterChipProps) {
   );
 }
 
-type FarZoomContentProps = {
-  readonly nearbySummary: NearbyAccessibilitySummary | null;
-  readonly nickname: string | undefined;
-  readonly onPlacePress: (place: PlaceSearchItem) => void;
-  readonly recentlyViewedPlaces: readonly RecentlyViewedPlace[];
-  readonly recommendedPlaces: readonly PlaceSearchItem[];
-};
-
-function FarZoomContent({
-  nearbySummary,
-  nickname,
-  onPlacePress,
-  recentlyViewedPlaces,
-  recommendedPlaces
-}: FarZoomContentProps) {
-  return (
-    <View style={styles.sections}>
-      {nearbySummary ? <AccessibilitySummaryCard summary={nearbySummary} /> : null}
-      <RecommendedPlacesSection nickname={nickname} onPlacePress={onPlacePress} places={recommendedPlaces} />
-      <RecentlyViewedPlacesSection places={recentlyViewedPlaces} />
-    </View>
-  );
-}
-
-function AccessibilitySummaryCard({ summary }: { readonly summary: NearbyAccessibilitySummary }) {
-  return (
-    <Card elevation="sm" style={styles.summaryCard}>
-      <View style={styles.summaryRow}>
-        <SummaryCount color={SEVERITY_COLOR.INFO} count={summary.safeCount} label={SEVERITY_LABEL.INFO} />
-        <View style={styles.summaryDivider} />
-        <SummaryCount color={SEVERITY_COLOR.CAUTION} count={summary.cautionCount} label={SEVERITY_LABEL.CAUTION} />
-        <View style={styles.summaryDivider} />
-        <SummaryCount
-          color={SEVERITY_COLOR.IMPASSABLE}
-          count={summary.detourRecommendedCount}
-          label={SEVERITY_LABEL.IMPASSABLE}
-        />
-        <View style={styles.summaryDivider} />
-        <SummaryCount color={NEEDS_CONFIRMATION_COLOR} count={summary.needsConfirmationCount} label={NEEDS_CONFIRMATION_LABEL} />
-      </View>
-    </Card>
-  );
-}
-
-function SummaryCount({ color, count, label }: { readonly color: string; readonly count: number; readonly label: string }) {
-  return (
-    <View style={styles.summaryCount}>
-      <AppText color={color} variant="title-2" weight="bold">
-        {String(count)}
-        <AppText color={colors.text.secondary} variant="body-2" weight="regular">
-          건
-        </AppText>
-      </AppText>
-      <AppText color={colors.text.secondary} variant="caption-1">
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
-type MidZoomContentProps = {
-  readonly clusters: readonly ObstacleReportCluster[];
-};
-
-function MidZoomContent({ clusters }: MidZoomContentProps) {
-  const labeledClusters = clusters.filter((cluster) => cluster.nearbyPlaceLabel !== null);
-
-  if (labeledClusters.length === 0) {
-    return (
-      <AppText color={colors.text.secondary} variant="body-3">
-        이 주변에 표시할 접근성 이슈가 없어요.
-      </AppText>
-    );
-  }
-
-  return (
-    <View style={styles.sections}>
-      {labeledClusters.map((cluster, index) => (
-        <Card elevation="sm" key={`${String(cluster.centerLat)}-${String(cluster.centerLng)}-${String(index)}`}>
-          <View style={styles.issueRow}>
-            <View style={[styles.severityDot, { backgroundColor: SEVERITY_COLOR[cluster.maxSeverity] }]} />
-            <View style={styles.issueTextGroup}>
-              <AppText variant="body-2" weight="semibold">
-                {cluster.nearbyPlaceLabel}
-              </AppText>
-              <AppText color={colors.text.secondary} variant="caption-1">
-                {formatClusterMarkerLabel(cluster.maxSeverity, cluster.reportCount)}
-              </AppText>
-            </View>
-          </View>
-        </Card>
-      ))}
-    </View>
-  );
-}
-
-type CloseZoomContentProps = {
-  readonly clusters: readonly ObstacleReportCluster[];
-  readonly nickname: string | undefined;
-  readonly onPlacePress: (place: PlaceSearchItem) => void;
-  readonly recentlyViewedPlaces: readonly RecentlyViewedPlace[];
-  readonly recommendedPlaces: readonly PlaceSearchItem[];
-};
-
-function CloseZoomContent({
-  clusters,
-  nickname,
-  onPlacePress,
-  recentlyViewedPlaces,
-  recommendedPlaces
-}: CloseZoomContentProps) {
-  // 가까운 줌은 언클러스터링 상태라 클러스터 하나 = 제보 하나. topIssueTypes를 합산하면
-  // 뷰포트 전체의 유형별 분포가 정확히 나온다(각 클러스터가 이미 리포트 1건이라 손실 없음).
-  const issueTypeCounts = new Map<ObstacleIssueType, number>();
-  let totalCount = 0;
-  for (const cluster of clusters) {
-    for (const entry of cluster.topIssueTypes) {
-      issueTypeCounts.set(entry.issueType, (issueTypeCounts.get(entry.issueType) ?? 0) + entry.count);
-      totalCount += entry.count;
-    }
-  }
-  const breakdown = Array.from(issueTypeCounts.entries()).sort((a, b) => b[1] - a[1]);
-
-  const reportItems = clusters
-    .filter((cluster) => cluster.id !== null)
-    .slice()
-    .sort((a, b) => new Date(b.latestReportAt).getTime() - new Date(a.latestReportAt).getTime());
-
-  return (
-    <View style={styles.sections}>
-      {totalCount > 0 ? (
-        <Card elevation="sm">
-          <AppText style={styles.sectionHeading} variant="title-2" weight="semibold">
-            {totalCount}건 · 이 지역에서 확인된 접근성 제보 수
-          </AppText>
-          <View style={styles.breakdownList}>
-            {breakdown.map(([issueType, count]) => (
-              <View key={issueType} style={styles.breakdownRow}>
-                <AppText style={styles.breakdownLabel} variant="body-3">
-                  {ISSUE_TYPE_LABEL[issueType]}
-                </AppText>
-                <AppText color={colors.text.secondary} variant="body-3">
-                  {count}건 · {Math.round((count / totalCount) * 100)}%
-                </AppText>
-              </View>
-            ))}
-          </View>
-        </Card>
-      ) : null}
-
-      <View style={styles.sections}>
-        <AppText style={styles.sectionHeading} variant="title-2" weight="semibold">
-          최근 제보
-        </AppText>
-        {reportItems.length === 0 ? (
-          <AppText color={colors.text.secondary} variant="body-3">
-            이 화면에 표시할 제보가 없어요.
-          </AppText>
-        ) : (
-          reportItems.map((cluster) => (
-            <Card elevation="sm" key={`report-${String(cluster.id)}`}>
-              <View style={styles.issueRow}>
-                <View style={[styles.severityDot, { backgroundColor: SEVERITY_COLOR[cluster.maxSeverity] }]} />
-                <View style={styles.issueTextGroup}>
-                  <AppText variant="body-2" weight="semibold">
-                    {cluster.topIssueTypes[0]
-                      ? ISSUE_TYPE_LABEL[cluster.topIssueTypes[0].issueType]
-                      : SEVERITY_LABEL[cluster.maxSeverity]}
-                  </AppText>
-                  <AppText color={colors.text.secondary} variant="caption-1">
-                    {cluster.nearbyPlaceLabel ?? "주변 장소 정보 없음"} · {formatRelativeTime(cluster.latestReportAt)}
-                  </AppText>
-                </View>
-              </View>
-            </Card>
-          ))
-        )}
-      </View>
-
-      <RecommendedPlacesSection nickname={nickname} onPlacePress={onPlacePress} places={recommendedPlaces} />
-      <RecentlyViewedPlacesSection places={recentlyViewedPlaces} />
-    </View>
-  );
-}
-
-type RecommendedPlacesSectionProps = {
-  readonly nickname: string | undefined;
-  readonly onPlacePress: (place: PlaceSearchItem) => void;
-  readonly places: readonly PlaceSearchItem[];
-};
-
-const RECOMMENDED_PLACES_INITIAL_COUNT = 4;
-const RECOMMENDED_PLACES_PAGE_SIZE = 6;
-// 진짜 페이지네이션(offset) 없이 상위 K개를 한 번에 받아와 클라이언트에서 순차 공개한다 — 이 값이 노출 가능한 최대 순위다.
-const RECOMMENDED_PLACES_MAX_COUNT = 15;
-
-function RecommendedPlacesSection({ nickname, onPlacePress, places }: RecommendedPlacesSectionProps) {
-  const [visibleCount, setVisibleCount] = useState(RECOMMENDED_PLACES_INITIAL_COUNT);
-  const [renderedPlaces, setRenderedPlaces] = useState(places);
-
-  // 지도 이동으로 추천 목록 자체가 새로 바뀌면(places 참조 변경) 이전 위치에서 펼쳐뒀던
-  // 개수를 그대로 이어받지 않도록 초기 개수로 되돌린다. 렌더 중 조건부로 처리해
-  // (React가 공식적으로 지원하는 "prop 변경에 대한 state 조정" 패턴) 불필요한 추가
-  // 렌더 사이클을 만드는 useEffect 기반 리셋을 피한다.
-  if (places !== renderedPlaces) {
-    setRenderedPlaces(places);
-    setVisibleCount(RECOMMENDED_PLACES_INITIAL_COUNT);
-  }
-
-  if (places.length === 0) {
-    return null;
-  }
-
-  const visiblePlaces = places.slice(0, visibleCount);
-  const nextCount = Math.min(visibleCount + RECOMMENDED_PLACES_PAGE_SIZE, places.length);
-  const hasMore = visibleCount < places.length;
-
-  return (
-    <View style={styles.sections}>
-      <AppText style={styles.sectionHeading} variant="title-2" weight="semibold">
-        {nickname ? (
-          <>
-            <AppText color={colors.brand.main} variant="title-2" weight="semibold">
-              {nickname}
-            </AppText>
-            님을 위한 추천 관광지
-          </>
-        ) : (
-          "추천 관광지"
-        )}
-      </AppText>
-      <View style={styles.placeGrid}>
-        {visiblePlaces.map((place, index) => (
-          <Pressable
-            accessibilityLabel={`${String(index + 1)}위 ${place.name}, 여기서 ${(place.distanceMeters / 1000).toFixed(1)}km`}
-            accessibilityRole="button"
-            key={place.placeId}
-            onPress={() => onPlacePress(place)}
-            style={styles.placeCard}
-          >
-            <ImageBackground
-              imageStyle={styles.placeCardImage}
-              source={place.thumbnailUrl ? { uri: place.thumbnailUrl } : undefined}
-              style={[styles.placeCardImage, styles.placeCardImageWrapper]}
-            >
-              <View pointerEvents="none" style={styles.placeCardScrim} />
-              <View style={styles.placeCardHeader}>
-                <AppText color={colors.text.inverse} style={styles.placeCardBadgeText} variant="headline-2" weight="bold">
-                  {index + 1}
-                </AppText>
-                <AppText
-                  color={colors.text.inverse}
-                  numberOfLines={1}
-                  style={styles.placeCardTitle}
-                  variant="body-1"
-                  weight="regular"
-                >
-                  {place.name}
-                </AppText>
-              </View>
-              <AppText color={colors.text.inverse} style={styles.placeCardDistance} variant="caption-2">
-                여기서 {(place.distanceMeters / 1000).toFixed(1)}km
-              </AppText>
-            </ImageBackground>
-          </Pressable>
-        ))}
-      </View>
-      {hasMore || visibleCount > RECOMMENDED_PLACES_INITIAL_COUNT ? (
-        <Pressable
-          onPress={() =>
-            hasMore ? setVisibleCount(nextCount) : setVisibleCount(RECOMMENDED_PLACES_INITIAL_COUNT)
-          }
-          style={styles.placeMoreButton}
-        >
-          <AppText variant="body-3" weight="semibold">
-            {hasMore ? `${String(visibleCount + 1)}~${String(nextCount)}위 더보기` : "접기"}
-          </AppText>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
-function RecentlyViewedPlacesSection({ places }: { readonly places: readonly RecentlyViewedPlace[] }) {
-  if (places.length === 0) {
-    return null;
-  }
-
-  return (
-    <View style={styles.sections}>
-      <AppText style={styles.sectionHeading} variant="title-2" weight="semibold">
-        최근 조회한 장소
-      </AppText>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.recentPlaceRow}>
-          {places.map((place) => (
-            <View key={place.placeId} style={styles.recentPlaceCard}>
-              <ImageBackground
-                imageStyle={styles.recentPlaceImage}
-                source={place.thumbnailUrl ? { uri: place.thumbnailUrl } : undefined}
-                style={[styles.recentPlaceImage, styles.recentPlaceImageWrapper]}
-              />
-              <AppText numberOfLines={1} style={styles.recentPlaceName} variant="caption-1" weight="semibold">
-                {place.name}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  breakdownLabel: {
-    flex: 1
-  },
-  breakdownList: {
-    gap: spacing[2],
-    marginTop: spacing[3]
-  },
-  breakdownRow: {
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
   chip: {
     alignItems: "center",
     backgroundColor: colors.background.primary,
@@ -790,122 +500,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing[2]
   },
-  issueRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[3]
-  },
-  issueTextGroup: {
-    flex: 1,
-    gap: spacing[1]
-  },
   map: {
     flex: 1
-  },
-  placeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[3]
-  },
-  recentPlaceRow: {
-    flexDirection: "row",
-    gap: spacing[3]
-  },
-  recentPlaceCard: {
-    width: 108
-  },
-  recentPlaceImage: {
-    borderRadius: radius.lg
-  },
-  recentPlaceImageWrapper: {
-    aspectRatio: 1,
-    backgroundColor: colors.background.regular
-  },
-  recentPlaceName: {
-    marginTop: spacing[1]
-  },
-  placeCard: {
-    width: "47%"
-  },
-  placeCardImage: {
-    borderRadius: radius.lg
-  },
-  placeCardImageWrapper: {
-    aspectRatio: 0.75,
-    // 썸네일 없는 장소는 흰 텍스트가 안 묻히도록 밝은 회색 대신 중간 톤 회색을 배경으로 쓴다.
-    backgroundColor: colors.neutral[400],
-    justifyContent: "space-between",
-    overflow: "hidden",
-    padding: spacing[2],
-    position: "relative"
-  },
-  placeCardScrim: {
-    backgroundColor: "rgba(0, 0, 0, 0.28)",
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0
-  },
-  placeCardHeader: {
-    alignItems: "flex-start",
-    flexDirection: "column"
-  },
-  placeCardBadgeText: {
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { height: 1, width: 0 },
-    textShadowRadius: 3
-  },
-  placeCardTitle: {
-    alignSelf: "stretch",
-    // headline-2/body-1 모두 줄간격이 실제 글자 높이보다 커서, 음수 margin으로 그 여백을 상쇄한다.
-    marginTop: -8,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { height: 1, width: 0 },
-    textShadowRadius: 3
-  },
-  placeCardDistance: {
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { height: 1, width: 0 },
-    textShadowRadius: 3
-  },
-  placeMoreButton: {
-    alignItems: "center",
-    borderColor: colors.border.regular,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    paddingVertical: spacing[2]
-  },
-  sectionHeading: {
-    marginBottom: spacing[1]
-  },
-  sections: {
-    gap: spacing[4]
-  },
-  severityDot: {
-    borderRadius: 6,
-    height: 12,
-    width: 12
-  },
-  summaryCard: {
-    borderWidth: 0,
-    elevation: 0,
-    shadowColor: "transparent",
-    shadowOpacity: 0,
-    shadowRadius: 0
-  },
-  summaryCount: {
-    alignItems: "center",
-    flex: 1,
-    gap: spacing[1]
-  },
-  summaryDivider: {
-    alignSelf: "stretch",
-    backgroundColor: colors.border.light,
-    marginVertical: spacing[1],
-    width: 1
-  },
-  summaryRow: {
-    flexDirection: "row"
   }
 });
