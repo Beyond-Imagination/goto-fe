@@ -199,7 +199,7 @@ export function MapHomeSheet({ children, contentKey, title }: MapHomeSheetProps)
           scrollEnabled={isContentScrollEnabled(snap)}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>{title}</Text>
+          {title.length > 0 ? <Text style={styles.title}>{title}</Text> : null}
           {children}
         </ScrollView>
       </Animated.View>

@@ -4,8 +4,10 @@ import { describe, it } from 'node:test';
 import {
   createPlaceApi,
   fetchNearbyAccessibilitySummary,
+  getPlaceDetail,
   searchPlaces,
   type NearbyAccessibilitySummary,
+  type PlaceDetail,
   type PlaceSearchResult,
 } from '@/placeApi';
 import { ApiError } from '@/api';
@@ -138,7 +140,7 @@ describe('placeApi', () => {
   });
 
   describe('searchPlaces', () => {
-    it('k, categoryPrefixes, mobilityTypes, avoid 옵션을 올바르게 직렬화한다', async () => {
+    it('k, keyword, categoryPrefixes, mobilityTypes, avoid 옵션을 올바르게 직렬화한다', async () => {
       const calls: Call[] = [];
       const mockResult: PlaceSearchResult = {
         places: [
@@ -164,6 +166,7 @@ describe('placeApi', () => {
         129.2286,
         {
           k: 20,
+          keyword: ' 경주 박물관 ',
           categoryPrefixes: ['A01', 'A02'],
           mobilityTypes: ['WHEELCHAIR', 'STROLLER'],
           avoid: ['STEEP_SLOPE'],
@@ -181,6 +184,7 @@ describe('placeApi', () => {
       assert.equal(parsedUrl.searchParams.get('lat'), '35.8294');
       assert.equal(parsedUrl.searchParams.get('lng'), '129.2286');
       assert.equal(parsedUrl.searchParams.get('k'), '20');
+      assert.equal(parsedUrl.searchParams.get('keyword'), '경주 박물관');
       assert.deepEqual(parsedUrl.searchParams.getAll('categoryPrefixes'), ['A01', 'A02']);
       assert.deepEqual(parsedUrl.searchParams.getAll('mobilityTypes'), ['WHEELCHAIR', 'STROLLER']);
       assert.deepEqual(parsedUrl.searchParams.getAll('avoid'), ['STEEP_SLOPE']);
@@ -206,6 +210,38 @@ describe('placeApi', () => {
           return error instanceof ApiError && error.status === 401;
         },
       );
+    });
+  });
+
+  describe('getPlaceDetail', () => {
+    it('placeId로 상세 API를 호출한다', async () => {
+      const calls: Call[] = [];
+      const mockDetail: PlaceDetail = {
+        placeId: 101,
+        name: '서울숲',
+        address: '서울 성동구',
+        category: 'A01010100',
+        categoryCode: 'A01010100',
+        thumbnailUrls: [],
+        detailState: 'REPORT_MISSING',
+        badges: [{ text: '제보없음', tone: 'neutral' }],
+        summary: { title: '아직 방문 제보가 없어요', description: '공식 정보 기준으로 보여드려요' },
+        issues: [],
+        accessibilityRows: [],
+        notice: '이 정보는 공식 정보만으로 구성돼 있어요',
+      };
+      const fetchImpl = stubFetch(mockDetail, calls);
+
+      const result = await getPlaceDetail(TEST_TOKEN, 101, {
+        baseUrl: BASE_URL,
+        fetchImplementation: fetchImpl,
+      });
+
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0]!.authorization, `Bearer ${TEST_TOKEN}`);
+      const parsedUrl = new URL(calls[0]!.url);
+      assert.equal(parsedUrl.origin + parsedUrl.pathname, `${BASE_URL}/api/v1/places/101/detail`);
+      assert.deepEqual(result, mockDetail);
     });
   });
 });
