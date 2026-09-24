@@ -41,7 +41,7 @@ const REPORT_PAYLOAD = {
   id: 7,
   lat: 37.5,
   lng: 127.0,
-  issueType: 'OBSTRUCTION',
+  issueType: 'SIDEWALK_DAMAGE',
   severity: 'CAUTION',
   affectedMobilityTypes: ['WHEELCHAIR'],
   photoUrls: ['https://cdn.example.test/a.jpg'],
@@ -54,23 +54,25 @@ const REPORT_PAYLOAD = {
 };
 
 describe('제보 옵션', () => {
-  it('BE ObstacleIssueType 12종을 모두 노출하고 라벨을 갖는다', () => {
-    assert.equal(ISSUE_TYPE_OPTIONS.length, 12);
+  it('BE ObstacleIssueType 7종을 모두 노출하고 라벨을 갖는다', () => {
+    assert.equal(ISSUE_TYPE_OPTIONS.length, 7);
     for (const option of ISSUE_TYPE_OPTIONS) {
       assert.equal(ISSUE_TYPE_LABELS[option.value], option.label);
     }
   });
 
-  it('새로 추가된 유형(적치물·불법주차·점자블록·미끄러움·기타)이 포함된다', () => {
+  it('BE enum에 없는 유형(적치물·불법주차·점자블록·미끄러움·기타)은 선택지에 없다', () => {
+    // BE ObstacleIssueType엔 애초에 없던 값이라 골라서 제출해도 역직렬화 실패로 항상
+    // 거부됐다 — 선택지에서 완전히 삭제했다(obstacleReportApi.ts 주석 참고).
     const values = ISSUE_TYPE_OPTIONS.map(option => option.value);
-    for (const added of [
+    for (const removed of [
       'OBSTRUCTION',
       'ILLEGAL_PARKING',
       'BRAILLE_BLOCK_DAMAGE',
       'SLIPPERY_SURFACE',
       'OTHER',
-    ] as const) {
-      assert.ok(values.includes(added), `${added}가 없습니다`);
+    ]) {
+      assert.ok(!values.includes(removed as (typeof values)[number]), `${removed}가 아직 있습니다`);
     }
   });
 
@@ -116,7 +118,7 @@ describe('제보 등록 API 연동', () => {
     const report = await api.create({
       lat: 37.5,
       lng: 127.0,
-      issueType: 'OBSTRUCTION',
+      issueType: 'SIDEWALK_DAMAGE',
       severity: 'CAUTION',
       affectedMobilityTypes: ['WHEELCHAIR'],
       photoUrls: ['https://cdn.example.test/a.jpg'],
@@ -129,7 +131,7 @@ describe('제보 등록 API 연동', () => {
     assert.deepEqual(JSON.parse(calls[0]!.body), {
       lat: 37.5,
       lng: 127.0,
-      issueType: 'OBSTRUCTION',
+      issueType: 'SIDEWALK_DAMAGE',
       severity: 'CAUTION',
       affectedMobilityTypes: ['WHEELCHAIR'],
       photoUrls: ['https://cdn.example.test/a.jpg'],

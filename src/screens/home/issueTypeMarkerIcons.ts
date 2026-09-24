@@ -13,10 +13,10 @@ import { tieredValue } from "./tieredValue";
  * 정적 리소스(require) 이미지 타입을 대신 쓴다 — 이 타입은 커스텀 View 스냅샷과 무관한
  * 별도 네이티브 경로라 안정적으로 렌더링된다.
  *
- * `ObstacleIssueType` 12종 중 전용 아트가 있는 7종만 키로 둔다 — 나머지 5종
- * (OBSTRUCTION/ILLEGAL_PARKING/BRAILLE_BLOCK_DAMAGE/SLIPPERY_SURFACE/OTHER)은 아직
- * Figma 마커 아트가 없어 `issueTypeMarkerIcon()`이 undefined를 반환하고, 호출부는
- * 기본 원형 마커로 폴백한다(obstacleSeverityStyle.ts의 ISSUE_TYPE_LABEL 주석 참고).
+ * `ObstacleIssueType` 7종(BE enum과 1:1) 전부 여기 키로 있다 — 예전엔 BE에 없는 5종
+ * (적치물/불법주차/점자블록훼손/미끄러운길/기타)도 타입에 남아 있어 `issueTypeMarkerIcon()`이
+ * undefined를 반환할 수 있었지만, 그 5종은 실제 제보 데이터에 나타난 적이 없어 타입에서
+ * 통째로 지웠다(obstacleReportApi.ts 주석 참고) — 그래서 지금은 이 함수가 항상 값을 반환한다.
  *
  * 배경은 진짜 반투명(알파 채널 그대로)이라 지도 위에서 실제로 비쳐 보인다 — Figma 목업의
  * 회색으로 보이는 배경은 어두운 아트보드 캔버스에 반투명 흰색이 겹쳐 보인 것일 뿐이다.
@@ -26,7 +26,7 @@ import { tieredValue } from "./tieredValue";
  * 티어별로 다르게 굽는다 — width/height prop 분기(issueTypeMarkerSize 사용처,
  * MapHomeScreen.tsx)만으로는 부족할 수 있다.
  */
-const ISSUE_TYPE_MARKER_ICON: Partial<Record<ObstacleIssueType, { high: ImageRequireSource; low: ImageRequireSource }>> = {
+const ISSUE_TYPE_MARKER_ICON: Record<ObstacleIssueType, { high: ImageRequireSource; low: ImageRequireSource }> = {
   CONSTRUCTION: {
     high: require("@/assets/icons/markers/construction_high.png"),
     low: require("@/assets/icons/markers/construction_low.png")
@@ -57,9 +57,9 @@ const ISSUE_TYPE_MARKER_ICON: Partial<Record<ObstacleIssueType, { high: ImageReq
   }
 };
 
-// 위 마커 PNG와 같은 7종만. <Icon>도 이 7종 외에는 그릴 아트가 없어 name prop이
-// IconName으로 좁혀져야 하므로, ISSUE_TYPE_LABEL(문자열 12종)과 별도로 이 맵을 둔다.
-const ISSUE_TYPE_ICON_NAME: Partial<Record<ObstacleIssueType, IconName>> = {
+// ObstacleIssueType 7종 전부. <Icon>의 name prop이 IconName으로 좁혀져야 하므로,
+// ISSUE_TYPE_LABEL(obstacleSeverityStyle.ts)과 별도로 이 맵을 둔다.
+const ISSUE_TYPE_ICON_NAME: Record<ObstacleIssueType, IconName> = {
   CONSTRUCTION: "공사구간",
   HIGH_CURB: "높은턱",
   LONG_WALKING_DISTANCE: "긴보행거리",
@@ -69,9 +69,46 @@ const ISSUE_TYPE_ICON_NAME: Partial<Record<ObstacleIssueType, IconName>> = {
   STEEP_SLOPE: "급경사"
 };
 
-export function issueTypeIconName(issueType: ObstacleIssueType): IconName | undefined {
+export function issueTypeIconName(issueType: ObstacleIssueType): IconName {
   return ISSUE_TYPE_ICON_NAME[issueType];
 }
+
+/**
+ * 가까운 줌 마커용: pin 모양(흰 몸통 + 주황 테두리·아이콘) 정적 이미지. 가까운 줌은
+ * 언클러스터링이라 건수 구간이 없고(리포트 1건 = 마커 1개), 그래서 색도 항상 이 한 가지
+ * (테두리·아이콘 #ED782F, 몸통 #FFFFFF)뿐이다 — 위 원형 배지처럼 high/low 두 변형을 두지
+ * 않는다. `scripts/gen_marker_icons.py`가 굽는 `pin_<key>.png`와 1:1로 대응. ObstacleIssueType
+ * 7종 전부 전용 아트가 있다.
+ */
+const ISSUE_TYPE_PIN_ICON: Record<ObstacleIssueType, ImageRequireSource> = {
+  CONSTRUCTION: require("@/assets/icons/markers/pin_construction.png"),
+  HIGH_CURB: require("@/assets/icons/markers/pin_high_curb.png"),
+  LONG_WALKING_DISTANCE: require("@/assets/icons/markers/pin_long_walking_distance.png"),
+  NARROW_PASSAGE: require("@/assets/icons/markers/pin_narrow_passage.png"),
+  SIDEWALK_DAMAGE: require("@/assets/icons/markers/pin_sidewalk_damage.png"),
+  STAIRS: require("@/assets/icons/markers/pin_stairs.png"),
+  STEEP_SLOPE: require("@/assets/icons/markers/pin_steep_slope.png")
+};
+
+export function issueTypePinIcon(issueType: ObstacleIssueType): ImageRequireSource {
+  return ISSUE_TYPE_PIN_ICON[issueType];
+}
+
+/**
+ * pin PNG 원본 비율(240x276)을 그대로 유지하는 표시 크기. anchor는 이미지 하단 중앙(pin의
+ * 뾰족한 끝)이 좌표를 정확히 가리키게 (0.5, 1) — SearchPlaceMarker와 같은 관례.
+ */
+export const ISSUE_TYPE_PIN_WIDTH = 44;
+export const ISSUE_TYPE_PIN_HEIGHT = 50;
+export const ISSUE_TYPE_PIN_ANCHOR = { x: 0.5, y: 1 } as const;
+
+/**
+ * pin 위에 얹는 이슈유형 이름표(네이티브 caption) 색. 기획엔 흰 글자 + 주황 외곽선으로
+ * 지도 배경 위에서도 읽히게 돼 있다 — 이 주황은 pin 테두리/아이콘과 같은
+ * ISSUE_TYPE_MARKER_COLOR.high 값이라 여기서 새로 정의하지 않고 그대로 재사용한다.
+ */
+export const ISSUE_TYPE_PIN_LABEL_HALO_COLOR = ISSUE_TYPE_MARKER_COLOR.high;
+export const ISSUE_TYPE_PIN_LABEL_TEXT_SIZE = 12;
 
 const ISSUE_TYPE_MARKER_COLOR_TIERS = [{ min: ISSUE_TYPE_MARKER_COUNT_THRESHOLD, value: "high" as const }];
 
@@ -79,8 +116,8 @@ export function issueTypeMarkerColorTier(reportCount: number): "high" | "low" {
   return tieredValue(reportCount, ISSUE_TYPE_MARKER_COLOR_TIERS, "low");
 }
 
-export function issueTypeMarkerIcon(issueType: ObstacleIssueType, reportCount: number): ImageRequireSource | undefined {
-  return ISSUE_TYPE_MARKER_ICON[issueType]?.[issueTypeMarkerColorTier(reportCount)];
+export function issueTypeMarkerIcon(issueType: ObstacleIssueType, reportCount: number): ImageRequireSource {
+  return ISSUE_TYPE_MARKER_ICON[issueType][issueTypeMarkerColorTier(reportCount)];
 }
 
 export function issueTypeMarkerCaptionColor(reportCount: number): string {

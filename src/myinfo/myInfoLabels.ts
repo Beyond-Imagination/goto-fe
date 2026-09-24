@@ -41,11 +41,6 @@ const ISSUE_TYPE_LABELS: Record<ObstacleIssueType, string> = {
   CONSTRUCTION: '공사 구간',
   SIDEWALK_DAMAGE: '보도 파손',
   LONG_WALKING_DISTANCE: '긴 보행 거리',
-  OBSTRUCTION: '적치물',
-  ILLEGAL_PARKING: '불법 주차',
-  BRAILLE_BLOCK_DAMAGE: '점자블록 훼손',
-  SLIPPERY_SURFACE: '미끄러운 길',
-  OTHER: '기타',
 };
 
 /** 심각도는 색이 아니라 문장으로 함께 전달합니다 (화면기획 설계 원칙 #5). */

@@ -45,12 +45,18 @@ import {
   ISSUE_TYPE_MARKER_CAPTION_SIZE,
   ISSUE_TYPE_MARKER_HEIGHT_RATIO,
   ISSUE_TYPE_MARKER_WIDTH_RATIO,
+  ISSUE_TYPE_PIN_ANCHOR,
+  ISSUE_TYPE_PIN_HEIGHT,
+  ISSUE_TYPE_PIN_LABEL_HALO_COLOR,
+  ISSUE_TYPE_PIN_LABEL_TEXT_SIZE,
+  ISSUE_TYPE_PIN_WIDTH,
   issueTypeMarkerCaptionColor,
   issueTypeMarkerIcon,
-  issueTypeMarkerSize
+  issueTypeMarkerSize,
+  issueTypePinIcon
 } from "./issueTypeMarkerIcons";
 import { MapHomeSheet } from "./MapHomeSheet";
-import { clusterSeverityColor, clusterSeverityLabel } from "./obstacleSeverityStyle";
+import { ISSUE_TYPE_LABEL, clusterSeverityColor, clusterSeverityLabel } from "./obstacleSeverityStyle";
 import { RECOMMENDED_PLACES_MAX_COUNT } from "./sections/RecommendedPlacesSection";
 import { tieredValue } from "./tieredValue";
 import { getZoomTier, type ZoomTier } from "./zoomTiers";
@@ -409,6 +415,43 @@ export function MapHomeScreen() {
             );
           }
 
+          if (zoomTier === "close") {
+            // 가까운 줌은 언클러스터링 상태라 클러스터 하나 = 제보 하나(CloseZoomContent.tsx
+            // 참고) — 그래서 건수 구간 없이 이슈유형 하나만으로 pin 이미지가 정해진다.
+            // 전용 pin 아트가 없는 이슈유형(issueTypePinIcon()이 undefined)은 아래 공용
+            // 원형 마커 분기로 그대로 흘러 내려가 폴백된다.
+            const dominantIssueType = cluster.topIssueTypes[0]?.issueType;
+            const pinIcon = dominantIssueType ? issueTypePinIcon(dominantIssueType) : undefined;
+            if (pinIcon && dominantIssueType) {
+              return (
+                <NaverMapMarkerOverlay
+                  anchor={ISSUE_TYPE_PIN_ANCHOR}
+                  // 기획(가까운 줌 목업)엔 pin 위에 이슈유형 이름표가 항상 같이 붙어있다.
+                  // align:"Top"은 이미 mid 줌 캡션(align:"Center")과 같은 네이티브 caption
+                  // 렌더 경로를 타므로 안전하고, offset은 그 mid 줌 쪽에서 "지정하면 캡션이
+                  // 아예 안 그려지는" 버그가 확인돼 건드리지 않는다(issueTypeMarkerIcons.ts
+                  // ISSUE_TYPE_MARKER_ANCHOR_X 주석 참고) — 기본 간격을 그대로 쓴다.
+                  caption={{
+                    align: "Top",
+                    color: "#ffffff",
+                    haloColor: ISSUE_TYPE_PIN_LABEL_HALO_COLOR,
+                    text: ISSUE_TYPE_LABEL[dominantIssueType],
+                    textSize: ISSUE_TYPE_PIN_LABEL_TEXT_SIZE
+                  }}
+                  height={ISSUE_TYPE_PIN_HEIGHT}
+                  image={pinIcon}
+                  isHideCollidedMarkers
+                  key={key}
+                  latitude={cluster.centerLat}
+                  longitude={cluster.centerLng}
+                  onTap={() => handleClusterTap(cluster)}
+                  width={ISSUE_TYPE_PIN_WIDTH}
+                  zIndex={cluster.reportCount}
+                />
+              );
+            }
+          }
+
           const size = clusterMarkerSize(cluster.reportCount);
           const captionStyle = clusterMarkerCaptionStyle(size);
           return (
@@ -627,7 +670,12 @@ function sheetTitleFor(zoomTier: ZoomTier): string {
   if (zoomTier === "far") {
     return "\uD604\uC7AC \uD654\uBA74 \uC811\uADFC\uC131 \uD604\uD669";
   }
-  return zoomTier === "mid" ? "\uC8FC\uBCC0 \uC811\uADFC\uC131 \uC774\uC288" : "\uD604\uC7AC \uD654\uBA74 \uC81C\uBCF4";
+  if (zoomTier === "mid") {
+    return "\uC8FC\uBCC0 \uC811\uADFC\uC131 \uC774\uC288";
+  }
+  // close: CurrentScreenReportStatsCard\uAC00 "\uD604\uC7AC \uD654\uBA74 \uC81C\uBCF4" + \u24D8\uB97C \uCE74\uB4DC \uC548\uC5D0\uC11C \uC9C1\uC811 \uADF8\uB9B0\uB2E4 \u2014
+  // \uC5EC\uAE30\uC11C \uB610 \uAC19\uC740 \uC81C\uBAA9\uC744 \uB744\uC6B0\uBA74 \uB450 \uC904\uB85C \uACB9\uCCD0 \uBCF4\uC778\uB2E4(\uC911\uBCF5 \uD5E4\uB354 \uBC84\uADF8, \uC774\uC804\uC5D0 \uD55C \uBC88 \uACE0\uCCE4\uC74C).
+  return "";
 }
 
 type FilterChipProps = {

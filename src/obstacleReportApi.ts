@@ -4,6 +4,9 @@ export type { TokenProvider };
 
 export type MobilityType = "WHEELCHAIR" | "STROLLER" | "SLOW_WALKER";
 
+// BE kr.bi.go_to.model.obstaclereport.ObstacleIssueType와 1:1 — BE enum은 이 7종뿐이다.
+// (적치물/불법주차/점자블록훼손/미끄러운길/기타는 FE에만 있던 값이라 실제 제보 데이터에
+// 나타난 적이 없고, 생성 요청에 넣어도 BE가 역직렬화에 실패해 항상 거부된다 — 삭제함.)
 export type ObstacleIssueType =
   | "STAIRS"
   | "HIGH_CURB"
@@ -11,12 +14,7 @@ export type ObstacleIssueType =
   | "NARROW_PASSAGE"
   | "CONSTRUCTION"
   | "SIDEWALK_DAMAGE"
-  | "LONG_WALKING_DISTANCE"
-  | "OBSTRUCTION"
-  | "ILLEGAL_PARKING"
-  | "BRAILLE_BLOCK_DAMAGE"
-  | "SLIPPERY_SURFACE"
-  | "OTHER";
+  | "LONG_WALKING_DISTANCE";
 
 // IMPASSABLE=우회권장, CAUTION=주의, INFO=안전. "안전"은 새 값이 아니라 INFO를 부르는 이름이다 (CONTEXT.md 참고).
 export type ObstacleSeverity = "IMPASSABLE" | "CAUTION" | "INFO";

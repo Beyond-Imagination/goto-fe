@@ -9,6 +9,8 @@ export type AvoidCondition = 'STAIRS' | 'STEEP_SLOPE' | 'UNEVEN_SURFACE';
 
 export type MobilityType = 'WHEELCHAIR' | 'STROLLER' | 'SLOW_WALKER';
 
+// BE ObstacleIssueType은 이 7종뿐 — 적치물/불법주차/점자블록훼손/미끄러운길/기타는 FE에만
+// 있던 값이라 실제 제보 데이터엔 나타나지 않고 삭제함 (obstacleReportApi.ts 주석 참고).
 export type ObstacleIssueType =
   | 'STAIRS'
   | 'HIGH_CURB'
@@ -16,12 +18,7 @@ export type ObstacleIssueType =
   | 'NARROW_PASSAGE'
   | 'CONSTRUCTION'
   | 'SIDEWALK_DAMAGE'
-  | 'LONG_WALKING_DISTANCE'
-  | 'OBSTRUCTION'
-  | 'ILLEGAL_PARKING'
-  | 'BRAILLE_BLOCK_DAMAGE'
-  | 'SLIPPERY_SURFACE'
-  | 'OTHER';
+  | 'LONG_WALKING_DISTANCE';
 
 export type ObstacleSeverity = 'IMPASSABLE' | 'CAUTION' | 'INFO';
 

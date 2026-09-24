@@ -25,3 +25,6 @@ expo-env.d.ts
 # Firebase(FCM) 설정 파일 — 각자 Firebase 콘솔에서 받아 로컬에만 둡니다.
 google-services.json
 GoogleService-Info.plist
+
+# scripts/ 파이썬 자산 생성 스크립트용 가상환경 (scripts/requirements.txt로 각자 재생성)
+scripts/.venv/

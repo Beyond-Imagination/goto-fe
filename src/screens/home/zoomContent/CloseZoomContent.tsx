@@ -1,15 +1,21 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 
-import { Card, Text as AppText } from "@/components";
+import { Text as AppText } from "@/components";
 import type { ObstacleIssueType, ObstacleReportCluster } from "@/obstacleReportApi";
 import type { PlaceSearchItem } from "@/placeApi";
 import type { RecentlyViewedPlace } from "@/state/recentlyViewedPlaces";
 import { colors } from "@/styles/tokens/colors";
-import { spacing } from "@/styles/tokens/spacing";
 
 import { homeSectionStyles } from "../homeSectionStyles";
-import { clusterSeverityColor, clusterSeverityLabel, ISSUE_TYPE_LABEL } from "../obstacleSeverityStyle";
+import { issueTypeIconName } from "../issueTypeMarkerIcons";
+import { ISSUE_TYPE_LABEL, ISSUE_TYPE_STAT_SUB_DESCRIPTION, issueTypeStatCategoryId } from "../obstacleSeverityStyle";
+import {
+  CurrentScreenReportStatsCard,
+  reportStatsGradientColor,
+  type ReportCategoryStat
+} from "../sections/CurrentScreenReportStats";
 import { RecentlyViewedPlacesSection } from "../sections/RecentlyViewedPlacesSection";
+import { RecentReportsList, type RecentReportItem } from "../sections/RecentReportsList";
 import { RecommendedPlacesSection } from "../sections/RecommendedPlacesSection";
 
 type CloseZoomContentProps = {
@@ -55,60 +61,56 @@ export function CloseZoomContent({
     }
   }
   const breakdown = Array.from(issueTypeCounts.entries()).sort((a, b) => b[1] - a[1]);
+  const categoryStats: ReportCategoryStat[] = breakdown.map(([issueType, count], index) => ({
+    categoryId: issueTypeStatCategoryId(issueType),
+    // 카테고리 고유색이 아니라 순위(건수 내림차순)별 파랑→회색 그라데이션 — 어떤 이슈유형이든
+    // 1위면 진한 파랑, 뒤로 갈수록 옅어진다(reportStatsGradientColor 주석 참고).
+    color: reportStatsGradientColor(index),
+    count,
+    iconType: issueTypeIconName(issueType),
+    label: ISSUE_TYPE_LABEL[issueType],
+    percentage: totalCount > 0 ? Math.round((count / totalCount) * 100) : 0,
+    subDescription: ISSUE_TYPE_STAT_SUB_DESCRIPTION[issueType]
+  }));
 
-  const reportItems = clusters
-    .filter((cluster) => cluster.id !== null)
+  // topIssueTypes[0]이 없는 클러스터(대표 이슈유형을 못 정하는 데이터 이상)는 RecentReportItem의
+  // iconType(필수)을 채울 수 없어 제외한다 — 가까운 줌은 언클러스터링이라 정상 데이터라면
+  // 클러스터 하나 = 제보 하나여서 항상 topIssueTypes가 1건 있어야 한다.
+  const recentReportItems: RecentReportItem[] = clusters
+    .filter((cluster) => cluster.id !== null && cluster.topIssueTypes[0] !== undefined)
     .slice()
-    .sort((a, b) => new Date(b.latestReportAt).getTime() - new Date(a.latestReportAt).getTime());
+    .sort((a, b) => new Date(b.latestReportAt).getTime() - new Date(a.latestReportAt).getTime())
+    .map((cluster) => {
+      const dominantIssueType = cluster.topIssueTypes[0]!.issueType;
+      return {
+        category: ISSUE_TYPE_LABEL[dominantIssueType],
+        iconType: issueTypeIconName(dominantIssueType),
+        locationText: cluster.nearbyPlaceLabel ?? "주변 장소 정보 없음",
+        timeAgo: formatRelativeTime(cluster.latestReportAt),
+        thumbnailUrl: cluster.photoUrls?.[0] ?? null
+      };
+    });
 
   return (
     <View style={homeSectionStyles.sections}>
-      {totalCount > 0 ? (
-        <Card elevation="sm">
-          <AppText style={homeSectionStyles.sectionHeading} variant="title-2" weight="semibold">
-            {totalCount}건 · 이 지역에서 확인된 접근성 제보 수
-          </AppText>
-          <View style={styles.breakdownList}>
-            {breakdown.map(([issueType, count]) => (
-              <View key={issueType} style={styles.breakdownRow}>
-                <AppText style={styles.breakdownLabel} variant="body-3">
-                  {ISSUE_TYPE_LABEL[issueType]}
-                </AppText>
-                <AppText color={colors.text.secondary} variant="body-3">
-                  {count}건 · {Math.round((count / totalCount) * 100)}%
-                </AppText>
-              </View>
-            ))}
-          </View>
-        </Card>
-      ) : null}
+      <CurrentScreenReportStatsCard
+        categories={categoryStats}
+        // 자동 줄바꿈에 맡기면 컨테이너 너비에 따라 끊기는 지점이 기획과 달라진다 — 줄바꿈
+        // 위치를 명시적으로 고정한다.
+        descriptionText={"이 지역에서 확인 된\n접근성 제보 수"}
+        totalCount={totalCount}
+      />
 
       <View style={homeSectionStyles.sections}>
         <AppText style={homeSectionStyles.sectionHeading} variant="title-2" weight="semibold">
           최근 제보
         </AppText>
-        {reportItems.length === 0 ? (
+        {recentReportItems.length === 0 ? (
           <AppText color={colors.text.secondary} variant="body-3">
             이 화면에 표시할 제보가 없어요.
           </AppText>
         ) : (
-          reportItems.map((cluster) => (
-            <Card elevation="sm" key={`report-${String(cluster.id)}`}>
-              <View style={styles.issueRow}>
-                <View style={[styles.severityDot, { backgroundColor: clusterSeverityColor(cluster) }]} />
-                <View style={styles.issueTextGroup}>
-                  <AppText variant="body-2" weight="semibold">
-                    {cluster.topIssueTypes[0]
-                      ? ISSUE_TYPE_LABEL[cluster.topIssueTypes[0].issueType]
-                      : clusterSeverityLabel(cluster)}
-                  </AppText>
-                  <AppText color={colors.text.secondary} variant="caption-1">
-                    {cluster.nearbyPlaceLabel ?? "주변 장소 정보 없음"} · {formatRelativeTime(cluster.latestReportAt)}
-                  </AppText>
-                </View>
-              </View>
-            </Card>
-          ))
+          <RecentReportsList items={recentReportItems} />
         )}
       </View>
 
@@ -117,31 +119,3 @@ export function CloseZoomContent({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  breakdownLabel: {
-    flex: 1
-  },
-  breakdownList: {
-    gap: spacing[2],
-    marginTop: spacing[3]
-  },
-  breakdownRow: {
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
-  issueRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[3]
-  },
-  issueTextGroup: {
-    flex: 1,
-    gap: spacing[1]
-  },
-  severityDot: {
-    borderRadius: 6,
-    height: 12,
-    width: 12
-  }
-});
