@@ -45,11 +45,7 @@ import {
   ISSUE_TYPE_MARKER_CAPTION_SIZE,
   ISSUE_TYPE_MARKER_HEIGHT_RATIO,
   ISSUE_TYPE_MARKER_WIDTH_RATIO,
-  ISSUE_TYPE_PIN_ANCHOR,
-  ISSUE_TYPE_PIN_HEIGHT,
-  ISSUE_TYPE_PIN_LABEL_HALO_COLOR,
-  ISSUE_TYPE_PIN_LABEL_TEXT_SIZE,
-  ISSUE_TYPE_PIN_WIDTH,
+  ISSUE_TYPE_PIN_MARKER,
   issueTypeMarkerCaptionColor,
   issueTypeMarkerIcon,
   issueTypeMarkerSize,
@@ -424,7 +420,7 @@ export function MapHomeScreen() {
             if (dominantIssueType) {
               return (
                 <NaverMapMarkerOverlay
-                  anchor={ISSUE_TYPE_PIN_ANCHOR}
+                  anchor={ISSUE_TYPE_PIN_MARKER.anchor}
                   // 기획(가까운 줌 목업)엔 pin 위에 이슈유형 이름표가 항상 같이 붙어있다.
                   // align:"Top"은 이미 mid 줌 캡션(align:"Center")과 같은 네이티브 caption
                   // 렌더 경로를 타므로 안전하고, offset은 그 mid 줌 쪽에서 "지정하면 캡션이
@@ -432,19 +428,19 @@ export function MapHomeScreen() {
                   // ISSUE_TYPE_MARKER_ANCHOR_X 주석 참고) — 기본 간격을 그대로 쓴다.
                   caption={{
                     align: "Top",
-                    color: "#ffffff",
-                    haloColor: ISSUE_TYPE_PIN_LABEL_HALO_COLOR,
+                    color: colors.text.inverse,
+                    haloColor: ISSUE_TYPE_PIN_MARKER.labelHaloColor,
                     text: ISSUE_TYPE_LABEL[dominantIssueType],
-                    textSize: ISSUE_TYPE_PIN_LABEL_TEXT_SIZE
+                    textSize: ISSUE_TYPE_PIN_MARKER.labelTextSize
                   }}
-                  height={ISSUE_TYPE_PIN_HEIGHT}
+                  height={ISSUE_TYPE_PIN_MARKER.height}
                   image={issueTypePinIcon(dominantIssueType)}
                   isHideCollidedMarkers
                   key={key}
                   latitude={cluster.centerLat}
                   longitude={cluster.centerLng}
                   onTap={() => handleClusterTap(cluster)}
-                  width={ISSUE_TYPE_PIN_WIDTH}
+                  width={ISSUE_TYPE_PIN_MARKER.width}
                   zIndex={cluster.reportCount}
                 />
               );

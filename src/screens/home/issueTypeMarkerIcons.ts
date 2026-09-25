@@ -95,20 +95,21 @@ export function issueTypePinIcon(issueType: ObstacleIssueType): ImageRequireSour
 }
 
 /**
- * pin PNG 원본 비율(240x276)을 그대로 유지하는 표시 크기. anchor는 이미지 하단 중앙(pin의
- * 뾰족한 끝)이 좌표를 정확히 가리키게 (0.5, 1) — SearchPlaceMarker와 같은 관례.
+ * pin 마커 표시 스펙.
+ * - width/height: pin PNG 원본 비율(240x276)을 그대로 유지하는 표시 크기.
+ * - anchor: 이미지 하단 중앙(pin의 뾰족한 끝)이 좌표를 정확히 가리키게 (0.5, 1) —
+ *   SearchPlaceMarker와 같은 관례.
+ * - labelHaloColor/labelTextSize: pin 위에 얹는 이슈유형 이름표(네이티브 caption). 기획엔
+ *   흰 글자 + 주황 외곽선으로 지도 배경 위에서도 읽히게 돼 있다 — 이 주황은 pin
+ *   테두리/아이콘과 같은 ISSUE_TYPE_MARKER_COLOR.high 값이라 새로 정의하지 않고 재사용한다.
  */
-export const ISSUE_TYPE_PIN_WIDTH = 44;
-export const ISSUE_TYPE_PIN_HEIGHT = 50;
-export const ISSUE_TYPE_PIN_ANCHOR = { x: 0.5, y: 1 } as const;
-
-/**
- * pin 위에 얹는 이슈유형 이름표(네이티브 caption) 색. 기획엔 흰 글자 + 주황 외곽선으로
- * 지도 배경 위에서도 읽히게 돼 있다 — 이 주황은 pin 테두리/아이콘과 같은
- * ISSUE_TYPE_MARKER_COLOR.high 값이라 여기서 새로 정의하지 않고 그대로 재사용한다.
- */
-export const ISSUE_TYPE_PIN_LABEL_HALO_COLOR = ISSUE_TYPE_MARKER_COLOR.high;
-export const ISSUE_TYPE_PIN_LABEL_TEXT_SIZE = 12;
+export const ISSUE_TYPE_PIN_MARKER = {
+  anchor: { x: 0.5, y: 1 },
+  height: 50,
+  labelHaloColor: ISSUE_TYPE_MARKER_COLOR.high,
+  labelTextSize: 12,
+  width: 44
+} as const;
 
 const ISSUE_TYPE_MARKER_COLOR_TIERS = [{ min: ISSUE_TYPE_MARKER_COUNT_THRESHOLD, value: "high" as const }];
 
