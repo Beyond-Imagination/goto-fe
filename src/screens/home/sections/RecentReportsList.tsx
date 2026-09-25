@@ -21,7 +21,7 @@ export type RecentReportItem = {
   readonly thumbnailUrl: string | null;
 };
 
-const ICON_BOX_BACKGROUND_COLOR = "#FEF8F3"; // Figma 실측 — 아이콘 배지 배경(연한 주황)
+const ICON_BOX_BACKGROUND_COLOR = colors.background.accentLight; // 아이콘 배지 배경(연한 주황)
 
 export function RecentReportsList({ items }: { readonly items: readonly RecentReportItem[] }) {
   return (

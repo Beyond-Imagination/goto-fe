@@ -32,9 +32,8 @@ export type CurrentScreenReportStats = {
 const DEFAULT_COLLAPSED_COUNT = 4;
 
 // 리스트 행 선택 상태 색 — 카테고리별 color와 무관하게 항상 이 둘뿐(파랑/회색)이다.
-// #393CF5는 Figma 실측값(총 건수 숫자·선택된 카테고리 색과 동일) — colors.brand.main
-// (#2962FF)과는 다른 블루라 토큰을 새로 쓰지 않고 그대로 hex로 둔다.
-const SELECTED_COLOR = "#393CF5";
+// colors.brand.reportStat은 Figma 실측값(총 건수 숫자·선택된 카테고리 색과 동일)이다.
+const SELECTED_COLOR = colors.brand.reportStat;
 const UNSELECTED_ICON_COLOR = colors.neutral[500];
 const UNSELECTED_ICON_BOX_BG = colors.neutral[100];
 
