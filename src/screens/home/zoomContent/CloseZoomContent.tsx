@@ -8,7 +8,13 @@ import { colors } from "@/styles/tokens/colors";
 
 import { homeSectionStyles } from "../homeSectionStyles";
 import { issueTypeIconName } from "../issueTypeMarkerIcons";
-import { ISSUE_TYPE_LABEL, ISSUE_TYPE_STAT_SUB_DESCRIPTION, issueTypeStatCategoryId } from "../obstacleSeverityStyle";
+import {
+  clusterDominantIssueType,
+  ISSUE_TYPE_LABEL,
+  ISSUE_TYPE_STAT_SUB_DESCRIPTION,
+  isKnownIssueType,
+  issueTypeStatCategoryId
+} from "../obstacleSeverityStyle";
 import {
   CurrentScreenReportStatsCard,
   reportStatsGradientColor,
@@ -56,6 +62,10 @@ export function CloseZoomContent({
   let totalCount = 0;
   for (const cluster of clusters) {
     for (const entry of cluster.topIssueTypes) {
+      // FE가 모르는 이슈유형은 아이콘·라벨이 없어 통계에서 제외한다(총 건수도 같이 빠진다).
+      if (!isKnownIssueType(entry.issueType)) {
+        continue;
+      }
       issueTypeCounts.set(entry.issueType, (issueTypeCounts.get(entry.issueType) ?? 0) + entry.count);
       totalCount += entry.count;
     }
@@ -73,22 +83,26 @@ export function CloseZoomContent({
     subDescription: ISSUE_TYPE_STAT_SUB_DESCRIPTION[issueType]
   }));
 
-  // topIssueTypes[0]이 없는 클러스터(대표 이슈유형을 못 정하는 데이터 이상)는 RecentReportItem의
-  // iconType(필수)을 채울 수 없어 제외한다 — 가까운 줌은 언클러스터링이라 정상 데이터라면
-  // 클러스터 하나 = 제보 하나여서 항상 topIssueTypes가 1건 있어야 한다.
+  // 대표 이슈유형이 없거나 FE가 모르는 값인 클러스터는 RecentReportItem의 iconType(필수)을
+  // 채울 수 없어 제외한다 — 가까운 줌은 언클러스터링이라 정상 데이터라면 클러스터 하나 =
+  // 제보 하나여서 항상 대표 이슈유형이 있어야 한다.
   const recentReportItems: RecentReportItem[] = clusters
-    .filter((cluster) => cluster.id !== null && cluster.topIssueTypes[0] !== undefined)
-    .slice()
+    .filter((cluster) => cluster.id !== null)
     .sort((a, b) => new Date(b.latestReportAt).getTime() - new Date(a.latestReportAt).getTime())
-    .map((cluster) => {
-      const dominantIssueType = cluster.topIssueTypes[0]!.issueType;
-      return {
-        category: ISSUE_TYPE_LABEL[dominantIssueType],
-        iconType: issueTypeIconName(dominantIssueType),
-        locationText: cluster.nearbyPlaceLabel ?? "주변 장소 정보 없음",
-        timeAgo: formatRelativeTime(cluster.latestReportAt),
-        thumbnailUrl: cluster.photoUrls?.[0] ?? null
-      };
+    .flatMap((cluster) => {
+      const dominantIssueType = clusterDominantIssueType(cluster);
+      if (dominantIssueType === undefined) {
+        return [];
+      }
+      return [
+        {
+          category: ISSUE_TYPE_LABEL[dominantIssueType],
+          iconType: issueTypeIconName(dominantIssueType),
+          locationText: cluster.nearbyPlaceLabel ?? "주변 장소 정보 없음",
+          timeAgo: formatRelativeTime(cluster.latestReportAt),
+          thumbnailUrl: cluster.photoUrls?.[0] ?? null
+        }
+      ];
     });
 
   return (

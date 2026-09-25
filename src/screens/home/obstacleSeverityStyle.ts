@@ -32,6 +32,21 @@ export const ISSUE_TYPE_LABEL: Record<ObstacleIssueType, string> = {
   STEEP_SLOPE: "급경사"
 };
 
+/**
+ * 타입은 BE enum 7종으로 좁혀졌지만 런타임 응답은 그 밖의 값이 올 수 있다(BE에 유형이 새로
+ * 추가되고 FE가 아직 배포 전인 경우 등). 아이콘·라벨 맵은 이제 Partial이 아니라서 모르는 값을
+ * 그대로 조회하면 undefined가 되어 렌더 중 크래시하므로, 조회 전에 이 가드로 거른다.
+ */
+export function isKnownIssueType(value: string): boolean {
+  return Object.prototype.hasOwnProperty.call(ISSUE_TYPE_LABEL, value);
+}
+
+/** 클러스터 대표 이슈유형(topIssueTypes[0]). 없거나 FE가 모르는 값이면 undefined. */
+export function clusterDominantIssueType(cluster: ObstacleReportCluster): ObstacleIssueType | undefined {
+  const issueType = cluster.topIssueTypes[0]?.issueType;
+  return issueType !== undefined && isKnownIssueType(issueType) ? issueType : undefined;
+}
+
 export function formatClusterMarkerLabel(severity: ObstacleSeverity, reportCount: number): string {
   return `${SEVERITY_LABEL[severity]} ${String(reportCount)}`;
 }

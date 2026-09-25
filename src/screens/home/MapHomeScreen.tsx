@@ -56,7 +56,7 @@ import {
   issueTypePinIcon
 } from "./issueTypeMarkerIcons";
 import { MapHomeSheet } from "./MapHomeSheet";
-import { ISSUE_TYPE_LABEL, clusterSeverityColor, clusterSeverityLabel } from "./obstacleSeverityStyle";
+import { ISSUE_TYPE_LABEL, clusterDominantIssueType, clusterSeverityColor, clusterSeverityLabel } from "./obstacleSeverityStyle";
 import { RECOMMENDED_PLACES_MAX_COUNT } from "./sections/RecommendedPlacesSection";
 import { tieredValue } from "./tieredValue";
 import { getZoomTier, type ZoomTier } from "./zoomTiers";
@@ -391,7 +391,7 @@ export function MapHomeScreen() {
               : `cluster-${String(index)}-${String(cluster.centerLat)}-${String(cluster.centerLng)}`;
 
           if (zoomTier === "mid") {
-            const dominantIssueType = cluster.topIssueTypes[0]?.issueType;
+            const dominantIssueType = clusterDominantIssueType(cluster);
             const midSize = issueTypeMarkerSize(cluster.reportCount);
             return (
               <NaverMapMarkerOverlay
@@ -418,11 +418,10 @@ export function MapHomeScreen() {
           if (zoomTier === "close") {
             // 가까운 줌은 언클러스터링 상태라 클러스터 하나 = 제보 하나(CloseZoomContent.tsx
             // 참고) — 그래서 건수 구간 없이 이슈유형 하나만으로 pin 이미지가 정해진다.
-            // 전용 pin 아트가 없는 이슈유형(issueTypePinIcon()이 undefined)은 아래 공용
-            // 원형 마커 분기로 그대로 흘러 내려가 폴백된다.
-            const dominantIssueType = cluster.topIssueTypes[0]?.issueType;
-            const pinIcon = dominantIssueType ? issueTypePinIcon(dominantIssueType) : undefined;
-            if (pinIcon && dominantIssueType) {
+            // 대표 이슈유형이 없거나 FE가 모르는 값이면 아래 공용 원형 마커 분기로 그대로
+            // 흘러 내려가 폴백된다.
+            const dominantIssueType = clusterDominantIssueType(cluster);
+            if (dominantIssueType) {
               return (
                 <NaverMapMarkerOverlay
                   anchor={ISSUE_TYPE_PIN_ANCHOR}
@@ -439,7 +438,7 @@ export function MapHomeScreen() {
                     textSize: ISSUE_TYPE_PIN_LABEL_TEXT_SIZE
                   }}
                   height={ISSUE_TYPE_PIN_HEIGHT}
-                  image={pinIcon}
+                  image={issueTypePinIcon(dominantIssueType)}
                   isHideCollidedMarkers
                   key={key}
                   latitude={cluster.centerLat}
