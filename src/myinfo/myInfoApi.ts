@@ -1,4 +1,5 @@
 import { ApiError, createHttpClient, getApiBaseUrl } from '@/api';
+import type { ObstacleIssueType } from '@/obstacleReportApi';
 
 /** BE enum과 1:1로 맞춘 값들. 화면 표시 라벨은 myInfoLabels.ts에서 매핑합니다. */
 export type MobilityMode = 'WHEELCHAIR' | 'WALK' | 'STROLLER';
@@ -9,16 +10,8 @@ export type AvoidCondition = 'STAIRS' | 'STEEP_SLOPE' | 'UNEVEN_SURFACE';
 
 export type MobilityType = 'WHEELCHAIR' | 'STROLLER' | 'SLOW_WALKER';
 
-// BE ObstacleIssueType은 이 7종뿐 — 적치물/불법주차/점자블록훼손/미끄러운길/기타는 FE에만
-// 있던 값이라 실제 제보 데이터엔 나타나지 않고 삭제함 (obstacleReportApi.ts 주석 참고).
-export type ObstacleIssueType =
-  | 'STAIRS'
-  | 'HIGH_CURB'
-  | 'STEEP_SLOPE'
-  | 'NARROW_PASSAGE'
-  | 'CONSTRUCTION'
-  | 'SIDEWALK_DAMAGE'
-  | 'LONG_WALKING_DISTANCE';
+// 정의는 obstacleReportApi.ts 한 곳에 둔다(BE enum 7종) — 여기서는 재내보내기만 한다.
+export type { ObstacleIssueType };
 
 export type ObstacleSeverity = 'IMPASSABLE' | 'CAUTION' | 'INFO';
 
