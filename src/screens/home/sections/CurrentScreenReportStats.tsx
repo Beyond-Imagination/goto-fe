@@ -327,15 +327,24 @@ function CategoryRow({
   );
 }
 
-/** SELECTED_COLOR를 흰 배경과 섞은 옅은 배경색(선택된 행의 아이콘 박스 배경). */
-function tintOnWhite(hex: string, opacity: number): string {
+/** "#RRGGBB"를 [r, g, b](0~255)로 파싱한다. 형식이 다르면 null. */
+function parseHexColor(hex: string): [number, number, number] | null {
   const match = /^#([0-9a-fA-F]{6})$/.exec(hex);
   if (!match) {
+    return null;
+  }
+  const value = parseInt(match[1]!, 16);
+  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+}
+
+/** SELECTED_COLOR를 흰 배경과 섞은 옅은 배경색(선택된 행의 아이콘 박스 배경). */
+function tintOnWhite(hex: string, opacity: number): string {
+  const rgb = parseHexColor(hex);
+  if (!rgb) {
     return colors.neutral[100];
   }
-  const [r, g, b] = [0, 2, 4].map((start) => parseInt(match[1]!.slice(start, start + 2), 16));
-  const mix = (channel: number) => Math.round(channel * opacity + 255 * (1 - opacity));
-  return `rgb(${mix(r!)}, ${mix(g!)}, ${mix(b!)})`;
+  const [r, g, b] = rgb.map((channel) => Math.round(channel * opacity + 255 * (1 - opacity)));
+  return `rgb(${String(r)}, ${String(g)}, ${String(b)})`;
 }
 
 const SELECTED_ICON_BOX_BG = tintOnWhite(SELECTED_COLOR, 0.12);
@@ -343,13 +352,12 @@ const SELECTED_ICON_BOX_BG = tintOnWhite(SELECTED_COLOR, 0.12);
 /** 도넛 세그먼트 아이콘 색을 고를 때 그 세그먼트 배경이 흰 아이콘을 받쳐줄 만큼 어두운지
  * 판단한다(지각 휘도 기준). 예상 못 한 포맷이면 밝은 배경으로 취급해 옅은 아이콘을 쓴다. */
 function isDarkColor(hex: string): boolean {
-  const match = /^#([0-9a-fA-F]{6})$/.exec(hex);
-  if (!match) {
+  const rgb = parseHexColor(hex);
+  if (!rgb) {
     return false;
   }
-  const [r, g, b] = [0, 2, 4].map((start) => parseInt(match[1]!.slice(start, start + 2), 16));
-  const luminance = (0.299 * r! + 0.587 * g! + 0.114 * b!) / 255;
-  return luminance < 0.5;
+  const [r, g, b] = rgb;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
 }
 
 const styles = StyleSheet.create({

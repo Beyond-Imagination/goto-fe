@@ -11,7 +11,7 @@
 앱에 박힌 이미지와 미묘하게 달라질 위험이 있어 일부러 건드리지 않는다. 나중에 원형 배지도
 이 스크립트로 관리하고 싶다면 CIRCLE 관련 렌더 함수를 채우고 SHAPES에 등록하면 된다.
 
-컬러 규칙: pin은 카테고리와 무관하게 단일 배색이다 — 몸통 회색(#999999) + 테두리·아이콘
+컬러 규칙: pin은 카테고리와 무관하게 단일 배색이다 — 몸통 흰색(#FFFFFF) + 테두리·아이콘
 주황(#ED782F). 이 주황은 기존 중간 줌 배지의 ISSUE_TYPE_MARKER_COLOR.high와 동일한 값이라
 새 토큰을 만들지 않고 그대로 재사용한다
 (src/screens/home/obstacleSeverityStyle.ts:ISSUE_TYPE_MARKER_COLOR 참고).

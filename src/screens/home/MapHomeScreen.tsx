@@ -668,8 +668,8 @@ function sheetTitleFor(zoomTier: ZoomTier): string {
   if (zoomTier === "mid") {
     return "\uC8FC\uBCC0 \uC811\uADFC\uC131 \uC774\uC288";
   }
-  // close: CurrentScreenReportStatsCard\uAC00 "\uD604\uC7AC \uD654\uBA74 \uC81C\uBCF4" + \u24D8\uB97C \uCE74\uB4DC \uC548\uC5D0\uC11C \uC9C1\uC811 \uADF8\uB9B0\uB2E4 \u2014
-  // \uC5EC\uAE30\uC11C \uB610 \uAC19\uC740 \uC81C\uBAA9\uC744 \uB744\uC6B0\uBA74 \uB450 \uC904\uB85C \uACB9\uCCD0 \uBCF4\uC778\uB2E4(\uC911\uBCF5 \uD5E4\uB354 \uBC84\uADF8, \uC774\uC804\uC5D0 \uD55C \uBC88 \uACE0\uCCE4\uC74C).
+  // close: CurrentScreenReportStatsCard가 "현재 화면 제보" 제목과 정보 배지를 카드 안에서
+  // 직접 그린다. 여기서도 같은 제목을 띄우면 헤더가 두 줄로 겹쳐 보이므로 비운다.
   return "";
 }
 

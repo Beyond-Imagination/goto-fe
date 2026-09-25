@@ -115,7 +115,7 @@ export function CloseZoomContent({
         categories={categoryStats}
         // 자동 줄바꿈에 맡기면 컨테이너 너비에 따라 끊기는 지점이 기획과 달라진다 — 줄바꿈
         // 위치를 명시적으로 고정한다.
-        descriptionText={"이 지역에서 확인 된\n접근성 제보 수"}
+        descriptionText={"이 지역에서 확인된\n접근성 제보 수"}
         totalCount={totalCount}
       />
 

@@ -62,8 +62,8 @@ export function issueTypeStatCategoryId(issueType: ObstacleIssueType): string {
 }
 
 /**
- * ⚠️ 임시값 — 실제 카피 확정 전 placeholder. 참고 스크린샷엔 "높은턱 → 이동 경로의 단차"
- * 하나만 나와 있어 그대로 쓰고, 나머지 6종은 비슷한 톤으로 새로 썼다. 콘텐츠팀 확인 필요.
+ * TODO(콘텐츠팀 카피 확정 후 교체): 임시값 placeholder. 참고 스크린샷엔 "높은턱 → 이동
+ * 경로의 단차" 하나만 나와 있어 그대로 쓰고, 나머지 6종은 비슷한 톤으로 새로 썼다.
  */
 export const ISSUE_TYPE_STAT_SUB_DESCRIPTION: Record<ObstacleIssueType, string> = {
   HIGH_CURB: "이동 경로의 단차", // Figma 실측
