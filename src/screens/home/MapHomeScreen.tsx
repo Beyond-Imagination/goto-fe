@@ -668,9 +668,7 @@ function sheetTitleFor(zoomTier: ZoomTier): string {
   if (zoomTier === "mid") {
     return "\uC8FC\uBCC0 \uC811\uADFC\uC131 \uC774\uC288";
   }
-  // close: CurrentScreenReportStatsCard가 "현재 화면 제보" 제목과 정보 배지를 카드 안에서
-  // 직접 그린다. 여기서도 같은 제목을 띄우면 헤더가 두 줄로 겹쳐 보이므로 비운다.
-  return "";
+  return "\uD604\uC7AC \uD654\uBA74 \uC81C\uBCF4";
 }
 
 type FilterChipProps = {

@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 import { Card, Text as AppText } from "@/components";
-import { InfoMark } from "@/components/help";
 import { Icon, type IconName } from "@/components/icons/Icon";
 import { colors } from "@/styles/tokens/colors";
 import { radius } from "@/styles/tokens/radius";
@@ -70,9 +69,8 @@ export function CurrentScreenReportStatsCard({
 
   if (categories.length === 0) {
     return (
-      <Card elevation="sm">
-        <TitleRow />
-        <AppText color={colors.text.secondary} style={styles.emptyText} variant="body-3">
+      <Card elevation="sm" style={styles.card}>
+        <AppText color={colors.text.secondary} variant="body-3">
           확인된 접근성 제보가 없습니다
         </AppText>
       </Card>
@@ -100,9 +98,7 @@ export function CurrentScreenReportStatsCard({
   );
 
   return (
-    <Card elevation="sm">
-      <TitleRow />
-
+    <Card elevation="sm" style={styles.card}>
       <View style={styles.summaryRow}>
         <View style={styles.summaryTextGroup}>
           <AppText color={SELECTED_COLOR} variant="headline-1" weight="bold">
@@ -138,18 +134,6 @@ export function CurrentScreenReportStatsCard({
         </Pressable>
       ) : null}
     </Card>
-  );
-}
-
-function TitleRow() {
-  return (
-    <View style={styles.titleRow}>
-      <AppText style={styles.titleText} variant="title-2" weight="semibold">
-        현재 화면 제보
-      </AppText>
-      {/* 지금은 정적 배지만 — 탭해서 툴팁/설명을 띄우는 인터랙션은 별도 확인 후 붙인다. */}
-      <InfoMark />
-    </View>
   );
 }
 
@@ -361,6 +345,10 @@ function isDarkColor(hex: string): boolean {
 }
 
 const styles = StyleSheet.create({
+  // 공용 Card의 기본 회색 테두리(border.light)를 이 카드에서만 끈다 — 그림자로만 구분한다.
+  card: {
+    borderWidth: 0
+  },
   descriptionText: {
     marginTop: spacing[1]
   },
@@ -374,9 +362,6 @@ const styles = StyleSheet.create({
     height: DONUT_CANVAS_SIZE,
     justifyContent: "center",
     width: DONUT_CANVAS_SIZE
-  },
-  emptyText: {
-    marginTop: spacing[2]
   },
   iconBox: {
     alignItems: "center",
@@ -424,18 +409,10 @@ const styles = StyleSheet.create({
   summaryRow: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: spacing[3]
+    justifyContent: "space-between"
   },
   summaryTextGroup: {
     flex: 1
-  },
-  titleRow: {
-    alignItems: "center",
-    flexDirection: "row"
-  },
-  titleText: {
-    marginRight: spacing[1]
   },
   toggleBox: {
     alignItems: "center",
