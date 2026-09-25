@@ -14,6 +14,12 @@ export const colors = {
      * 어느 쪽이 정본인지 디자이너 확인이 필요합니다.
      */
     mainAlt: '#383CFF',
+    /**
+     * 지도 홈 "현재 화면 제보" 통계 카드의 총 건수·선택 상태·도넛 그라데이션 기준색 (Figma 실측).
+     * mainAlt(#383CFF)와 거의 같은 블루지만 값이 달라 별도 토큰으로 둔다 —
+     * 같은 색의 실측 오차인지 디자이너 확인이 필요합니다.
+     */
+    reportStat: '#393CF5',
     // 도움 요청 홈의 "도움이 필요한 사람 찾기" 카드에 쓰이는 Figma Yellow.
     help: '#F9A825',
     sub1: '#6200EA',   // Sub 01 (서브 보라)
@@ -69,6 +75,7 @@ export const colors = {
     light: '#F7F7FB',     // Light_Color BG
     regular: '#F1F1F5',   // Regular_Color BG
     dark: '#2A2A37',      // Dark Mode BG
+    accentLight: '#FEF8F3', // 지도 마커 주황(#ED782F)의 옅은 배경 — 최근 제보 아이콘 배지 (Figma 실측)
   },
 
   // Border & Line Colors (Line Light, Line Regular)

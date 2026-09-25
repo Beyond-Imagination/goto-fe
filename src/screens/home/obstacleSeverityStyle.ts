@@ -29,18 +29,51 @@ export const ISSUE_TYPE_LABEL: Record<ObstacleIssueType, string> = {
   NARROW_PASSAGE: "좁은통로",
   SIDEWALK_DAMAGE: "보도파손",
   STAIRS: "계단",
-  STEEP_SLOPE: "급경사",
-  // 아래 5종은 전용 아이콘이 아직 없어 Icon.tsx 기본 아이콘으로 표시됩니다.
-  OBSTRUCTION: "적치물",
-  ILLEGAL_PARKING: "불법주차",
-  BRAILLE_BLOCK_DAMAGE: "점자블록훼손",
-  SLIPPERY_SURFACE: "미끄러운길",
-  OTHER: "기타"
+  STEEP_SLOPE: "급경사"
 };
+
+/**
+ * 타입은 BE enum 7종으로 좁혀졌지만 런타임 응답은 그 밖의 값이 올 수 있다(BE에 유형이 새로
+ * 추가되고 FE가 아직 배포 전인 경우 등). 아이콘·라벨 맵은 이제 Partial이 아니라서 모르는 값을
+ * 그대로 조회하면 undefined가 되어 렌더 중 크래시하므로, 조회 전에 이 가드로 거른다.
+ */
+export function isKnownIssueType(value: string): boolean {
+  return Object.prototype.hasOwnProperty.call(ISSUE_TYPE_LABEL, value);
+}
+
+/** 클러스터 대표 이슈유형(topIssueTypes[0]). 없거나 FE가 모르는 값이면 undefined. */
+export function clusterDominantIssueType(cluster: ObstacleReportCluster): ObstacleIssueType | undefined {
+  const issueType = cluster.topIssueTypes[0]?.issueType;
+  return issueType !== undefined && isKnownIssueType(issueType) ? issueType : undefined;
+}
 
 export function formatClusterMarkerLabel(severity: ObstacleSeverity, reportCount: number): string {
   return `${SEVERITY_LABEL[severity]} ${String(reportCount)}`;
 }
+
+/**
+ * "현재 화면 제보" 통계 카드(CurrentScreenReportStats)용 카테고리 식별자.
+ * ObstacleIssueType을 그대로 key로 안 쓰는 이유: 그 컴포넌트의 데이터 계약이 범용 문자열
+ * `categoryId`를 요구해서(다른 화면·다른 분류 체계에서도 재사용할 수 있게) — 지금은
+ * ObstacleIssueType을 lowercase로 바꾼 값을 쓴다.
+ */
+export function issueTypeStatCategoryId(issueType: ObstacleIssueType): string {
+  return issueType.toLowerCase();
+}
+
+/**
+ * TODO(콘텐츠팀 카피 확정 후 교체): 임시값 placeholder. 참고 스크린샷엔 "높은턱 → 이동
+ * 경로의 단차" 하나만 나와 있어 그대로 쓰고, 나머지 6종은 비슷한 톤으로 새로 썼다.
+ */
+export const ISSUE_TYPE_STAT_SUB_DESCRIPTION: Record<ObstacleIssueType, string> = {
+  HIGH_CURB: "이동 경로의 단차", // Figma 실측
+  STAIRS: "계단으로 인한 이동 제약",
+  STEEP_SLOPE: "경사가 급한 구간",
+  NARROW_PASSAGE: "폭이 좁은 통행로",
+  CONSTRUCTION: "공사로 인한 통행 제한",
+  SIDEWALK_DAMAGE: "파손된 보도면",
+  LONG_WALKING_DISTANCE: "먼 우회 이동 거리"
+};
 
 /**
  * 중간 줌 이슈유형 마커의 건수 구간별 색상. 심각도와 무관하게 이 클러스터의 대표 이슈유형이

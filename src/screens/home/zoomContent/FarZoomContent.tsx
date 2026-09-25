@@ -67,9 +67,10 @@ function AccessibilitySummaryCard({ summary }: { readonly summary: NearbyAccessi
 function SummaryCount({ color, count, label }: { readonly color: string; readonly count: number; readonly label: string }) {
   return (
     <View style={styles.summaryCount}>
-      <AppText color={color} variant="title-2" weight="bold">
+      {/* 숫자를 크고 굵게, "건"은 작게 — 현재 화면 제보 통계 카드의 총 건수와 같은 비중이다. */}
+      <AppText color={color} variant="headline-1" weight="bold">
         {String(count)}
-        <AppText color={colors.text.secondary} variant="body-2" weight="regular">
+        <AppText color={colors.text.secondary} variant="caption-1" weight="regular">
           건
         </AppText>
       </AppText>
@@ -90,7 +91,6 @@ const styles = StyleSheet.create({
   },
   summaryCount: {
     alignItems: "center",
-    flex: 1,
     gap: spacing[1]
   },
   summaryDivider: {
@@ -99,7 +99,10 @@ const styles = StyleSheet.create({
     marginVertical: spacing[1],
     width: 1
   },
+  // 항목을 균등 분배(flex: 1)하지 않고 고정 gap으로 모은 뒤, 묶음을 카드 안에서 가운데 정렬한다.
   summaryRow: {
-    flexDirection: "row"
+    flexDirection: "row",
+    gap: spacing[6],
+    justifyContent: "center"
   }
 });

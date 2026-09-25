@@ -2,7 +2,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 import expoConfig from 'eslint-config-expo/flat.js';
 
 export default defineConfig([
-  globalIgnores(['dist/*']),
+  globalIgnores(['dist/*', 'scripts/.venv/*']),
   expoConfig,
   {
     files: ['**/*.{ts,tsx}'],

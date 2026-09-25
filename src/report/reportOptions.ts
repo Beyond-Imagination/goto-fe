@@ -34,7 +34,12 @@ export const REPORT_KIND_OPTIONS: readonly ReportKindOption[] = [
   },
 ];
 
-/** 제보 05 — 어떤 장애물인가요? (BE ObstacleIssueType 12종) */
+/**
+ * 제보 05 — 어떤 장애물인가요? (BE ObstacleIssueType 7종)
+ * 예전엔 적치물/불법주차/점자블록훼손/미끄러운길/기타 5종도 선택지에 있었는데, BE enum엔
+ * 애초에 없던 값이라 골라서 제출하면 항상 역직렬화 실패로 거부됐다 — 삭제함
+ * (obstacleReportApi.ts 주석 참고).
+ */
 export const ISSUE_TYPE_OPTIONS: readonly { readonly value: ObstacleIssueType; readonly label: string }[] = [
   { value: 'SIDEWALK_DAMAGE', label: '보도 파손' },
   { value: 'HIGH_CURB', label: '높은 턱' },
@@ -43,11 +48,6 @@ export const ISSUE_TYPE_OPTIONS: readonly { readonly value: ObstacleIssueType; r
   { value: 'NARROW_PASSAGE', label: '좁은 인도' },
   { value: 'STAIRS', label: '계단' },
   { value: 'LONG_WALKING_DISTANCE', label: '긴 보행 거리' },
-  { value: 'OBSTRUCTION', label: '적치물' },
-  { value: 'ILLEGAL_PARKING', label: '불법 주차' },
-  { value: 'BRAILLE_BLOCK_DAMAGE', label: '점자블록 훼손' },
-  { value: 'SLIPPERY_SURFACE', label: '미끄러운 길' },
-  { value: 'OTHER', label: '기타' },
 ];
 
 /**

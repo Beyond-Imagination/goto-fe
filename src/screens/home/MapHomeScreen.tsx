@@ -45,12 +45,14 @@ import {
   ISSUE_TYPE_MARKER_CAPTION_SIZE,
   ISSUE_TYPE_MARKER_HEIGHT_RATIO,
   ISSUE_TYPE_MARKER_WIDTH_RATIO,
+  ISSUE_TYPE_PIN_MARKER,
   issueTypeMarkerCaptionColor,
   issueTypeMarkerIcon,
-  issueTypeMarkerSize
+  issueTypeMarkerSize,
+  issueTypePinIcon
 } from "./issueTypeMarkerIcons";
 import { MapHomeSheet } from "./MapHomeSheet";
-import { clusterSeverityColor, clusterSeverityLabel } from "./obstacleSeverityStyle";
+import { ISSUE_TYPE_LABEL, clusterDominantIssueType, clusterSeverityColor, clusterSeverityLabel } from "./obstacleSeverityStyle";
 import { RECOMMENDED_PLACES_MAX_COUNT } from "./sections/RecommendedPlacesSection";
 import { tieredValue } from "./tieredValue";
 import { getZoomTier, type ZoomTier } from "./zoomTiers";
@@ -385,7 +387,7 @@ export function MapHomeScreen() {
               : `cluster-${String(index)}-${String(cluster.centerLat)}-${String(cluster.centerLng)}`;
 
           if (zoomTier === "mid") {
-            const dominantIssueType = cluster.topIssueTypes[0]?.issueType;
+            const dominantIssueType = clusterDominantIssueType(cluster);
             const midSize = issueTypeMarkerSize(cluster.reportCount);
             return (
               <NaverMapMarkerOverlay
@@ -407,6 +409,42 @@ export function MapHomeScreen() {
                 zIndex={cluster.reportCount}
               />
             );
+          }
+
+          if (zoomTier === "close") {
+            // 가까운 줌은 언클러스터링 상태라 클러스터 하나 = 제보 하나(CloseZoomContent.tsx
+            // 참고) — 그래서 건수 구간 없이 이슈유형 하나만으로 pin 이미지가 정해진다.
+            // 대표 이슈유형이 없거나 FE가 모르는 값이면 아래 공용 원형 마커 분기로 그대로
+            // 흘러 내려가 폴백된다.
+            const dominantIssueType = clusterDominantIssueType(cluster);
+            if (dominantIssueType) {
+              return (
+                <NaverMapMarkerOverlay
+                  anchor={ISSUE_TYPE_PIN_MARKER.anchor}
+                  // 기획(가까운 줌 목업)엔 pin 위에 이슈유형 이름표가 항상 같이 붙어있다.
+                  // align:"Top"은 이미 mid 줌 캡션(align:"Center")과 같은 네이티브 caption
+                  // 렌더 경로를 타므로 안전하고, offset은 그 mid 줌 쪽에서 "지정하면 캡션이
+                  // 아예 안 그려지는" 버그가 확인돼 건드리지 않는다(issueTypeMarkerIcons.ts
+                  // ISSUE_TYPE_MARKER_ANCHOR_X 주석 참고) — 기본 간격을 그대로 쓴다.
+                  caption={{
+                    align: "Top",
+                    color: colors.text.inverse,
+                    haloColor: ISSUE_TYPE_PIN_MARKER.labelHaloColor,
+                    text: ISSUE_TYPE_LABEL[dominantIssueType],
+                    textSize: ISSUE_TYPE_PIN_MARKER.labelTextSize
+                  }}
+                  height={ISSUE_TYPE_PIN_MARKER.height}
+                  image={issueTypePinIcon(dominantIssueType)}
+                  isHideCollidedMarkers
+                  key={key}
+                  latitude={cluster.centerLat}
+                  longitude={cluster.centerLng}
+                  onTap={() => handleClusterTap(cluster)}
+                  width={ISSUE_TYPE_PIN_MARKER.width}
+                  zIndex={cluster.reportCount}
+                />
+              );
+            }
           }
 
           const size = clusterMarkerSize(cluster.reportCount);
@@ -627,7 +665,10 @@ function sheetTitleFor(zoomTier: ZoomTier): string {
   if (zoomTier === "far") {
     return "\uD604\uC7AC \uD654\uBA74 \uC811\uADFC\uC131 \uD604\uD669";
   }
-  return zoomTier === "mid" ? "\uC8FC\uBCC0 \uC811\uADFC\uC131 \uC774\uC288" : "\uD604\uC7AC \uD654\uBA74 \uC81C\uBCF4";
+  if (zoomTier === "mid") {
+    return "\uC8FC\uBCC0 \uC811\uADFC\uC131 \uC774\uC288";
+  }
+  return "\uD604\uC7AC \uD654\uBA74 \uC81C\uBCF4";
 }
 
 type FilterChipProps = {

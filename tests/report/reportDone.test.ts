@@ -14,7 +14,7 @@ const OBSTACLE: ObstacleReportResponse = {
   id: 7,
   lat: 37.5665,
   lng: 126.978,
-  issueType: 'OBSTRUCTION',
+  issueType: 'SIDEWALK_DAMAGE',
   severity: 'CAUTION',
   affectedMobilityTypes: ['WHEELCHAIR'],
   photoUrls: ['https://cdn.example.test/a.jpg'],
@@ -68,7 +68,7 @@ describe('완료 화면 — 길 위 장애물 (제보 07)', () => {
 
     assert.equal(summary.id, 7);
     assert.equal(summary.tagLabel, '주의');
-    assert.equal(summary.cards[0]!.title, '적치물 · 주의');
+    assert.equal(summary.cards[0]!.title, '보도 파손 · 주의');
     assert.equal(summary.cards[0]!.body, '서울숲 공원');
     assert.equal(summary.cards[0]!.emphasized, true);
     assert.equal(summary.primaryActionLabel, '지도에서 보기');
