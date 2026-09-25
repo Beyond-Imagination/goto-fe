@@ -27,7 +27,12 @@ export function RecentReportsList({ items }: { readonly items: readonly RecentRe
   return (
     <View style={styles.list}>
       {items.map((item, index) => (
-        <RecentReportRow item={item} key={`${item.category}-${item.locationText}-${item.timeAgo}-${String(index)}`} />
+        // thumbnailUrl을 key에 넣어, 목록이 갱신돼 같은 자리에 다른 제보가 오면 행이 새로
+        // 마운트되어 이전 제보의 이미지 로드 실패 상태(imageFailed)가 남지 않게 한다.
+        <RecentReportRow
+          item={item}
+          key={`${item.category}-${item.locationText}-${item.timeAgo}-${item.thumbnailUrl ?? ""}-${String(index)}`}
+        />
       ))}
     </View>
   );
@@ -35,7 +40,8 @@ export function RecentReportsList({ items }: { readonly items: readonly RecentRe
 
 function RecentReportRow({ item }: { readonly item: RecentReportItem }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const showThumbnail = item.thumbnailUrl !== null && !imageFailed;
+  const thumbnailUrl = item.thumbnailUrl !== null && item.thumbnailUrl.trim() !== "" ? item.thumbnailUrl : null;
+  const showThumbnail = thumbnailUrl !== null && !imageFailed;
 
   return (
     <View style={styles.row}>
@@ -62,14 +68,14 @@ function RecentReportRow({ item }: { readonly item: RecentReportItem }) {
       </View>
 
       <View style={styles.thumbnailBox}>
-        {showThumbnail && item.thumbnailUrl !== null ? (
+        {showThumbnail ? (
           <Image
             accessibilityLabel={`${item.category} 제보 사진`}
             onError={() => {
               setImageFailed(true);
             }}
             resizeMode="cover"
-            source={{ uri: item.thumbnailUrl }}
+            source={{ uri: thumbnailUrl }}
             style={styles.thumbnailImage}
           />
         ) : (

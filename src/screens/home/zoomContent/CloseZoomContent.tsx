@@ -32,6 +32,9 @@ type CloseZoomContentProps = {
   readonly recommendedPlaces: readonly PlaceSearchItem[];
 };
 
+// 뷰포트 안 제보를 전부 그리면 Image가 그만큼 동시에 로드된다 — 최근 순으로 이 개수까지만.
+const RECENT_REPORTS_MAX_COUNT = 20;
+
 function formatRelativeTime(isoTimestamp: string): string {
   const diffMs = Date.now() - new Date(isoTimestamp).getTime();
   const diffMinutes = Math.max(0, Math.round(diffMs / 60000));
@@ -103,7 +106,8 @@ export function CloseZoomContent({
           thumbnailUrl: cluster.photoUrls?.[0] ?? null
         }
       ];
-    });
+    })
+    .slice(0, RECENT_REPORTS_MAX_COUNT);
 
   return (
     <View style={homeSectionStyles.sections}>

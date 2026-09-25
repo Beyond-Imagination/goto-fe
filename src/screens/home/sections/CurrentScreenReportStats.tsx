@@ -79,9 +79,11 @@ export function CurrentScreenReportStatsCard({
     );
   }
 
-  const selectedCategory = categories.find((category) => category.categoryId === selectedCategoryId) ?? categories[0]!;
   const canToggle = categories.length > collapsedCount;
   const visibleCategories = expanded ? categories : categories.slice(0, collapsedCount);
+  // 선택은 보이는 목록 안에서만 유효하다 — 접어서 선택한 카테고리가 목록 밖으로 밀리면
+  // 도넛에만 강조가 남는 불일치가 생기므로 첫 번째로 폴백한다.
+  const selectedCategory = visibleCategories.find((category) => category.categoryId === selectedCategoryId) ?? categories[0]!;
   const listContent = (
     <View style={styles.list}>
       {visibleCategories.map((category) => (
@@ -180,20 +182,17 @@ type DonutSegment = {
 };
 
 /**
- * percentage(반올림된 정수)의 합이 100을 넘거나 못 채우는 경우가 실제로 있을 수 있다고
- * 명시됐다 — 세그먼트 길이를 각자 percentage로 독립적으로 그리면 원 둘레에 빈 틈이 생기거나
- * 겹친다. 그래서 앞쪽 세그먼트는 각자 percentage대로 그리되(단, 남은 둘레를 넘지 않게
- * 클램프), 마지막 세그먼트만 "남은 둘레 전부"로 강제해 항상 정확히 한 바퀴(360도)로
- * 닫히게 만든다.
+ * 세그먼트 길이는 반올림된 percentage가 아니라 count 비율로 계산한다 — percentage(정수)의
+ * 합은 100을 넘거나 못 채울 수 있어서, 그대로 쓰면 원 둘레에 틈이 생기거나 겹치고 마지막
+ * 세그먼트가 "남은 둘레 전부"로 부풀려져 표시된 %와 호 길이가 어긋난다. count 비율이면
+ * 합이 항상 정확히 한 바퀴(360도)이고, 0.5% 미만 카테고리도 눈에 보이는 아주 얇은 호가
+ * 남아 선택/강조가 된다.
  */
 function buildDonutSegments(categories: readonly ReportCategoryStat[], selectedCategoryId: string): DonutSegment[] {
+  const totalCount = categories.reduce((sum, category) => sum + Math.max(category.count, 0), 0);
   let offset = 0;
-  return categories.map((category, index) => {
-    const remaining = Math.max(DONUT_CIRCUMFERENCE - offset, 0);
-    const isLast = index === categories.length - 1;
-    const clampedPercentage = Math.min(Math.max(category.percentage, 0), 100);
-    const rawLength = (clampedPercentage / 100) * DONUT_CIRCUMFERENCE;
-    const length = isLast ? remaining : Math.min(rawLength, remaining);
+  return categories.map((category) => {
+    const length = totalCount > 0 ? (Math.max(category.count, 0) / totalCount) * DONUT_CIRCUMFERENCE : 0;
     const isSelected = category.categoryId === selectedCategoryId;
 
     const segment: DonutSegment = { categoryId: category.categoryId, color: category.color, isSelected, length, offset };
