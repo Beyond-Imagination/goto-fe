@@ -15,14 +15,16 @@ const googleIosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME?.trim()
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ?? '';
 
 /**
- * FCM 설정 파일은 Firebase 콘솔에서 받아 저장소 밖(로컬)에 둡니다(.gitignore).
- * 파일이 없으면 Firebase 플러그인을 붙이지 않습니다 — 그래야 설정 파일 없이도 앱을 빌드·실행할 수 있고,
- * 푸시만 꺼진 상태가 됩니다(BE도 자격 증명이 없으면 같은 방식으로 비활성입니다).
+ * FCM 설정 파일은 Git에 넣지 않습니다. EAS production에서는 파일형 secret 환경변수가
+ * 각각 임시 파일 경로를 제공하고, 로컬에서는 gitignored 파일을 fallback으로 사용합니다.
  */
-const androidGoogleServicesFile = resolve(__dirname, 'google-services.json');
-const iosGoogleServicesFile = resolve(__dirname, 'GoogleService-Info.plist');
-const hasAndroidFirebase = existsSync(androidGoogleServicesFile);
-const hasIosFirebase = existsSync(iosGoogleServicesFile);
+const androidGoogleServicesFile = process.env.GOOGLE_SERVICES_JSON ?? resolve(__dirname, 'google-services.json');
+const iosGoogleServicesFile =
+  process.env.GOOGLE_SERVICE_INFO_PLIST ?? resolve(__dirname, 'GoogleService-Info.plist');
+// EAS file secret은 경로가 먼저 주입되고 파일은 빌드 워커에서 마운트될 수 있으므로,
+// 환경변수가 있으면 existsSync 결과와 무관하게 Firebase 설정을 적용합니다.
+const hasAndroidFirebase = Boolean(process.env.GOOGLE_SERVICES_JSON) || existsSync(androidGoogleServicesFile);
+const hasIosFirebase = Boolean(process.env.GOOGLE_SERVICE_INFO_PLIST) || existsSync(iosGoogleServicesFile);
 const hasFirebase = hasAndroidFirebase || hasIosFirebase;
 
 /**
@@ -88,7 +90,7 @@ const config: ExpoConfig = {
   name: '함께가길',
   owner: 'beyondimagination',
   slug: 'goto-fe',
-  version: '0.1.0',
+  version: '1.0.1',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: 'goto',
@@ -99,11 +101,7 @@ const config: ExpoConfig = {
     buildNumber: '1',
     supportsTablet: false,
     icon: './assets/images/icon.png',
-    ...(hasIosFirebase ? { googleServicesFile: './GoogleService-Info.plist' } : {}),
-    // 푸시를 받으려면 remote-notification 백그라운드 모드와 APNs entitlement가 필요합니다.
-    entitlements: {
-      'aps-environment': 'development',
-    },
+    ...(hasIosFirebase ? { googleServicesFile: iosGoogleServicesFile } : {}),
     infoPlist: {
       UIBackgroundModes: ['remote-notification'],
       ITSAppUsesNonExemptEncryption: false,
@@ -120,7 +118,7 @@ const config: ExpoConfig = {
   android: {
     package: 'net.beyondimagination.gotoapp',
     versionCode: 1,
-    ...(hasAndroidFirebase ? { googleServicesFile: './google-services.json' } : {}),
+    ...(hasAndroidFirebase ? { googleServicesFile: androidGoogleServicesFile } : {}),
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon-foreground.png',
       backgroundImage: './assets/images/adaptive-icon-background.png',
@@ -133,6 +131,9 @@ const config: ExpoConfig = {
   },
   plugins: [
     withLocalApiCleartextTraffic,
+    // Firebase 설정 파일이 없는 로컬 mock 빌드도 RNFirebase pod을 autolink하므로,
+    // CocoaPods 정적 링크와 충돌하지 않도록 SPM 비활성화는 항상 적용합니다.
+    withRNFirebaseDisableSPM,
     'expo-font',
     [
       'expo-splash-screen',
@@ -146,7 +147,6 @@ const config: ExpoConfig = {
       ? [
           '@react-native-firebase/app',
           '@react-native-firebase/messaging',
-          withRNFirebaseDisableSPM,
           withFirebaseNotificationMetaOverride,
         ]
       : []),

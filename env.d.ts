@@ -15,6 +15,8 @@ declare namespace NodeJS {
     EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?: string;
     EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME?: string;
     NAVER_MAP_CLIENT_ID?: string;
+    GOOGLE_SERVICES_JSON?: string;
+    GOOGLE_SERVICE_INFO_PLIST?: string;
     EXPO_PUBLIC_AUTH_MODE?: 'live' | 'mock';
     EXPO_PUBLIC_DEV_PERSONA?: string;
   }
